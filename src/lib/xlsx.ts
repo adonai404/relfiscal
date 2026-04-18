@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { ALL_COLUMNS, type ColumnKey, type FiscalConfig, getColumnLabel, isColumnVisible, isComputedColumn } from "@/hooks/useFiscalConfig";
-import { displayCompetencia, normalizeCompetencia } from "./format";
+import { displayCompetencia, normalizeCompetencia, parseBrNumber } from "./format";
 
 export interface ParsedRow {
   competencia: string;
@@ -19,24 +19,7 @@ const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
 // Parse numeric value supporting BR (1.234,56) and US (1,234.56) formats
-const parseNum = (v: unknown): number => {
-  if (v === null || v === undefined || v === "") return 0;
-  if (typeof v === "number") return v;
-  let s = String(v).trim();
-  if (!s) return 0;
-  // Remove currency symbols and spaces
-  s = s.replace(/[R$\s]/g, "");
-  const hasComma = s.includes(",");
-  const hasDot = s.includes(".");
-  if (hasComma && hasDot) {
-    // Assume BR: dot thousand sep, comma decimal
-    s = s.replace(/\./g, "").replace(",", ".");
-  } else if (hasComma) {
-    s = s.replace(",", ".");
-  }
-  const n = parseFloat(s);
-  return isNaN(n) ? 0 : n;
-};
+const parseNum = (v: unknown): number => parseBrNumber(v as string | number | null | undefined);
 
 export function downloadTemplate(cfg: FiscalConfig | null | undefined, fileName = "template-movimento.xlsx") {
   const cols = visibleColumns(cfg);

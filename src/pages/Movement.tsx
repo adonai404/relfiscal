@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
+import { brl, displayCompetencia, formatCNPJ, parseBrNumber } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
@@ -333,7 +333,10 @@ function SummaryCard({ label, value, accent }: { label: string; value: number; a
 }
 
 function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v: number) => void; readonly?: boolean }) {
-  const [v, setV] = useState(String(value));
+  // Initialize with BR-formatted decimal string (comma as decimal separator)
+  const toEditable = (n: number) =>
+    n === 0 ? "" : n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const [v, setV] = useState(toEditable(value));
   const [editing, setEditing] = useState(false);
   if (readonly) {
     return (
@@ -347,29 +350,35 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
       <button
         type="button"
         className="w-full text-right px-2 py-1.5 rounded hover:bg-accent transition text-sm tabular-nums"
-        onClick={() => { setV(String(value)); setEditing(true); }}
+        onClick={() => { setV(toEditable(value)); setEditing(true); }}
       >
         {brl(value)}
       </button>
     );
   }
   const commit = () => {
-    const n = parseFloat(v.replace(/\./g, "").replace(",", "."));
+    const n = parseBrNumber(v);
     setEditing(false);
-    if (!isNaN(n) && n !== value) onCommit(n);
+    if (n !== value) onCommit(n);
   };
   return (
     <Input
       autoFocus
-      type="number"
-      step="0.01"
+      type="text"
+      inputMode="decimal"
       value={v}
-      onChange={(e) => setV(e.target.value)}
+      onChange={(e) => {
+        // Allow only digits, separators, minus and parentheses while typing
+        const cleaned = e.target.value.replace(/[^\d.,\-()\s]/g, "");
+        setV(cleaned);
+      }}
+      onFocus={(e) => e.target.select()}
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         if (e.key === "Escape") setEditing(false);
       }}
+      placeholder="0,00"
       className="h-8 text-right tabular-nums"
     />
   );
