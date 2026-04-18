@@ -20,6 +20,50 @@ export const displayCompetencia = (c: string) => {
   return c;
 };
 
+// Parse a user-entered numeric string supporting BR (1.234,56) and US (1,234.56) formats.
+// Accepts currency symbols, spaces, parentheses for negatives, and bare commas/dots.
+export const parseBrNumber = (input: string | number | null | undefined): number => {
+  if (input === null || input === undefined || input === "") return 0;
+  if (typeof input === "number") return isNaN(input) ? 0 : input;
+  let s = String(input).trim();
+  if (!s) return 0;
+  // Handle parentheses as negative: (123,45) => -123,45
+  let negative = false;
+  if (/^\(.*\)$/.test(s)) {
+    negative = true;
+    s = s.slice(1, -1).trim();
+  }
+  // Strip currency and spaces
+  s = s.replace(/[R$\s\u00A0]/gi, "");
+  // Leading minus sign
+  if (s.startsWith("-")) {
+    negative = !negative;
+    s = s.slice(1);
+  }
+  if (!s) return 0;
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+  if (hasComma && hasDot) {
+    // Whichever appears LAST is the decimal separator
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    if (lastComma > lastDot) {
+      // BR: dots are thousands, comma is decimal
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else {
+      // US: commas are thousands, dot is decimal
+      s = s.replace(/,/g, "");
+    }
+  } else if (hasComma) {
+    // Only comma -> decimal separator (BR)
+    s = s.replace(/\./g, "").replace(",", ".");
+  }
+  // else: only dot or none -> already valid
+  const n = parseFloat(s);
+  if (isNaN(n)) return 0;
+  return negative ? -n : n;
+};
+
 // Normalize any input to 'YYYY-MM' for storage / sorting
 export const normalizeCompetencia = (c: string) => {
   if (!c) return c;
