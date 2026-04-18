@@ -11,6 +11,7 @@ import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import Companies from "./pages/Companies.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
 import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
@@ -32,6 +33,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/empresas" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
