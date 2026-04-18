@@ -22,6 +22,7 @@ export type Database = {
           id: string
           nome_fantasia: string
           razao_social: string
+          regime: Database["public"]["Enums"]["tax_regime"]
           slug: string
           uf: string
           updated_at: string
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           nome_fantasia: string
           razao_social: string
+          regime?: Database["public"]["Enums"]["tax_regime"]
           slug: string
           uf: string
           updated_at?: string
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           nome_fantasia?: string
           razao_social?: string
+          regime?: Database["public"]["Enums"]["tax_regime"]
           slug?: string
           uf?: string
           updated_at?: string
@@ -328,6 +331,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      tax_regime: "simples_nacional" | "lucro_presumido" | "lucro_real" | "mei"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -456,6 +460,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      tax_regime: ["simples_nacional", "lucro_presumido", "lucro_real", "mei"],
     },
   },
 } as const
