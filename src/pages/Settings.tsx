@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Building2, ChevronLeft, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Building2, ChevronLeft, Download, FileSpreadsheet, Loader2, Settings as SettingsIcon, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +18,9 @@ import {
 } from "@/hooks/useFiscalConfig";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatCNPJ } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
+import { downloadTemplate, exportMovementToXlsx } from "@/lib/xlsx";
+import { useXlsxImport } from "@/hooks/useXlsxImport";
 
 const TOGGLE_LABELS: Record<ColumnKey, string> = {
   entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
