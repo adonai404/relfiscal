@@ -233,18 +233,21 @@ export default function PublicMovement() {
                   {rows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{displayCompetencia(r.competencia)}</TableCell>
-                      {visibleCols.map((c) => (
-                        <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
-                          {brl(Number(r[c] || 0))}
-                        </TableCell>
-                      ))}
+                      {visibleCols.map((c) => {
+                        const value = computeColumnValue(r, c);
+                        return (
+                          <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
+                            {isComputedColumn(c) ? formatPercent(value) : brl(value)}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))}
                   <TableRow className="font-semibold bg-muted/50">
                     <TableCell>TOTAL</TableCell>
                     {visibleCols.map((c) => (
                       <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
-                        {brl(totals.byCol[c] || 0)}
+                        {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
                       </TableCell>
                     ))}
                   </TableRow>
