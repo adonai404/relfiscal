@@ -236,6 +236,57 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Card 4 — Import / Export XLSX */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Importação e Exportação</CardTitle>
+                <CardDescription>
+                  Baixe um template em XLSX (com seus rótulos e colunas visíveis), importe planilhas (atualiza o mês existente) ou exporte os dados atuais.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <input
+                  ref={xlsx.fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                  className="hidden"
+                  onChange={xlsx.onFileChange}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`)}
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Baixar Template
+                  </Button>
+                  <Button variant="outline" onClick={xlsx.triggerPicker} disabled={xlsx.isImporting}>
+                    {xlsx.isImporting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    Importar XLSX
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      exportMovementToXlsx(
+                        exportRows as Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
+                        config ?? undefined,
+                        `movimento-${selectedCompany.slug}.xlsx`
+                      )
+                    }
+                    disabled={exportRows.length === 0}
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  A importação faz upsert por <strong>mês de referência</strong>: linhas existentes são atualizadas; novas são criadas.
+                </p>
+              </CardContent>
+            </Card>
           </>
         )}
       </main>
