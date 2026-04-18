@@ -43,6 +43,7 @@ export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ["dashboard_companies"],
@@ -56,7 +57,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: movements = [], isLoading: loadingMov } = useQuery({
+  const { data: rawMovements = [], isLoading: loadingMov } = useQuery({
     queryKey: ["dashboard_movements"],
     enabled: !!user,
     queryFn: async () => {
@@ -67,6 +68,12 @@ export default function Dashboard() {
       return (data ?? []) as MovementLite[];
     },
   });
+
+  const availableComps = useMemo(
+    () => Array.from(new Set(rawMovements.map((m) => m.competencia))).sort(),
+    [rawMovements],
+  );
+  const movements = useMemo(() => filterByPeriod(rawMovements, period), [rawMovements, period]);
 
   const metrics = useMemo(() => {
     const byCompany = new Map<string, MovementLite[]>();
@@ -207,6 +214,7 @@ export default function Dashboard() {
             <Badge variant="secondary" className="ml-2">Admin</Badge>
           </div>
           <div className="flex items-center gap-2">
+            <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
