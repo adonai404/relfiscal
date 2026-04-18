@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, LogOut, Plus, Loader2 } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +65,9 @@ export default function Companies() {
                 <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
               </Button>
             )}
+            <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
+              <Layers className="mr-2 h-4 w-4" /> Combo
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
               <LogOut className="h-4 w-4" />
