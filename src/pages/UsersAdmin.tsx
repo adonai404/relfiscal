@@ -52,8 +52,8 @@ export default function UsersAdmin() {
     qc.invalidateQueries({ queryKey: ["admin_profiles"] });
   };
 
-  const pending = profiles.filter((p) => !p.approved);
-  const approved = profiles.filter((p) => p.approved);
+  const pending = rows.filter((p) => !p.approved);
+  const approved = rows.filter((p) => p.approved);
 
   const formatDate = (s: string | null) =>
     s ? new Date(s).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
