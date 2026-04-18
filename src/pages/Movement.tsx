@@ -1,18 +1,22 @@
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronLeft, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
+import { Building2, ChevronLeft, Filter, FilterX, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
@@ -48,6 +52,9 @@ export default function Movement() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  type Op = "gte" | "lte" | "eq" | "between";
+  const [colFilters, setColFilters] = useState<Record<string, { op: Op; a: string; b: string }>>({});
 
   const companyId = selectedCompany?.id;
   const { data: config } = useFiscalConfig(companyId);
@@ -67,7 +74,7 @@ export default function Movement() {
   });
 
   // Apply auto-calculate Simples Nacional if enabled (display-only)
-  const rows = useMemo(() => {
+  const computedRows = useMemo(() => {
     if (!config?.auto_calculate_simples_nacional) return rawRows;
     const a = Number(config.aliquota_simples_nacional || 0) / 100;
     return rawRows.map((r) => ({
@@ -75,6 +82,35 @@ export default function Movement() {
       simples_nacional: Number((Number(r.saida || 0) * a).toFixed(2)),
     }));
   }, [rawRows, config]);
+
+  const availableComps = useMemo(
+    () => Array.from(new Set(rawRows.map((r) => r.competencia))).sort(),
+    [rawRows],
+  );
+
+  // Apply period + column filters
+  const rows = useMemo(() => {
+    let r = filterByPeriod(computedRows, period);
+    const entries = Object.entries(colFilters);
+    if (entries.length > 0) {
+      r = r.filter((row) => {
+        for (const [col, f] of entries) {
+          const val = computeColumnValue(row, col as ColumnKey);
+          const a = parseBrNumber(f.a);
+          const b = parseBrNumber(f.b);
+          if (f.op === "gte" && f.a !== "" && !(val >= a)) return false;
+          if (f.op === "lte" && f.a !== "" && !(val <= a)) return false;
+          if (f.op === "eq" && f.a !== "" && Math.abs(val - a) > 0.001) return false;
+          if (f.op === "between" && f.a !== "" && f.b !== "" && !(val >= a && val <= b)) return false;
+        }
+        return true;
+      });
+    }
+    return r;
+  }, [computedRows, period, colFilters]);
+
+  const filtersActive = !!(period.from || period.to) || Object.keys(colFilters).length > 0;
+  const clearAllFilters = () => { setPeriod({ from: "", to: "" }); setColFilters({}); };
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
@@ -211,27 +247,43 @@ export default function Movement() {
         </div>
 
         <Card className="print-container">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-            <CardTitle>Movimento Fiscal</CardTitle>
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="no-print">
-                  <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
+          <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle>Movimento Fiscal</CardTitle>
+              {filtersActive && (
+                <Badge variant="secondary" className="gap-1">
+                  <Filter className="h-3 w-3" />
+                  {rows.length}/{computedRows.length}
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 no-print">
+              <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+              {filtersActive && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                  <FilterX className="mr-2 h-4 w-4" /> Limpar
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
-                <div className="space-y-2">
-                  <Label>Mês de referência</Label>
-                  <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
-                </div>
-                <DialogFooter>
-                  <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
-                    {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+              )}
+              <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
+                  <div className="space-y-2">
+                    <Label>Mês de referência</Label>
+                    <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
+                      {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (
@@ -241,11 +293,38 @@ export default function Movement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="sticky left-0 bg-card">{config?.label_competencia ?? "Competência"}</TableHead>
-                    {visibleCols.map((c) => (
-                      <TableHead key={c} className="text-right whitespace-nowrap">
-                        {getColumnLabel(config ?? undefined, c)}
-                      </TableHead>
-                    ))}
+                    {visibleCols.map((c) => {
+                      const f = colFilters[c];
+                      const active = !!f;
+                      return (
+                        <TableHead key={c} className="text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <span>{getColumnLabel(config ?? undefined, c)}</span>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-6 w-6 no-print ${active ? "text-primary" : "text-muted-foreground"}`}
+                                  aria-label={`Filtrar ${getColumnLabel(config ?? undefined, c)}`}
+                                >
+                                  <Filter className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64" align="end">
+                                <ColumnFilterEditor
+                                  current={f}
+                                  onApply={(next) => setColFilters((prev) => ({ ...prev, [c]: next }))}
+                                  onClear={() => setColFilters((prev) => {
+                                    const n = { ...prev }; delete n[c]; return n;
+                                  })}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </TableHead>
+                      );
+                    })}
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -253,7 +332,7 @@ export default function Movement() {
                   {rows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={visibleCols.length + 2} className="text-center text-muted-foreground py-8">
-                        Nenhuma competência ainda. Clique em "Adicionar Competência".
+                        {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -381,5 +460,58 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
       placeholder="0,00"
       className="h-8 text-right tabular-nums"
     />
+  );
+}
+
+type FilterOp = "gte" | "lte" | "eq" | "between";
+function ColumnFilterEditor({
+  current, onApply, onClear,
+}: {
+  current?: { op: FilterOp; a: string; b: string };
+  onApply: (next: { op: FilterOp; a: string; b: string }) => void;
+  onClear: () => void;
+}) {
+  const [op, setOp] = useState<FilterOp>(current?.op ?? "gte");
+  const [a, setA] = useState(current?.a ?? "");
+  const [b, setB] = useState(current?.b ?? "");
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-medium">Filtrar coluna</p>
+        <p className="text-xs text-muted-foreground">Aplicado sobre o valor da linha</p>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Operador</Label>
+        <Select value={op} onValueChange={(v) => setOp(v as FilterOp)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gte">Maior ou igual a (≥)</SelectItem>
+            <SelectItem value="lte">Menor ou igual a (≤)</SelectItem>
+            <SelectItem value="eq">Igual a (=)</SelectItem>
+            <SelectItem value="between">Entre</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs">{op === "between" ? "De" : "Valor"}</Label>
+          <Input inputMode="decimal" placeholder="0,00" value={a} onChange={(e) => setA(e.target.value)} />
+        </div>
+        {op === "between" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Até</Label>
+            <Input inputMode="decimal" placeholder="0,00" value={b} onChange={(e) => setB(e.target.value)} />
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" className="flex-1" onClick={() => onApply({ op, a, b })} disabled={!a}>Aplicar</Button>
+        {current && (
+          <Button size="sm" variant="ghost" onClick={onClear}>
+            <FilterX className="mr-1 h-3 w-3" /> Limpar
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
