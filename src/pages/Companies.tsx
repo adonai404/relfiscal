@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import { formatCNPJ } from "@/lib/format";
 
 export default function Companies() {
   const { user, loading, signOut } = useAuth();
-  const { companies, loadingCompanies, setSelectedCompany, refetch } = useCompany();
+  const { companies, loadingCompanies, setSelectedCompany, refetch, isDemo } = useCompany();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -80,9 +80,14 @@ export default function Companies() {
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             {isAdmin && (
-              <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
-                <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => navigate("/usuarios")}>
+                  <Shield className="mr-2 h-4 w-4" /> Usuários
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                </Button>
+              </>
             )}
             <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
               <Layers className="mr-2 h-4 w-4" /> Combo
@@ -101,7 +106,7 @@ export default function Companies() {
             <h2 className="text-2xl font-bold">Suas empresas</h2>
             <p className="text-sm text-muted-foreground">Escolha uma empresa para gerenciar o movimento fiscal</p>
           </div>
-          {isAdmin && (
+          {isAdmin && !isDemo && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> Nova empresa</Button>
