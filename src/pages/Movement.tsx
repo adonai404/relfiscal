@@ -128,7 +128,7 @@ export default function Movement() {
       if (isComputedColumn(c)) {
         byCol[c] = 0; // computed below from aggregates if needed
       } else {
-        byCol[c] = rows.reduce((s, r) => s + Number((r as Record<string, number>)[c] || 0), 0);
+        byCol[c] = rows.reduce((s, r) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0);
       }
     });
     // Aggregate aliquota: total simples / total saida
