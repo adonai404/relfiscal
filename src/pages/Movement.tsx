@@ -202,62 +202,25 @@ export default function Movement() {
         <Card className="print-container">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
             <CardTitle>Movimento Fiscal</CardTitle>
-            <div className="flex flex-wrap items-center gap-2 no-print">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                className="hidden"
-                onChange={handleFileSelected}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => downloadTemplate(config ?? undefined)}
-                title="Baixa um modelo de planilha respeitando seus rótulos e colunas visíveis"
-              >
-                <Download className="mr-2 h-4 w-4" /> Baixar Template
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={importing || importRows.isPending}
-                title="Importar planilha XLSX (upsert por mês de referência)"
-              >
-                {importing || importRows.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-2 h-4 w-4" />
-                )}
-                Importar XLSX
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportMovementToXlsx(rows, config ?? undefined, `movimento-${selectedCompany.slug}.xlsx`)}
-                disabled={rows.length === 0}
-              >
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
-              </Button>
-              <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="mr-2 h-4 w-4" /> Adicionar Competência</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
-                  <div className="space-y-2">
-                    <Label>Mês de referência</Label>
-                    <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
-                      {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="no-print">
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
+                <div className="space-y-2">
+                  <Label>Mês de referência</Label>
+                  <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
+                    {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (
