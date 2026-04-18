@@ -56,18 +56,16 @@ export default function Movement() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  if (!selectedCompany) {
-    navigate("/empresas");
-    return null;
-  }
+  const companyId = selectedCompany?.id;
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["fiscal_movement", selectedCompany.id],
+    queryKey: ["fiscal_movement", companyId],
+    enabled: !!companyId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fiscal_movement")
         .select("*")
-        .eq("company_id", selectedCompany.id)
+        .eq("company_id", companyId!)
         .order("competencia", { ascending: true });
       if (error) throw error;
       return (data ?? []) as MovementRow[];
@@ -76,23 +74,27 @@ export default function Movement() {
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
-      const { error } = await supabase.from("fiscal_movement").update({ [field]: value }).eq("id", id);
+      const { error } = await supabase
+        .from("fiscal_movement")
+        .update({ [field]: value } as Record<string, number>)
+        .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fiscal_movement", selectedCompany.id] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fiscal_movement", companyId] }),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const addRow = useMutation({
     mutationFn: async (competencia: string) => {
+      if (!companyId) return;
       const { error } = await supabase.from("fiscal_movement").insert({
-        company_id: selectedCompany.id,
+        company_id: companyId,
         competencia,
-      } as never);
+      });
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["fiscal_movement", selectedCompany.id] });
+      qc.invalidateQueries({ queryKey: ["fiscal_movement", companyId] });
       toast.success("Competência adicionada");
       setAddOpen(false);
     },
@@ -105,20 +107,24 @@ export default function Movement() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["fiscal_movement", selectedCompany.id] });
+      qc.invalidateQueries({ queryKey: ["fiscal_movement", companyId] });
       toast.success("Linha excluída");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const totals = useMemo(() => {
-    const t: Record<string, number> = {};
-    NUM_COLS.forEach((c) => (t[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
-    const totalImpostos = (t.icms || 0) + (t.difal || 0) + (t.pis || 0) + (t.cofins || 0) + (t.irpj || 0) + (t.csll || 0);
-    const totalSimples = t.simples_nacional || 0;
+    const byCol: Record<string, number> = {};
+    NUM_COLS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
+    const totalImpostos = (byCol.icms || 0) + (byCol.difal || 0) + (byCol.pis || 0) + (byCol.cofins || 0) + (byCol.irpj || 0) + (byCol.csll || 0);
+    const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
-    return { ...t, totalImpostos, totalSimples, economia };
+    return { byCol, totalImpostos, totalSimples, economia };
   }, [rows]);
+
+  if (!selectedCompany) {
+    return <Navigate to="/empresas" replace />;
+  }
 
   const sharePublic = () => {
     const url = `${window.location.origin}/p/${selectedCompany.slug}`;
