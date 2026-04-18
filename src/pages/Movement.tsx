@@ -124,7 +124,17 @@ export default function Movement() {
 
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
-    ALL_COLUMNS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
+    ALL_COLUMNS.forEach((c) => {
+      if (isComputedColumn(c)) {
+        byCol[c] = 0; // computed below from aggregates if needed
+      } else {
+        byCol[c] = rows.reduce((s, r) => s + Number((r as Record<string, number>)[c] || 0), 0);
+      }
+    });
+    // Aggregate aliquota: total simples / total saida
+    if (byCol.saida) {
+      byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
+    }
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
