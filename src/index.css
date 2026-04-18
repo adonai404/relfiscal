@@ -131,9 +131,9 @@
 @media print {
   @page {
     size: A4 landscape;
-    margin: 12mm;
+    margin: 10mm;
   }
-  body {
+  html, body {
     background: white !important;
     color: black !important;
   }
@@ -146,11 +146,42 @@
   .print-container {
     box-shadow: none !important;
     border: none !important;
+    background: white !important;
   }
-  table {
-    font-size: 10pt;
+  .print-main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .print-header {
+    display: flex !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #999;
+    padding: 0 0 8px 0;
+    margin-bottom: 10px;
+  }
+  .print-title { font-size: 16pt; font-weight: 700; margin: 0; }
+  .print-sub { font-size: 9pt; color: #333; }
+  .print-qr { width: 110px; height: 110px; }
+  .print-cards {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+  .print-cards > * { flex: 1 1 0; min-width: 0; }
+  .print-cards .text-xl { font-size: 11pt !important; }
+  .print-cards .text-xs { font-size: 7pt !important; }
+  table { font-size: 9pt; width: 100%; border-collapse: collapse; }
+  th, td { padding: 4px 6px !important; }
+  .print-footer {
+    margin-top: 12px;
+    font-size: 8pt;
+    color: #555;
+    border-top: 1px solid #ccc;
+    padding-top: 6px;
+    text-align: center;
   }
 }
-.print-only {
-  display: none;
-}
+.print-only { display: none; }
