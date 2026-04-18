@@ -25,8 +25,9 @@ export default function Companies() {
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "" });
+  const [form, setForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -47,10 +48,26 @@ export default function Companies() {
     if (error) return toast.error(error.message);
     toast.success("Empresa criada");
     setOpen(false);
-    setForm({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "" });
+    setForm({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
     qc.invalidateQueries({ queryKey: ["companies"] });
     refetch();
   };
+
+  const regimeLabels: Record<string, string> = {
+    simples_nacional: "Simples Nacional",
+    lucro_presumido: "Lucro Presumido",
+    lucro_real: "Lucro Real",
+    mei: "MEI",
+  };
+
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? companies.filter((c) =>
+        [c.nome_fantasia, c.razao_social, c.cnpj, c.uf, (c as any).regime ? regimeLabels[(c as any).regime] : ""]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q))
+      )
+    : companies;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
