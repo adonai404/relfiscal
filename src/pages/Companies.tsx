@@ -148,6 +148,16 @@ export default function Companies() {
           )}
         </div>
 
+        <div className="mb-4 relative max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar por nome, CNPJ, UF ou regime..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
         {loadingCompanies ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : companies.length === 0 ? (
@@ -156,20 +166,36 @@ export default function Companies() {
               {isAdmin ? "Nenhuma empresa ainda. Cadastre a primeira." : "Nenhuma empresa vinculada a você. Peça ao administrador."}
             </CardContent>
           </Card>
+        ) : filtered.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Nenhuma empresa encontrada para "{search}".
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {companies.map((c) => (
-              <Card key={c.id} className="cursor-pointer transition hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5" onClick={() => select(c)}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{c.nome_fantasia}</CardTitle>
-                  <CardDescription className="line-clamp-1">{c.razao_social}</CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-1">
-                  <div>CNPJ: {formatCNPJ(c.cnpj)}</div>
-                  <div>UF: {c.uf}</div>
-                </CardContent>
-              </Card>
-            ))}
+            {filtered.map((c) => {
+              const regime = (c as any).regime as string | undefined;
+              return (
+                <Card key={c.id} className="cursor-pointer transition hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5" onClick={() => select(c)}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg truncate">{c.nome_fantasia}</CardTitle>
+                        <CardDescription className="line-clamp-1">{c.razao_social}</CardDescription>
+                      </div>
+                      {regime && (
+                        <Badge variant="secondary" className="shrink-0">{regimeLabels[regime] ?? regime}</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground space-y-1">
+                    <div>CNPJ: {formatCNPJ(c.cnpj)}</div>
+                    <div>UF: {c.uf}</div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
