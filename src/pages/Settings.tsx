@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Building2, ChevronLeft, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Building2, ChevronLeft, Download, FileSpreadsheet, Loader2, Settings as SettingsIcon, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +18,9 @@ import {
 } from "@/hooks/useFiscalConfig";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatCNPJ } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
+import { downloadTemplate, exportMovementToXlsx } from "@/lib/xlsx";
+import { useXlsxImport } from "@/hooks/useXlsxImport";
 
 const TOGGLE_LABELS: Record<ColumnKey, string> = {
   entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
@@ -48,6 +52,20 @@ export default function Settings() {
   const companyId = selectedCompany?.id;
   const { data: config, isLoading } = useFiscalConfig(companyId);
   const update = useUpdateFiscalConfig(companyId);
+  const xlsx = useXlsxImport(companyId, config);
+
+  // Lightweight fetch of rows just for export
+  const { data: exportRows = [] } = useQuery({
+    queryKey: ["fiscal_movement_export", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fiscal_movement").select("*").eq("company_id", companyId!)
+        .order("competencia", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Local label state for onBlur saves
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -216,6 +234,57 @@ export default function Settings() {
                     onBlur={saveAliquota}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 4 — Import / Export XLSX */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Importação e Exportação</CardTitle>
+                <CardDescription>
+                  Baixe um template em XLSX (com seus rótulos e colunas visíveis), importe planilhas (atualiza o mês existente) ou exporte os dados atuais.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <input
+                  ref={xlsx.fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                  className="hidden"
+                  onChange={xlsx.onFileChange}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`)}
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Baixar Template
+                  </Button>
+                  <Button variant="outline" onClick={xlsx.triggerPicker} disabled={xlsx.isImporting}>
+                    {xlsx.isImporting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    Importar XLSX
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      exportMovementToXlsx(
+                        exportRows as Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
+                        config ?? undefined,
+                        `movimento-${selectedCompany.slug}.xlsx`
+                      )
+                    }
+                    disabled={exportRows.length === 0}
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  A importação faz upsert por <strong>mês de referência</strong>: linhas existentes são atualizadas; novas são criadas.
+                </p>
               </CardContent>
             </Card>
           </>
