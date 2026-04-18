@@ -17,6 +17,7 @@ import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
+  isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
 
 interface MovementRow {
@@ -123,7 +124,17 @@ export default function Movement() {
 
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
-    ALL_COLUMNS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
+    ALL_COLUMNS.forEach((c) => {
+      if (isComputedColumn(c)) {
+        byCol[c] = 0; // computed below from aggregates if needed
+      } else {
+        byCol[c] = rows.reduce((s, r) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0);
+      }
+    });
+    // Aggregate aliquota: total simples / total saida
+    if (byCol.saida) {
+      byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
+    }
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
@@ -249,15 +260,27 @@ export default function Movement() {
                   {rows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="sticky left-0 bg-card font-medium">{displayCompetencia(r.competencia)}</TableCell>
-                      {visibleCols.map((c) => (
-                        <TableCell key={c} className="p-1">
-                          <CellEditor
-                            value={Number(r[c] || 0)}
-                            readonly={isCellReadonly(c)}
-                            onCommit={(v) => updateCell.mutate({ id: r.id, field: c, value: v })}
-                          />
-                        </TableCell>
-                      ))}
+                      {visibleCols.map((c) => {
+                        const value = computeColumnValue(r, c);
+                        if (isComputedColumn(c)) {
+                          return (
+                            <TableCell key={c} className="p-1">
+                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
+                                {formatPercent(value)}
+                              </div>
+                            </TableCell>
+                          );
+                        }
+                        return (
+                          <TableCell key={c} className="p-1">
+                            <CellEditor
+                              value={value}
+                              readonly={isCellReadonly(c)}
+                              onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
+                            />
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="no-print">
                         <Button
                           variant="ghost"
@@ -276,7 +299,9 @@ export default function Movement() {
                     <TableRow className="font-semibold bg-muted/50">
                       <TableCell className="sticky left-0 bg-muted/50">TOTAL</TableCell>
                       {visibleCols.map((c) => (
-                        <TableCell key={c} className="text-right whitespace-nowrap">{brl(totals.byCol[c] || 0)}</TableCell>
+                        <TableCell key={c} className="text-right whitespace-nowrap">
+                          {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                        </TableCell>
                       ))}
                       <TableCell className="no-print" />
                     </TableRow>

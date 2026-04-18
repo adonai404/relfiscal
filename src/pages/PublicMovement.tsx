@@ -10,6 +10,7 @@ import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   type FiscalConfig, isColumnVisible, getColumnLabel,
+  isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
 
 interface Company {
@@ -97,7 +98,14 @@ export default function PublicMovement() {
 
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
-    ALL_COLUMNS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
+    ALL_COLUMNS.forEach((c) => {
+      if (isComputedColumn(c)) {
+        byCol[c] = 0;
+      } else {
+        byCol[c] = rows.reduce((s, r) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0);
+      }
+    });
+    if (byCol.saida) byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     return { byCol, totalImpostos, totalSimples, economia: totalImpostos - totalSimples };
@@ -225,18 +233,21 @@ export default function PublicMovement() {
                   {rows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{displayCompetencia(r.competencia)}</TableCell>
-                      {visibleCols.map((c) => (
-                        <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
-                          {brl(Number(r[c] || 0))}
-                        </TableCell>
-                      ))}
+                      {visibleCols.map((c) => {
+                        const value = computeColumnValue(r, c);
+                        return (
+                          <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
+                            {isComputedColumn(c) ? formatPercent(value) : brl(value)}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))}
                   <TableRow className="font-semibold bg-muted/50">
                     <TableCell>TOTAL</TableCell>
                     {visibleCols.map((c) => (
                       <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
-                        {brl(totals.byCol[c] || 0)}
+                        {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
                       </TableCell>
                     ))}
                   </TableRow>

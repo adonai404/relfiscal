@@ -35,25 +35,37 @@ export interface FiscalConfig {
 
 export type ColumnKey =
   | "entrada" | "saida" | "icms" | "impostos_federais" | "simples_nacional"
+  | "aliquota_simples_calc"
   | "honorarios" | "folha" | "encargos_patronal" | "difal" | "pis"
   | "cofins" | "irpj" | "csll";
 
 export const ALL_COLUMNS: ColumnKey[] = [
-  "entrada", "saida", "icms", "impostos_federais", "simples_nacional",
+  "entrada", "saida", "icms", "impostos_federais", "simples_nacional", "aliquota_simples_calc",
   "honorarios", "folha", "encargos_patronal", "difal", "pis", "cofins", "irpj", "csll",
 ];
 
 // entrada and saida are always visible
 export const TOGGLEABLE_COLUMNS: ColumnKey[] = [
-  "icms", "impostos_federais", "simples_nacional", "honorarios", "folha",
+  "icms", "impostos_federais", "simples_nacional", "aliquota_simples_calc", "honorarios", "folha",
   "encargos_patronal", "difal", "pis", "cofins", "irpj", "csll",
 ];
 
 export const TAX_COLUMNS: ColumnKey[] = ["icms", "difal", "pis", "cofins", "irpj", "csll"];
 
+// Computed (virtual) columns are not stored in DB and not editable
+export const COMPUTED_COLUMNS: ColumnKey[] = ["aliquota_simples_calc"];
+export const isComputedColumn = (col: ColumnKey) => COMPUTED_COLUMNS.includes(col);
+
 export const isColumnVisible = (cfg: FiscalConfig | undefined, col: ColumnKey): boolean => {
   if (!cfg) return true;
   if (col === "entrada" || col === "saida") return true;
+  if (col === "aliquota_simples_calc") {
+    // Visible only when Simples Nacional column is visible
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const showAliq = (cfg as any).show_aliquota_simples_calc_column;
+    const showSimples = cfg.show_simples_nacional_column ?? true;
+    return (showAliq ?? true) && showSimples;
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (cfg as any)[`show_${col}_column`] ?? true;
 };
@@ -61,7 +73,8 @@ export const isColumnVisible = (cfg: FiscalConfig | undefined, col: ColumnKey): 
 export const getColumnLabel = (cfg: FiscalConfig | undefined, col: ColumnKey): string => {
   const defaults: Record<ColumnKey, string> = {
     entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
-    simples_nacional: "Simples Nacional", honorarios: "Honorários", folha: "Folha",
+    simples_nacional: "Simples Nacional", aliquota_simples_calc: "Alíquota Simples",
+    honorarios: "Honorários", folha: "Folha",
     encargos_patronal: "Encargos Patronal", difal: "DIFAL", pis: "PIS",
     cofins: "COFINS", irpj: "IRPJ", csll: "CSLL",
   };
@@ -69,6 +82,21 @@ export const getColumnLabel = (cfg: FiscalConfig | undefined, col: ColumnKey): s
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (cfg as any)[`label_${col}`] || defaults[col];
 };
+
+// Compute the value of a column (handles virtual columns).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const computeColumnValue = (row: any, col: ColumnKey): number => {
+  if (col === "aliquota_simples_calc") {
+    const saida = Number(row?.saida || 0);
+    const sn = Number(row?.simples_nacional || 0);
+    if (!saida) return 0;
+    return sn / saida; // ratio (0.10 = 10%)
+  }
+  return Number(row?.[col] || 0);
+};
+
+export const formatPercent = (n: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
 
 export function useFiscalConfig(companyId: string | undefined) {
   return useQuery({
