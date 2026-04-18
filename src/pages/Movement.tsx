@@ -199,9 +199,9 @@ export default function Movement() {
     toast.success("Link público copiado!");
   };
 
-  // Cell editor disabled for simples_nacional when auto-calc is on
+  // Cell editor disabled for simples_nacional when auto-calc is on, or in demo mode
   const isCellReadonly = (col: ColumnKey) =>
-    col === "simples_nacional" && !!config?.auto_calculate_simples_nacional;
+    demoMode || (col === "simples_nacional" && !!config?.auto_calculate_simples_nacional);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
