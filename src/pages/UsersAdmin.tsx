@@ -22,12 +22,10 @@ interface ProfileRow {
 
 export default function UsersAdmin() {
   const navigate = useNavigate();
-  const { isAdmin, roles } = useUserRole();
+  const { isAdmin } = useUserRole();
   const qc = useQueryClient();
 
-  const rolesLoading = roles === undefined;
-
-  const { data: profiles = [], isLoading } = useQuery({
+  const { data: profiles, isLoading } = useQuery({
     queryKey: ["admin_profiles"],
     enabled: isAdmin,
     queryFn: async () => {
@@ -40,7 +38,9 @@ export default function UsersAdmin() {
     },
   });
 
-  if (!rolesLoading && !isAdmin) return <Navigate to="/empresas" replace />;
+  // Wait for first profiles fetch to settle before redirecting (avoids flicker for admins)
+  if (!isAdmin && profiles !== undefined) return <Navigate to="/empresas" replace />;
+  const rows = profiles ?? [];
 
   const setApproved = async (userId: string, approved: boolean) => {
     const { error } = await supabase
