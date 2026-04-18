@@ -48,8 +48,9 @@ export default function Combo() {
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
+  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
 
-  const { data: movements = [], isLoading } = useQuery({
+  const { data: rawMovements = [], isLoading } = useQuery({
     queryKey: ["combo_movements", selectedIds.sort().join(",")],
     enabled: selectedIds.length > 0,
     queryFn: async () => {
@@ -61,6 +62,12 @@ export default function Combo() {
       return (data ?? []) as MovementLite[];
     },
   });
+
+  const availableComps = useMemo(
+    () => Array.from(new Set(rawMovements.map((m) => m.competencia))).sort(),
+    [rawMovements],
+  );
+  const movements = useMemo(() => filterByPeriod(rawMovements, period), [rawMovements, period]);
 
   const selectedCompanies = useMemo(
     () => companies.filter((c) => selectedIds.includes(c.id)),
@@ -240,6 +247,7 @@ export default function Combo() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
