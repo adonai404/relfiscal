@@ -12,6 +12,7 @@ import Auth from "./pages/Auth.tsx";
 import Companies from "./pages/Companies.tsx";
 import Movement from "./pages/Movement.tsx";
 import Settings from "./pages/Settings.tsx";
+import PublicMovement from "./pages/PublicMovement.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
                 <Route path="/empresas" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
