@@ -260,15 +260,27 @@ export default function Movement() {
                   {rows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="sticky left-0 bg-card font-medium">{displayCompetencia(r.competencia)}</TableCell>
-                      {visibleCols.map((c) => (
-                        <TableCell key={c} className="p-1">
-                          <CellEditor
-                            value={Number(r[c] || 0)}
-                            readonly={isCellReadonly(c)}
-                            onCommit={(v) => updateCell.mutate({ id: r.id, field: c, value: v })}
-                          />
-                        </TableCell>
-                      ))}
+                      {visibleCols.map((c) => {
+                        const value = computeColumnValue(r, c);
+                        if (isComputedColumn(c)) {
+                          return (
+                            <TableCell key={c} className="p-1">
+                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
+                                {formatPercent(value)}
+                              </div>
+                            </TableCell>
+                          );
+                        }
+                        return (
+                          <TableCell key={c} className="p-1">
+                            <CellEditor
+                              value={value}
+                              readonly={isCellReadonly(c)}
+                              onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
+                            />
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="no-print">
                         <Button
                           variant="ghost"
