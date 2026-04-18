@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { ALL_COLUMNS, type ColumnKey, type FiscalConfig, getColumnLabel, isColumnVisible } from "@/hooks/useFiscalConfig";
+import { ALL_COLUMNS, type ColumnKey, type FiscalConfig, getColumnLabel, isColumnVisible, isComputedColumn } from "@/hooks/useFiscalConfig";
 import { displayCompetencia, normalizeCompetencia } from "./format";
 
 export interface ParsedRow {
@@ -9,9 +9,10 @@ export interface ParsedRow {
 
 const competenciaHeaderLabel = (cfg?: FiscalConfig | null) => cfg?.label_competencia ?? "Competência";
 
-// Build list of columns that should appear (visible) in the export/template
+// Build list of columns that should appear (visible) in the export/template.
+// Computed/virtual columns (e.g. aliquota_simples_calc) are excluded — they're derived, not stored.
 const visibleColumns = (cfg?: FiscalConfig | null): ColumnKey[] =>
-  ALL_COLUMNS.filter((c) => isColumnVisible(cfg ?? undefined, c));
+  ALL_COLUMNS.filter((c) => !isComputedColumn(c) && isColumnVisible(cfg ?? undefined, c));
 
 // Normalize header strings for matching: trim, lowercase, strip diacritics
 const norm = (s: string) =>
