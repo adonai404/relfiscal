@@ -1,18 +1,22 @@
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronLeft, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
+import { Building2, ChevronLeft, Filter, FilterX, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
