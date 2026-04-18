@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronLeft, LogOut, Plus, Printer, Trash2, Loader2, Share2 } from "lucide-react";
+import { Building2, ChevronLeft, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,6 +14,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
+import {
+  ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
+  isColumnVisible, getColumnLabel, useFiscalConfig,
+} from "@/hooks/useFiscalConfig";
 
 interface MovementRow {
   id: string;
@@ -33,20 +37,8 @@ interface MovementRow {
   csll: number;
 }
 
-const NUM_COLS: (keyof MovementRow)[] = [
-  "entrada", "saida", "icms", "impostos_federais", "simples_nacional",
-  "honorarios", "folha", "encargos_patronal", "difal", "pis", "cofins", "irpj", "csll",
-];
-
-const COL_LABELS: Record<string, string> = {
-  entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
-  simples_nacional: "Simples Nacional", honorarios: "Honorários", folha: "Folha",
-  encargos_patronal: "Encargos Patronal", difal: "DIFAL", pis: "PIS",
-  cofins: "COFINS", irpj: "IRPJ", csll: "CSLL",
-};
-
 export default function Movement() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -57,8 +49,9 @@ export default function Movement() {
   });
 
   const companyId = selectedCompany?.id;
+  const { data: config } = useFiscalConfig(companyId);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rawRows = [], isLoading } = useQuery({
     queryKey: ["fiscal_movement", companyId],
     enabled: !!companyId,
     queryFn: async () => {
@@ -71,6 +64,16 @@ export default function Movement() {
       return (data ?? []) as MovementRow[];
     },
   });
+
+  // Apply auto-calculate Simples Nacional if enabled (display-only)
+  const rows = useMemo(() => {
+    if (!config?.auto_calculate_simples_nacional) return rawRows;
+    const a = Number(config.aliquota_simples_nacional || 0) / 100;
+    return rawRows.map((r) => ({
+      ...r,
+      simples_nacional: Number((Number(r.saida || 0) * a).toFixed(2)),
+    }));
+  }, [rawRows, config]);
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
@@ -86,10 +89,7 @@ export default function Movement() {
   const addRow = useMutation({
     mutationFn: async (competencia: string) => {
       if (!companyId) return;
-      const { error } = await supabase.from("fiscal_movement").insert({
-        company_id: companyId,
-        competencia,
-      });
+      const { error } = await supabase.from("fiscal_movement").insert({ company_id: companyId, competencia });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -112,24 +112,37 @@ export default function Movement() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Visible columns based on config
+  const visibleCols: ColumnKey[] = useMemo(
+    () => ALL_COLUMNS.filter((c) => isColumnVisible(config ?? undefined, c)),
+    [config]
+  );
+
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
-    NUM_COLS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
-    const totalImpostos = (byCol.icms || 0) + (byCol.difal || 0) + (byCol.pis || 0) + (byCol.cofins || 0) + (byCol.irpj || 0) + (byCol.csll || 0);
+    ALL_COLUMNS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
+    const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
     return { byCol, totalImpostos, totalSimples, economia };
   }, [rows]);
 
-  if (!selectedCompany) {
-    return <Navigate to="/empresas" replace />;
-  }
+  // Card visibility rules
+  const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
+  const showSimplesCard = isColumnVisible(config ?? undefined, "simples_nacional");
+  const showEconomiaCard = anyTaxVisible && showSimplesCard;
+
+  if (!selectedCompany) return <Navigate to="/empresas" replace />;
 
   const sharePublic = () => {
     const url = `${window.location.origin}/p/${selectedCompany.slug}`;
     navigator.clipboard.writeText(url);
     toast.success("Link público copiado!");
   };
+
+  // Cell editor disabled for simples_nacional when auto-calc is on
+  const isCellReadonly = (col: ColumnKey) =>
+    col === "simples_nacional" && !!config?.auto_calculate_simples_nacional;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
@@ -146,6 +159,9 @@ export default function Movement() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes")}>
+              <Settings className="mr-2 h-4 w-4" /> Configurações
+            </Button>
             <Button variant="outline" size="sm" onClick={sharePublic}>
               <Share2 className="mr-2 h-4 w-4" /> Página pública
             </Button>
@@ -162,16 +178,22 @@ export default function Movement() {
 
       <main className="mx-auto max-w-7xl px-4 py-6">
         {/* Summary cards */}
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
           <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
           <SummaryCard label="Total Saída" value={totals.byCol.saida || 0} />
-          <SummaryCard label="Total Impostos" value={totals.totalImpostos} accent="warning" />
-          <SummaryCard label="Total Simples Nacional" value={totals.totalSimples} accent="primary" />
-          <SummaryCard
-            label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
-            value={Math.abs(totals.economia)}
-            accent={totals.economia >= 0 ? "success" : "destructive"}
-          />
+          {anyTaxVisible && (
+            <SummaryCard label="Total Impostos" value={totals.totalImpostos} accent="warning" />
+          )}
+          {showSimplesCard && (
+            <SummaryCard label="Total Simples Nacional" value={totals.totalSimples} accent="primary" />
+          )}
+          {showEconomiaCard && (
+            <SummaryCard
+              label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
+              value={Math.abs(totals.economia)}
+              accent={totals.economia >= 0 ? "success" : "destructive"}
+            />
+          )}
         </div>
 
         <Card className="print-container">
@@ -202,9 +224,11 @@ export default function Movement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-card">Competência</TableHead>
-                    {NUM_COLS.map((c) => (
-                      <TableHead key={c} className="text-right whitespace-nowrap">{COL_LABELS[c]}</TableHead>
+                    <TableHead className="sticky left-0 bg-card">{config?.label_competencia ?? "Competência"}</TableHead>
+                    {visibleCols.map((c) => (
+                      <TableHead key={c} className="text-right whitespace-nowrap">
+                        {getColumnLabel(config ?? undefined, c)}
+                      </TableHead>
                     ))}
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
@@ -212,7 +236,7 @@ export default function Movement() {
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={NUM_COLS.length + 2} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={visibleCols.length + 2} className="text-center text-muted-foreground py-8">
                         Nenhuma competência ainda. Clique em "Adicionar Competência".
                       </TableCell>
                     </TableRow>
@@ -220,10 +244,11 @@ export default function Movement() {
                   {rows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="sticky left-0 bg-card font-medium">{displayCompetencia(r.competencia)}</TableCell>
-                      {NUM_COLS.map((c) => (
+                      {visibleCols.map((c) => (
                         <TableCell key={c} className="p-1">
                           <CellEditor
                             value={Number(r[c] || 0)}
+                            readonly={isCellReadonly(c)}
                             onCommit={(v) => updateCell.mutate({ id: r.id, field: c, value: v })}
                           />
                         </TableCell>
@@ -245,7 +270,7 @@ export default function Movement() {
                   {rows.length > 0 && (
                     <TableRow className="font-semibold bg-muted/50">
                       <TableCell className="sticky left-0 bg-muted/50">TOTAL</TableCell>
-                      {NUM_COLS.map((c) => (
+                      {visibleCols.map((c) => (
                         <TableCell key={c} className="text-right whitespace-nowrap">{brl(totals.byCol[c] || 0)}</TableCell>
                       ))}
                       <TableCell className="no-print" />
@@ -277,9 +302,16 @@ function SummaryCard({ label, value, accent }: { label: string; value: number; a
   );
 }
 
-function CellEditor({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {
+function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v: number) => void; readonly?: boolean }) {
   const [v, setV] = useState(String(value));
   const [editing, setEditing] = useState(false);
+  if (readonly) {
+    return (
+      <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado automaticamente">
+        {brl(value)}
+      </div>
+    );
+  }
   if (!editing) {
     return (
       <button
