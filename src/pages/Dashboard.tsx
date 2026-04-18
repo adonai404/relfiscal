@@ -1,0 +1,519 @@
+import { useMemo } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Building2, ChevronLeft, LogOut, TrendingUp, TrendingDown, Activity,
+  Trophy, AlertTriangle, Percent, Wallet, Layers, CalendarDays, Loader2,
+} from "lucide-react";
+import {
+  Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { brl, displayCompetencia } from "@/lib/format";
+
+interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
+interface MovementLite {
+  company_id: string; competencia: string;
+  entrada: number; saida: number; icms: number; impostos_federais: number;
+  simples_nacional: number; honorarios: number; folha: number;
+  encargos_patronal: number; difal: number; pis: number; cofins: number;
+  irpj: number; csll: number;
+}
+
+const COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
+  "hsl(var(--chart-1, 220 70% 50%))",
+  "hsl(var(--chart-2, 160 60% 45%))",
+  "hsl(var(--chart-3, 30 80% 55%))",
+  "hsl(var(--chart-4, 280 65% 60%))",
+  "hsl(var(--chart-5, 340 75% 55%))",
+];
+
+export default function Dashboard() {
+  const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
+  const navigate = useNavigate();
+
+  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
+    queryKey: ["dashboard_companies"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, nome_fantasia, razao_social, uf, slug");
+      if (error) throw error;
+      return (data ?? []) as CompanyLite[];
+    },
+  });
+
+  const { data: movements = [], isLoading: loadingMov } = useQuery({
+    queryKey: ["dashboard_movements"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fiscal_movement")
+        .select("company_id, competencia, entrada, saida, icms, impostos_federais, simples_nacional, honorarios, folha, encargos_patronal, difal, pis, cofins, irpj, csll");
+      if (error) throw error;
+      return (data ?? []) as MovementLite[];
+    },
+  });
+
+  const metrics = useMemo(() => {
+    const byCompany = new Map<string, MovementLite[]>();
+    movements.forEach((m) => {
+      const arr = byCompany.get(m.company_id) ?? [];
+      arr.push(m);
+      byCompany.set(m.company_id, arr);
+    });
+
+    const totals = movements.reduce(
+      (acc, m) => {
+        acc.entrada += +m.entrada || 0;
+        acc.saida += +m.saida || 0;
+        acc.icms += +m.icms || 0;
+        acc.impostos_federais += +m.impostos_federais || 0;
+        acc.simples_nacional += +m.simples_nacional || 0;
+        acc.honorarios += +m.honorarios || 0;
+        acc.folha += +m.folha || 0;
+        acc.encargos_patronal += +m.encargos_patronal || 0;
+        acc.difal += +m.difal || 0;
+        acc.pis += +m.pis || 0;
+        acc.cofins += +m.cofins || 0;
+        acc.irpj += +m.irpj || 0;
+        acc.csll += +m.csll || 0;
+        return acc;
+      },
+      {
+        entrada: 0, saida: 0, icms: 0, impostos_federais: 0, simples_nacional: 0,
+        honorarios: 0, folha: 0, encargos_patronal: 0, difal: 0, pis: 0,
+        cofins: 0, irpj: 0, csll: 0,
+      },
+    );
+
+    const totalImpostos =
+      totals.icms + totals.impostos_federais + totals.simples_nacional +
+      totals.difal + totals.pis + totals.cofins + totals.irpj + totals.csll;
+    const totalCustosOperacionais = totals.honorarios + totals.folha + totals.encargos_patronal;
+    const margemBruta = totals.saida - totals.entrada;
+    const resultadoLiquido = margemBruta - totalImpostos - totalCustosOperacionais;
+    const cargaTributaria = totals.saida > 0 ? totalImpostos / totals.saida : 0;
+
+    // Per company aggregated
+    const perCompany = companies.map((c) => {
+      const ms = byCompany.get(c.id) ?? [];
+      const t = ms.reduce(
+        (a, m) => {
+          a.entrada += +m.entrada || 0;
+          a.saida += +m.saida || 0;
+          a.imp += (+m.icms || 0) + (+m.impostos_federais || 0) + (+m.simples_nacional || 0) +
+                  (+m.difal || 0) + (+m.pis || 0) + (+m.cofins || 0) + (+m.irpj || 0) + (+m.csll || 0);
+          a.simples += +m.simples_nacional || 0;
+          return a;
+        },
+        { entrada: 0, saida: 0, imp: 0, simples: 0 },
+      );
+      const carga = t.saida > 0 ? t.imp / t.saida : 0;
+      const aliqEfetiva = t.saida > 0 ? t.simples / t.saida : 0;
+      return {
+        ...c,
+        ...t,
+        carga,
+        aliqEfetiva,
+        margem: t.saida - t.entrada,
+        meses: ms.length,
+      };
+    });
+
+    const ativas = perCompany.filter((c) => c.meses > 0);
+    const inativas = perCompany.filter((c) => c.meses === 0);
+
+    const topFaturamento = [...perCompany].sort((a, b) => b.saida - a.saida).slice(0, 5);
+    const topCarga = [...ativas].sort((a, b) => b.carga - a.carga).slice(0, 5);
+    const menorCarga = [...ativas].sort((a, b) => a.carga - b.carga).slice(0, 5);
+
+    // Per UF
+    const ufMap = new Map<string, { uf: string; saida: number; impostos: number; count: number }>();
+    perCompany.forEach((c) => {
+      const e = ufMap.get(c.uf) ?? { uf: c.uf, saida: 0, impostos: 0, count: 0 };
+      e.saida += c.saida;
+      e.impostos += c.imp;
+      e.count += 1;
+      ufMap.set(c.uf, e);
+    });
+    const porUf = Array.from(ufMap.values()).sort((a, b) => b.saida - a.saida);
+
+    // Time series — sum across companies per competencia
+    const compMap = new Map<string, { competencia: string; entrada: number; saida: number; impostos: number }>();
+    movements.forEach((m) => {
+      const e = compMap.get(m.competencia) ?? { competencia: m.competencia, entrada: 0, saida: 0, impostos: 0 };
+      e.entrada += +m.entrada || 0;
+      e.saida += +m.saida || 0;
+      e.impostos += (+m.icms || 0) + (+m.impostos_federais || 0) + (+m.simples_nacional || 0) +
+                    (+m.difal || 0) + (+m.pis || 0) + (+m.cofins || 0) + (+m.irpj || 0) + (+m.csll || 0);
+      compMap.set(m.competencia, e);
+    });
+    const serie = Array.from(compMap.values()).sort((a, b) => a.competencia.localeCompare(b.competencia));
+    const serieFmt = serie.map((s) => ({ ...s, label: displayCompetencia(s.competencia) }));
+
+    // Composição de impostos
+    const composicao = [
+      { name: "ICMS", value: totals.icms },
+      { name: "Simples Nacional", value: totals.simples_nacional },
+      { name: "Impostos Federais", value: totals.impostos_federais },
+      { name: "PIS", value: totals.pis },
+      { name: "COFINS", value: totals.cofins },
+      { name: "IRPJ", value: totals.irpj },
+      { name: "CSLL", value: totals.csll },
+      { name: "DIFAL", value: totals.difal },
+    ].filter((x) => x.value > 0);
+
+    // Saúde financeira (heurística)
+    const saudaveis = ativas.filter((c) => c.margem > 0 && c.carga < 0.15).length;
+    const alerta = ativas.filter((c) => c.margem <= 0 || c.carga >= 0.25).length;
+
+    return {
+      totals, totalImpostos, totalCustosOperacionais, margemBruta, resultadoLiquido, cargaTributaria,
+      perCompany, ativas, inativas, topFaturamento, topCarga, menorCarga,
+      porUf, serieFmt, composicao, saudaveis, alerta,
+    };
+  }, [companies, movements]);
+
+  if (loading || loadingCompanies || loadingMov) {
+    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!isAdmin) return <Navigate to="/empresas" replace />;
+
+  return (
+    <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
+      <header className="border-b bg-card/60 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Activity className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold">Dashboard Administrativo</h1>
+            <Badge variant="secondary" className="ml-2">Admin</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
+        {/* KPI Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <KpiCard
+            icon={<Building2 className="h-5 w-5" />}
+            title="Empresas Monitoradas"
+            value={String(companies.length)}
+            hint={`${metrics.ativas.length} ativas · ${metrics.inativas.length} sem dados`}
+          />
+          <KpiCard
+            icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+            title="Faturamento Consolidado"
+            value={brl(metrics.totals.saida)}
+            hint={`Entradas ${brl(metrics.totals.entrada)}`}
+          />
+          <KpiCard
+            icon={<Percent className="h-5 w-5 text-amber-500" />}
+            title="Carga Tributária Global"
+            value={`${(metrics.cargaTributaria * 100).toFixed(2)}%`}
+            hint={`${brl(metrics.totalImpostos)} em tributos`}
+          />
+          <KpiCard
+            icon={metrics.resultadoLiquido >= 0
+              ? <TrendingUp className="h-5 w-5 text-emerald-500" />
+              : <TrendingDown className="h-5 w-5 text-destructive" />}
+            title="Resultado Estimado"
+            value={brl(metrics.resultadoLiquido)}
+            hint={`Margem bruta ${brl(metrics.margemBruta)}`}
+          />
+        </div>
+
+        {/* Saúde Financeira - mini cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <MiniCard
+            tone="success"
+            icon={<Trophy className="h-4 w-4" />}
+            label="Empresas Saudáveis"
+            value={metrics.saudaveis}
+            sub="Margem positiva e carga < 15%"
+          />
+          <MiniCard
+            tone="warning"
+            icon={<AlertTriangle className="h-4 w-4" />}
+            label="Empresas em Alerta"
+            value={metrics.alerta}
+            sub="Margem ≤ 0 ou carga ≥ 25%"
+          />
+          <MiniCard
+            tone="info"
+            icon={<CalendarDays className="h-4 w-4" />}
+            label="Competências Ativas"
+            value={metrics.serieFmt.length}
+            sub={metrics.serieFmt.length > 0
+              ? `${metrics.serieFmt[0].label} → ${metrics.serieFmt[metrics.serieFmt.length - 1].label}`
+              : "Sem dados"}
+          />
+        </div>
+
+        {/* Time series + Composição */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Evolução Consolidada</CardTitle>
+              <CardDescription>Entradas, saídas e impostos por competência (todas as empresas)</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[320px]">
+              {metrics.serieFmt.length === 0 ? (
+                <EmptyChart />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics.serieFmt}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12}
+                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                      formatter={(v: number) => brl(v)}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="entrada" name="Entrada" stroke={COLORS[2]} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="saida" name="Saída" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="impostos" name="Impostos" stroke={COLORS[4]} strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Composição Tributária</CardTitle>
+              <CardDescription>Distribuição dos tributos pagos</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[320px]">
+              {metrics.composicao.length === 0 ? (
+                <EmptyChart />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={metrics.composicao} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                      {metrics.composicao.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                      formatter={(v: number) => brl(v)}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top faturamento + Top carga */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-500" /> Top 5 Faturamento
+              </CardTitle>
+              <CardDescription>Empresas com maior volume de saída</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              {metrics.topFaturamento.length === 0 ? <EmptyChart /> : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={metrics.topFaturamento} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11}
+                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                      formatter={(v: number) => brl(v)}
+                    />
+                    <Bar dataKey="saida" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" /> Maiores Cargas Tributárias
+              </CardTitle>
+              <CardDescription>Empresas com maior % de impostos sobre saída</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              {metrics.topCarga.length === 0 ? <EmptyChart /> : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={metrics.topCarga.map((c) => ({ ...c, cargaPct: +(c.carga * 100).toFixed(2) }))} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `${v}%`} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                      formatter={(v: number) => `${v}%`}
+                    />
+                    <Bar dataKey="cargaPct" fill={COLORS[4]} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Distribuição por UF + Ranking detalhado */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" /> Distribuição por UF
+              </CardTitle>
+              <CardDescription>Faturamento e carga por estado</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {metrics.porUf.length === 0 ? (
+                <p className="py-12 text-center text-sm text-muted-foreground">Nenhuma empresa cadastrada.</p>
+              ) : (
+                <ScrollArea className="h-[280px] pr-3">
+                  <div className="space-y-3">
+                    {metrics.porUf.map((u) => {
+                      const carga = u.saida > 0 ? (u.impostos / u.saida) * 100 : 0;
+                      const max = metrics.porUf[0].saida || 1;
+                      const pct = (u.saida / max) * 100;
+                      return (
+                        <div key={u.uf} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="font-mono">{u.uf || "—"}</Badge>
+                              <span className="text-muted-foreground">{u.count} empresa(s)</span>
+                            </div>
+                            <span className="font-medium">{brl(u.saida)}</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <div className="text-xs text-muted-foreground">Carga média: {carga.toFixed(2)}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-emerald-500" /> Ranking Geral
+              </CardTitle>
+              <CardDescription>Visão consolidada por empresa</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[280px] pr-3">
+                <div className="space-y-2">
+                  {metrics.perCompany
+                    .slice()
+                    .sort((a, b) => b.saida - a.saida)
+                    .map((c, idx) => (
+                      <div
+                        key={c.id}
+                        className="group flex cursor-pointer items-center justify-between rounded-md border bg-card/40 p-3 transition hover:border-primary hover:bg-card"
+                        onClick={() => navigate(`/p/${c.slug}`)}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                            {idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{c.nome_fantasia}</p>
+                            <p className="truncate text-xs text-muted-foreground">{c.uf} · {c.meses} mês(es)</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">{brl(c.saida)}</p>
+                          <p className="text-xs text-muted-foreground">{(c.carga * 100).toFixed(1)}% carga</p>
+                        </div>
+                      </div>
+                    ))}
+                  {metrics.perCompany.length === 0 && (
+                    <p className="py-12 text-center text-sm text-muted-foreground">Sem empresas.</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function KpiCard({ icon, title, value, hint }: { icon: React.ReactNode; title: string; value: string; hint?: string }) {
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-5">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <div className="rounded-md bg-muted/60 p-2">{icon}</div>
+        </div>
+        <p className="text-2xl font-bold tracking-tight">{value}</p>
+        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MiniCard({
+  icon, label, value, sub, tone,
+}: { icon: React.ReactNode; label: string; value: number | string; sub?: string; tone: "success" | "warning" | "info" }) {
+  const toneClass =
+    tone === "success" ? "border-emerald-500/30 bg-emerald-500/5"
+    : tone === "warning" ? "border-amber-500/30 bg-amber-500/5"
+    : "border-primary/30 bg-primary/5";
+  return (
+    <Card className={`border ${toneClass}`}>
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className="rounded-md bg-card p-2">{icon}</div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-bold">{value}</p>
+          {sub && <p className="truncate text-xs text-muted-foreground">{sub}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyChart() {
+  return (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      Sem dados suficientes para exibir.
+    </div>
+  );
+}
