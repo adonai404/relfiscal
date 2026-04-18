@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
 
 interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
