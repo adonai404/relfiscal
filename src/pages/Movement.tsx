@@ -44,6 +44,8 @@ export default function Movement() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newComp, setNewComp] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
