@@ -10,6 +10,7 @@ import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   type FiscalConfig, isColumnVisible, getColumnLabel,
+  isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
 
 interface Company {
