@@ -89,9 +89,6 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar conta
                 </Button>
-                <p className="text-center text-xs text-muted-foreground">
-                  O primeiro usuário cadastrado torna-se administrador.
-                </p>
               </form>
             </TabsContent>
           </Tabs>
