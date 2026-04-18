@@ -125,6 +125,18 @@ export default function Companies() {
                     <Label>UF</Label>
                     <Input required maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label>Regime Tributário</Label>
+                    <Select value={form.regime} onValueChange={(v) => setForm({ ...form, regime: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simples_nacional">Simples Nacional</SelectItem>
+                        <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                        <SelectItem value="mei">MEI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <DialogFooter>
                     <Button type="submit" disabled={creating}>
                       {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar
