@@ -55,7 +55,7 @@ export function downloadTemplate(cfg: FiscalConfig | null | undefined, fileName 
 }
 
 export function exportMovementToXlsx(
-  rows: Array<Record<string, unknown> & { competencia: string }>,
+  rows: Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
   cfg: FiscalConfig | null | undefined,
   fileName = "movimento-fiscal.xlsx"
 ) {
