@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useApproval } from "./useApproval";
+import { DEMO_COMPANIES } from "@/lib/demoData";
 
 export interface Company {
   id: string;
@@ -18,6 +20,7 @@ interface CompanyCtx {
   companies: Company[];
   loadingCompanies: boolean;
   refetch: () => void;
+  isDemo: boolean;
 }
 
 const Ctx = createContext<CompanyCtx>({
@@ -26,19 +29,22 @@ const Ctx = createContext<CompanyCtx>({
   companies: [],
   loadingCompanies: false,
   refetch: () => {},
+  isDemo: false,
 });
 
 const STORAGE_KEY = "fiscal.selectedCompanyId";
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { approved, isLoading: approvalLoading } = useApproval();
   const [selectedCompany, setSelectedState] = useState<Company | null>(null);
 
-  const { data: companies = [], isLoading, refetch } = useQuery({
-    queryKey: ["companies", user?.id],
-    enabled: !!user,
+  const isDemo = !!user && !approvalLoading && !approved;
+
+  const { data: realCompanies = [], isLoading, refetch } = useQuery({
+    queryKey: ["companies", user?.id, approved],
+    enabled: !!user && approved,
     queryFn: async () => {
-      // Get IDs the user can access
       const { data: links, error: linkErr } = await supabase
         .from("user_companies")
         .select("company_id")
@@ -46,7 +52,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       if (linkErr) throw linkErr;
       const ids = links?.map((l) => l.company_id) ?? [];
 
-      // Admins also see all companies
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
@@ -64,7 +69,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // restore selection from localStorage when companies load
+  const companies = isDemo ? DEMO_COMPANIES : realCompanies;
+  const loadingCompanies = approvalLoading || (approved && isLoading);
+
   useEffect(() => {
     if (!companies.length) return;
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -84,7 +91,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ selectedCompany, setSelectedCompany, companies, loadingCompanies: isLoading, refetch }}>
+    <Ctx.Provider value={{ selectedCompany, setSelectedCompany, companies, loadingCompanies, refetch, isDemo }}>
       {children}
     </Ctx.Provider>
   );
