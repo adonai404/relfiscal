@@ -17,6 +17,7 @@ import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
+  isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
 
 interface MovementRow {
