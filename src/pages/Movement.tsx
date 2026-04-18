@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronLeft, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
+import { Building2, ChevronLeft, Download, FileSpreadsheet, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2, Upload } from "lucide-react";
+import { downloadTemplate, exportMovementToXlsx, parseXlsxFile, type ParsedRow } from "@/lib/xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -43,6 +44,8 @@ export default function Movement() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newComp, setNewComp] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -111,6 +114,44 @@ export default function Movement() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const importRows = useMutation({
+    mutationFn: async (parsed: ParsedRow[]) => {
+      if (!companyId) throw new Error("Empresa não selecionada");
+      if (parsed.length === 0) throw new Error("Nenhuma linha válida encontrada na planilha");
+      const payload = parsed.map((p) => ({
+        company_id: companyId,
+        competencia: p.competencia,
+        ...p.values,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("fiscal_movement").upsert(payload as any, {
+        onConflict: "company_id,competencia",
+      });
+      if (error) throw error;
+      return parsed.length;
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ["fiscal_movement", companyId] });
+      toast.success(`${count} competência(s) importada(s)`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const parsed = await parseXlsxFile(file, config ?? undefined);
+      await importRows.mutateAsync(parsed);
+    } catch (err) {
+      toast.error((err as Error).message || "Falha ao importar planilha");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   // Visible columns based on config
   const visibleCols: ColumnKey[] = useMemo(
@@ -197,25 +238,64 @@ export default function Movement() {
         </div>
 
         <Card className="print-container">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
             <CardTitle>Movimento Fiscal</CardTitle>
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="no-print"><Plus className="mr-2 h-4 w-4" /> Adicionar Competência</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
-                <div className="space-y-2">
-                  <Label>Mês de referência</Label>
-                  <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
-                </div>
-                <DialogFooter>
-                  <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
-                    {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <div className="flex flex-wrap items-center gap-2 no-print">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                className="hidden"
+                onChange={handleFileSelected}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadTemplate(config ?? undefined)}
+                title="Baixa um modelo de planilha respeitando seus rótulos e colunas visíveis"
+              >
+                <Download className="mr-2 h-4 w-4" /> Baixar Template
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing || importRows.isPending}
+                title="Importar planilha XLSX (upsert por mês de referência)"
+              >
+                {importing || importRows.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                Importar XLSX
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportMovementToXlsx(rows, config ?? undefined, `movimento-${selectedCompany.slug}.xlsx`)}
+                disabled={rows.length === 0}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
+              </Button>
+              <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Plus className="mr-2 h-4 w-4" /> Adicionar Competência</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
+                  <div className="space-y-2">
+                    <Label>Mês de referência</Label>
+                    <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
+                      {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (
