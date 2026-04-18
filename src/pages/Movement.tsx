@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
+import { DEMO_MOVEMENTS, isDemoCompany } from "@/lib/demoData";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber } from "@/lib/format";
@@ -63,6 +64,9 @@ export default function Movement() {
     queryKey: ["fiscal_movement", companyId],
     enabled: !!companyId,
     queryFn: async () => {
+      if (isDemoCompany(companyId)) {
+        return (DEMO_MOVEMENTS[companyId!] ?? []) as MovementRow[];
+      }
       const { data, error } = await supabase
         .from("fiscal_movement")
         .select("*")
@@ -72,6 +76,8 @@ export default function Movement() {
       return (data ?? []) as MovementRow[];
     },
   });
+
+  const demoMode = isDemoCompany(companyId);
 
   // Apply auto-calculate Simples Nacional if enabled (display-only)
   const computedRows = useMemo(() => {
