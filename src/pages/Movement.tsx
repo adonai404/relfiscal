@@ -120,6 +120,7 @@ export default function Movement() {
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
+      if (demoMode) throw new Error("Modo demonstração — solicite acesso para editar.");
       const payload: Record<string, number> = { [field]: value };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase.from("fiscal_movement").update(payload as any).eq("id", id);
@@ -132,6 +133,7 @@ export default function Movement() {
   const addRow = useMutation({
     mutationFn: async (competencia: string) => {
       if (!companyId) return;
+      if (demoMode) throw new Error("Modo demonstração — solicite acesso para adicionar competências.");
       const { error } = await supabase.from("fiscal_movement").insert({ company_id: companyId, competencia });
       if (error) throw error;
     },
@@ -145,6 +147,7 @@ export default function Movement() {
 
   const deleteRow = useMutation({
     mutationFn: async (id: string) => {
+      if (demoMode) throw new Error("Modo demonstração — solicite acesso para excluir.");
       const { error } = await supabase.from("fiscal_movement").delete().eq("id", id);
       if (error) throw error;
     },
