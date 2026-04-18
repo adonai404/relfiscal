@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, ChevronLeft, LogOut, Plus, Printer, Trash2, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,10 +74,9 @@ export default function Movement() {
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
-      const { error } = await supabase
-        .from("fiscal_movement")
-        .update({ [field]: value } as Record<string, number>)
-        .eq("id", id);
+      const payload: Record<string, number> = { [field]: value };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("fiscal_movement").update(payload as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fiscal_movement", companyId] }),
@@ -164,8 +163,8 @@ export default function Movement() {
       <main className="mx-auto max-w-7xl px-4 py-6">
         {/* Summary cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
-          <SummaryCard label="Total Entrada" value={totals.entrada} accent="success" />
-          <SummaryCard label="Total Saída" value={totals.saida} />
+          <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
+          <SummaryCard label="Total Saída" value={totals.byCol.saida || 0} />
           <SummaryCard label="Total Impostos" value={totals.totalImpostos} accent="warning" />
           <SummaryCard label="Total Simples Nacional" value={totals.totalSimples} accent="primary" />
           <SummaryCard
