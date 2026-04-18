@@ -462,3 +462,56 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
     />
   );
 }
+
+type FilterOp = "gte" | "lte" | "eq" | "between";
+function ColumnFilterEditor({
+  current, onApply, onClear,
+}: {
+  current?: { op: FilterOp; a: string; b: string };
+  onApply: (next: { op: FilterOp; a: string; b: string }) => void;
+  onClear: () => void;
+}) {
+  const [op, setOp] = useState<FilterOp>(current?.op ?? "gte");
+  const [a, setA] = useState(current?.a ?? "");
+  const [b, setB] = useState(current?.b ?? "");
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-medium">Filtrar coluna</p>
+        <p className="text-xs text-muted-foreground">Aplicado sobre o valor da linha</p>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Operador</Label>
+        <Select value={op} onValueChange={(v) => setOp(v as FilterOp)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gte">Maior ou igual a (≥)</SelectItem>
+            <SelectItem value="lte">Menor ou igual a (≤)</SelectItem>
+            <SelectItem value="eq">Igual a (=)</SelectItem>
+            <SelectItem value="between">Entre</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs">{op === "between" ? "De" : "Valor"}</Label>
+          <Input inputMode="decimal" placeholder="0,00" value={a} onChange={(e) => setA(e.target.value)} />
+        </div>
+        {op === "between" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Até</Label>
+            <Input inputMode="decimal" placeholder="0,00" value={b} onChange={(e) => setB(e.target.value)} />
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" className="flex-1" onClick={() => onApply({ op, a, b })} disabled={!a}>Aplicar</Button>
+        {current && (
+          <Button size="sm" variant="ghost" onClick={onClear}>
+            <FilterX className="mr-1 h-3 w-3" /> Limpar
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
