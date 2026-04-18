@@ -299,7 +299,9 @@ export default function Movement() {
                     <TableRow className="font-semibold bg-muted/50">
                       <TableCell className="sticky left-0 bg-muted/50">TOTAL</TableCell>
                       {visibleCols.map((c) => (
-                        <TableCell key={c} className="text-right whitespace-nowrap">{brl(totals.byCol[c] || 0)}</TableCell>
+                        <TableCell key={c} className="text-right whitespace-nowrap">
+                          {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                        </TableCell>
                       ))}
                       <TableCell className="no-print" />
                     </TableRow>
