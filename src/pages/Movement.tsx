@@ -52,6 +52,9 @@ export default function Movement() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  type Op = "gte" | "lte" | "eq" | "between";
+  const [colFilters, setColFilters] = useState<Record<string, { op: Op; a: string; b: string }>>({});
 
   const companyId = selectedCompany?.id;
   const { data: config } = useFiscalConfig(companyId);
@@ -71,7 +74,7 @@ export default function Movement() {
   });
 
   // Apply auto-calculate Simples Nacional if enabled (display-only)
-  const rows = useMemo(() => {
+  const computedRows = useMemo(() => {
     if (!config?.auto_calculate_simples_nacional) return rawRows;
     const a = Number(config.aliquota_simples_nacional || 0) / 100;
     return rawRows.map((r) => ({
@@ -79,6 +82,35 @@ export default function Movement() {
       simples_nacional: Number((Number(r.saida || 0) * a).toFixed(2)),
     }));
   }, [rawRows, config]);
+
+  const availableComps = useMemo(
+    () => Array.from(new Set(rawRows.map((r) => r.competencia))).sort(),
+    [rawRows],
+  );
+
+  // Apply period + column filters
+  const rows = useMemo(() => {
+    let r = filterByPeriod(computedRows, period);
+    const entries = Object.entries(colFilters);
+    if (entries.length > 0) {
+      r = r.filter((row) => {
+        for (const [col, f] of entries) {
+          const val = computeColumnValue(row, col as ColumnKey);
+          const a = parseBrNumber(f.a);
+          const b = parseBrNumber(f.b);
+          if (f.op === "gte" && f.a !== "" && !(val >= a)) return false;
+          if (f.op === "lte" && f.a !== "" && !(val <= a)) return false;
+          if (f.op === "eq" && f.a !== "" && Math.abs(val - a) > 0.001) return false;
+          if (f.op === "between" && f.a !== "" && f.b !== "" && !(val >= a && val <= b)) return false;
+        }
+        return true;
+      });
+    }
+    return r;
+  }, [computedRows, period, colFilters]);
+
+  const filtersActive = !!(period.from || period.to) || Object.keys(colFilters).length > 0;
+  const clearAllFilters = () => { setPeriod({ from: "", to: "" }); setColFilters({}); };
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
