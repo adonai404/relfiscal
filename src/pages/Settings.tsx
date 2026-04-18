@@ -24,7 +24,8 @@ import { useXlsxImport } from "@/hooks/useXlsxImport";
 
 const TOGGLE_LABELS: Record<ColumnKey, string> = {
   entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
-  simples_nacional: "Simples Nacional", honorarios: "Honorários", folha: "Folha",
+  simples_nacional: "Simples Nacional", aliquota_simples_calc: "Alíquota Simples (calc.)",
+  honorarios: "Honorários", folha: "Folha",
   encargos_patronal: "Encargos Patronal", difal: "DIFAL", pis: "PIS",
   cofins: "COFINS", irpj: "IRPJ", csll: "CSLL",
 };
