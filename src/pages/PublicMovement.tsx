@@ -98,7 +98,14 @@ export default function PublicMovement() {
 
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
-    ALL_COLUMNS.forEach((c) => (byCol[c] = rows.reduce((s, r) => s + Number(r[c] || 0), 0)));
+    ALL_COLUMNS.forEach((c) => {
+      if (isComputedColumn(c)) {
+        byCol[c] = 0;
+      } else {
+        byCol[c] = rows.reduce((s, r) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0);
+      }
+    });
+    if (byCol.saida) byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     return { byCol, totalImpostos, totalSimples, economia: totalImpostos - totalSimples };
