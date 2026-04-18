@@ -93,6 +93,7 @@ export async function parseXlsxFile(file: File, cfg: FiscalConfig | null | undef
       return;
     }
     for (const c of ALL_COLUMNS) {
+      if (isComputedColumn(c)) continue;
       const label = norm(getColumnLabel(cfg ?? undefined, c));
       const fallback = norm(c.replace(/_/g, " "));
       if (h === label || h === fallback) {
