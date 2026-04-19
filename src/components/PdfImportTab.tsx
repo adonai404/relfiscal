@@ -54,14 +54,30 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
   const totalSelected = useMemo(() => rows.filter((r) => r.selected).length, [rows]);
   const allSelected = rows.length > 0 && totalSelected === rows.length;
 
+  const [dragOver, setDragOver] = useState(false);
+
+  const addFiles = (list: File[]) => {
+    const pdfs = list.filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+    if (pdfs.length === 0) {
+      toast.error("Apenas arquivos PDF são aceitos.");
+      return;
+    }
+    setFiles((prev) => [...prev, ...pdfs]);
+    setRows([]);
+    setErrors([]);
+  };
+
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (list.length === 0) return;
-    const merged = [...files, ...list];
-    setFiles(merged);
-    setRows([]);
-    setErrors([]);
+    addFiles(list);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    addFiles(Array.from(e.dataTransfer.files ?? []));
   };
 
   const removeFile = (idx: number) => {
