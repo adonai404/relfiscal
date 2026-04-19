@@ -61,6 +61,18 @@ export default function Companies() {
     refetch();
   };
 
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("companies").delete().eq("id", toDelete.id);
+    setDeleting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Empresa excluída");
+    setToDelete(null);
+    qc.invalidateQueries({ queryKey: ["companies"] });
+    refetch();
+  };
+
   const regimeLabels: Record<string, string> = {
     simples_nacional: "Simples Nacional",
     lucro_presumido: "Lucro Presumido",
