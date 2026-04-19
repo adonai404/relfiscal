@@ -212,6 +212,8 @@ export default function Companies() {
           </div>
         )}
       </main>
+
+      <BatchImportDialog open={batchOpen} onOpenChange={setBatchOpen} />
     </div>
   );
 }
