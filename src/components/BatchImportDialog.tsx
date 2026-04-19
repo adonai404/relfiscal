@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Upload, Loader2, FileSpreadsheet, Building2, Layers } from "lucide-react";
+import { Download, Upload, Loader2, FileSpreadsheet, Building2, Layers, FileText } from "lucide-react";
+import { PdfImportTab } from "./PdfImportTab";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -187,7 +188,7 @@ export function BatchImportDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" /> Importação em lote
@@ -197,15 +198,22 @@ export function BatchImportDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="companies" className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="pdf" className="mt-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pdf">
+              <FileText className="mr-2 h-4 w-4" /> PDF (Simples)
+            </TabsTrigger>
             <TabsTrigger value="companies">
               <Building2 className="mr-2 h-4 w-4" /> Empresas
             </TabsTrigger>
             <TabsTrigger value="movement">
-              <Layers className="mr-2 h-4 w-4" /> Movimento em lote
+              <Layers className="mr-2 h-4 w-4" /> Movimento
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="pdf">
+            <PdfImportTab onDone={() => onOpenChange(false)} />
+          </TabsContent>
 
           <TabsContent value="companies" className="space-y-4 pt-4">
             <Card>
