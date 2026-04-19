@@ -204,6 +204,7 @@ export default function Companies() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
+              const canDelete = isSuperAdmin || (c as any).created_by === user.id;
               return (
                 <Card key={c.id} className="cursor-pointer transition hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5" onClick={() => select(c)}>
                   <CardHeader>
@@ -212,9 +213,22 @@ export default function Companies() {
                         <CardTitle className="text-lg truncate">{c.nome_fantasia}</CardTitle>
                         <CardDescription className="line-clamp-1">{c.razao_social}</CardDescription>
                       </div>
-                      {regime && (
-                        <Badge variant="secondary" className="shrink-0">{regimeLabels[regime] ?? regime}</Badge>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {regime && (
+                          <Badge variant="secondary">{regimeLabels[regime] ?? regime}</Badge>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setToDelete(c); }}
+                            aria-label="Excluir empresa"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground space-y-1">
@@ -229,6 +243,27 @@ export default function Companies() {
       </main>
 
       <BatchImportDialog open={batchOpen} onOpenChange={setBatchOpen} />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir empresa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{toDelete?.nome_fantasia}</strong>? Todos os movimentos fiscais e configurações vinculados também serão removidos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
