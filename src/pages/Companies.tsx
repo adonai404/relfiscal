@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,9 +80,14 @@ export default function Companies() {
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             {isAdmin && (
-              <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
-                <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => navigate("/admin/usuarios")}>
+                  <Users className="mr-2 h-4 w-4" /> Usuários
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                </Button>
+              </>
             )}
             <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
               <Layers className="mr-2 h-4 w-4" /> Combo
