@@ -10,12 +10,17 @@ export function useProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("approved, email, username, access_requested_at")
+        .select("approved, status, email, username, access_requested_at")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
-  return { profile, isLoading, approved: !!profile?.approved };
+  return {
+    profile,
+    isLoading,
+    isBlocked: profile?.status === "bloqueado",
+    isActive: profile?.status === "ativo",
+  };
 }

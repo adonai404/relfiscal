@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Check, X, Shield, ShieldOff, Users } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Unlock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +14,9 @@ type Row = {
   user_id: string;
   email: string | null;
   username: string | null;
-  approved: boolean;
+  status: "ativo" | "bloqueado";
   created_at: string;
-  roles: string[];
+  isSuperAdmin: boolean;
 };
 
 export default function AdminUsers() {
@@ -28,52 +28,36 @@ export default function AdminUsers() {
     queryKey: ["admin-users"],
     queryFn: async () => {
       const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
-        supabase.from("profiles").select("user_id, email, username, approved, created_at").order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("user_id, email, username, status, created_at")
+          .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
       ]);
       if (pErr) throw pErr;
       if (rErr) throw rErr;
-      const byUser = new Map<string, string[]>();
-      (roles ?? []).forEach((r: any) => {
-        const arr = byUser.get(r.user_id) ?? [];
-        arr.push(r.role);
-        byUser.set(r.user_id, arr);
-      });
-      return (profiles ?? []).map((p: any) => ({ ...p, roles: byUser.get(p.user_id) ?? [] })) as Row[];
+      const superAdmins = new Set((roles ?? []).filter((r: any) => r.role === "super_admin").map((r: any) => r.user_id));
+      return (profiles ?? []).map((p: any) => ({
+        ...p,
+        isSuperAdmin: superAdmins.has(p.user_id),
+      })) as Row[];
     },
   });
 
-  const setApproved = useMutation({
-    mutationFn: async ({ userId, approved }: { userId: string; approved: boolean }) => {
-      const { error } = await supabase.from("profiles").update({ approved }).eq("user_id", userId);
+  const setStatus = useMutation({
+    mutationFn: async ({ userId, status }: { userId: string; status: "ativo" | "bloqueado" }) => {
+      const { error } = await supabase.from("profiles").update({ status }).eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: (_d, v) => {
-      toast.success(v.approved ? "Usuário aprovado" : "Acesso revogado");
+      toast.success(v.status === "ativo" ? "Usuário ativado" : "Usuário bloqueado");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const setAdmin = useMutation({
-    mutationFn: async ({ userId, makeAdmin }: { userId: string; makeAdmin: boolean }) => {
-      if (makeAdmin) {
-        const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-        if (error && !error.message.includes("duplicate")) throw error;
-      } else {
-        const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
-        if (error) throw error;
-      }
-    },
-    onSuccess: (_d, v) => {
-      toast.success(v.makeAdmin ? "Promovido a admin" : "Removido de admin");
-      qc.invalidateQueries({ queryKey: ["admin-users"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const pending = rows.filter((r) => !r.approved);
-  const approved = rows.filter((r) => r.approved);
+  const ativos = rows.filter((r) => r.status === "ativo");
+  const bloqueados = rows.filter((r) => r.status === "bloqueado");
 
   const renderTable = (data: Row[], emptyMsg: string) => (
     <Table>
@@ -82,56 +66,58 @@ export default function AdminUsers() {
           <TableHead>Usuário</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Cadastro</TableHead>
-          <TableHead>Papéis</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.length === 0 ? (
-          <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{emptyMsg}</TableCell></TableRow>
-        ) : data.map((r) => {
-          const isAdminRow = r.roles.includes("admin");
-          const isSelf = r.user_id === user?.id;
-          return (
-            <TableRow key={r.user_id}>
-              <TableCell className="font-medium">{r.username ?? "-"}</TableCell>
-              <TableCell className="text-muted-foreground">{r.email ?? "-"}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">
-                {new Date(r.created_at).toLocaleDateString("pt-BR")}
-              </TableCell>
-              <TableCell>
-                {isAdminRow ? <Badge>admin</Badge> : <Badge variant="secondary">user</Badge>}
-              </TableCell>
-              <TableCell className="text-right space-x-2">
-                {!r.approved ? (
-                  <Button size="sm" onClick={() => setApproved.mutate({ userId: r.user_id, approved: true })}>
-                    <Check className="mr-1 h-4 w-4" /> Aprovar
-                  </Button>
-                ) : (
-                  <>
-                    {!isSelf && (
-                      <>
-                        {isAdminRow ? (
-                          <Button size="sm" variant="outline" onClick={() => setAdmin.mutate({ userId: r.user_id, makeAdmin: false })}>
-                            <ShieldOff className="mr-1 h-4 w-4" /> Remover admin
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" onClick={() => setAdmin.mutate({ userId: r.user_id, makeAdmin: true })}>
-                            <Shield className="mr-1 h-4 w-4" /> Tornar admin
-                          </Button>
-                        )}
-                        <Button size="sm" variant="destructive" onClick={() => setApproved.mutate({ userId: r.user_id, approved: false })}>
-                          <X className="mr-1 h-4 w-4" /> Revogar
-                        </Button>
-                      </>
-                    )}
-                    {isSelf && <span className="text-xs text-muted-foreground">(você)</span>}
-                  </>
-                )}
-              </TableCell>
-            </TableRow>
-          );
-        })}
+          <TableRow>
+            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              {emptyMsg}
+            </TableCell>
+          </TableRow>
+        ) : (
+          data.map((r) => {
+            const isSelf = r.user_id === user?.id;
+            return (
+              <TableRow key={r.user_id}>
+                <TableCell className="font-medium">
+                  {r.username ?? "-"}
+                  {r.isSuperAdmin && <Badge className="ml-2">super admin</Badge>}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{r.email ?? "-"}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                </TableCell>
+                <TableCell>
+                  {r.status === "ativo" ? (
+                    <Badge variant="secondary">ativo</Badge>
+                  ) : (
+                    <Badge variant="destructive">bloqueado</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  {isSelf || r.isSuperAdmin ? (
+                    <span className="text-xs text-muted-foreground">{isSelf ? "(você)" : "—"}</span>
+                  ) : r.status === "ativo" ? (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setStatus.mutate({ userId: r.user_id, status: "bloqueado" })}
+                    >
+                      <Lock className="mr-1 h-4 w-4" /> Bloquear
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => setStatus.mutate({ userId: r.user_id, status: "ativo" })}>
+                      <Unlock className="mr-1 h-4 w-4" /> Ativar
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })
+        )}
       </TableBody>
     </Table>
   );
@@ -153,24 +139,26 @@ export default function AdminUsers() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         {isLoading ? (
-          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
         ) : (
           <>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Pendentes de aprovação
-                  {pending.length > 0 && <Badge variant="destructive">{pending.length}</Badge>}
-                </CardTitle>
+                <CardTitle>Usuários ativos ({ativos.length})</CardTitle>
               </CardHeader>
-              <CardContent>{renderTable(pending, "Nenhum usuário aguardando aprovação.")}</CardContent>
+              <CardContent>{renderTable(ativos, "Nenhum usuário ativo.")}</CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Usuários aprovados ({approved.length})</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  Usuários bloqueados
+                  {bloqueados.length > 0 && <Badge variant="destructive">{bloqueados.length}</Badge>}
+                </CardTitle>
               </CardHeader>
-              <CardContent>{renderTable(approved, "Nenhum usuário aprovado ainda.")}</CardContent>
+              <CardContent>{renderTable(bloqueados, "Nenhum usuário bloqueado.")}</CardContent>
             </Card>
           </>
         )}

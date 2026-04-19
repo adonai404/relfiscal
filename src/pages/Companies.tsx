@@ -14,13 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatCNPJ } from "@/lib/format";
 
 export default function Companies() {
   const { user, loading, signOut } = useAuth();
   const { companies, loadingCompanies, setSelectedCompany, refetch } = useCompany();
-  const { isAdmin } = useUserRole();
+  const { isSuperAdmin } = useUserRole();
+  const { isActive } = useProfile();
+  const canCreate = isActive || isSuperAdmin;
   const navigate = useNavigate();
   const qc = useQueryClient();
 

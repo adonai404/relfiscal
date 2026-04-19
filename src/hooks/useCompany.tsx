@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useUserRole } from "./useUserRole";
 
 export interface Company {
   id: string;
@@ -32,31 +33,21 @@ const STORAGE_KEY = "fiscal.selectedCompanyId";
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { isSuperAdmin } = useUserRole();
   const [selectedCompany, setSelectedState] = useState<Company | null>(null);
 
   const { data: companies = [], isLoading, refetch } = useQuery({
-    queryKey: ["companies", user?.id],
+    queryKey: ["companies", user?.id, isSuperAdmin],
     enabled: !!user,
     queryFn: async () => {
-      // Get IDs the user can access
-      const { data: links, error: linkErr } = await supabase
-        .from("user_companies")
-        .select("company_id")
-        .eq("user_id", user!.id);
-      if (linkErr) throw linkErr;
-      const ids = links?.map((l) => l.company_id) ?? [];
+      let query = supabase
+        .from("companies")
+        .select("id, cnpj, razao_social, nome_fantasia, uf, slug, regime, created_by")
+        .order("nome_fantasia");
 
-      // Admins also see all companies
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id);
-      const isAdmin = roles?.some((r) => r.role === "admin");
-
-      let query = supabase.from("companies").select("id, cnpj, razao_social, nome_fantasia, uf, slug").order("nome_fantasia");
-      if (!isAdmin) {
-        if (ids.length === 0) return [] as Company[];
-        query = query.in("id", ids);
+      // Super admin vê todas; usuários comuns só veem as próprias
+      if (!isSuperAdmin) {
+        query = query.eq("created_by", user!.id);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -64,7 +55,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // restore selection from localStorage when companies load
   useEffect(() => {
     if (!companies.length) return;
     const stored = localStorage.getItem(STORAGE_KEY);
