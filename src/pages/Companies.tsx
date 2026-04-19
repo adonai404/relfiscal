@@ -34,6 +34,8 @@ export default function Companies() {
   const [form, setForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
+  const [toDelete, setToDelete] = useState<typeof companies[number] | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
