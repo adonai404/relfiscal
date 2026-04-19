@@ -156,7 +156,8 @@ export default function Companies() {
                   </DialogFooter>
                 </form>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           )}
         </div>
 
