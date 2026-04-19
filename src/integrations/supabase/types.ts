@@ -236,6 +236,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_requested_at: string | null
+          approved: boolean
           created_at: string
           email: string | null
           id: string
@@ -244,6 +246,8 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          access_requested_at?: string | null
+          approved?: boolean
           created_at?: string
           email?: string | null
           id?: string
@@ -252,6 +256,8 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          access_requested_at?: string | null
+          approved?: boolean
           created_at?: string
           email?: string | null
           id?: string
