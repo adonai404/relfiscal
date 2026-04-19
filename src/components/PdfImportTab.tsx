@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileUp, Loader2, Send, Trash2, AlertCircle, CheckCircle2, Sparkles } from "lucide-react";
+import { FileUp, Loader2, Send, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,14 +54,30 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
   const totalSelected = useMemo(() => rows.filter((r) => r.selected).length, [rows]);
   const allSelected = rows.length > 0 && totalSelected === rows.length;
 
+  const [dragOver, setDragOver] = useState(false);
+
+  const addFiles = (list: File[]) => {
+    const pdfs = list.filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+    if (pdfs.length === 0) {
+      toast.error("Apenas arquivos PDF são aceitos.");
+      return;
+    }
+    setFiles((prev) => [...prev, ...pdfs]);
+    setRows([]);
+    setErrors([]);
+  };
+
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (list.length === 0) return;
-    const merged = [...files, ...list];
-    setFiles(merged);
-    setRows([]);
-    setErrors([]);
+    addFiles(list);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    addFiles(Array.from(e.dataTransfer.files ?? []));
   };
 
   const removeFile = (idx: number) => {
@@ -212,32 +228,31 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
 
   return (
     <div className="space-y-4 pt-4">
-      <Card>
-        <CardContent className="pt-6 space-y-3 text-sm">
-          <p className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <strong>Importação automática via PDF</strong>
-          </p>
-          <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-            <li>Envie quantos PDFs precisar de extratos PGDAS-D / DAS (máx. 20MB por arquivo).</li>
-            <li>A API extrai CNPJ, razão social, competência, faturamento (RPA) e valor pago do DAS.</li>
-            <li>Empresas inexistentes são criadas automaticamente.</li>
-            <li>Competências repetidas são <strong>atualizadas</strong> (upsert).</li>
-          </ul>
-        </CardContent>
-      </Card>
-
       <input ref={fileRef} type="file" accept="application/pdf,.pdf" multiple className="hidden" onChange={onPickFiles} />
 
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={busy}>
-          <FileUp className="mr-2 h-4 w-4" /> Selecionar PDFs
-        </Button>
-        <Button onClick={sendToApi} disabled={busy || files.length === 0}>
-          {extracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-          Extrair dados ({files.length})
-        </Button>
+      <div
+        onClick={() => !busy && fileRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); if (!busy) setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition cursor-pointer ${
+          dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/30"
+        } ${busy ? "opacity-60 pointer-events-none" : ""}`}
+      >
+        <FileUp className="h-8 w-8 text-muted-foreground" />
+        <div className="text-sm">
+          <span className="font-medium">Arraste PDFs aqui</span>
+          <span className="text-muted-foreground"> ou clique para selecionar</span>
+        </div>
+        <div className="text-xs text-muted-foreground">Extratos PGDAS-D / DAS • máx. 20MB cada</div>
       </div>
+
+      {files.length > 0 && (
+        <Button onClick={sendToApi} disabled={busy} className="w-full">
+          {extracting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+          Extrair dados de {files.length} PDF{files.length > 1 ? "s" : ""}
+        </Button>
+      )}
 
       {files.length > 0 && (
         <div className="space-y-1">
