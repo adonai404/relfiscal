@@ -16,6 +16,7 @@ import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
 import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
+import AdminUsers from "./pages/AdminUsers.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/admin/usuarios" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
