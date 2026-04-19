@@ -201,7 +201,7 @@ export function BatchImportDialog({ open, onOpenChange }: Props) {
         <Tabs defaultValue="pdf" className="mt-2">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pdf">
-              <FileText className="mr-2 h-4 w-4" /> PDF (Simples)
+              <FileText className="mr-2 h-4 w-4" /> Extrato Simples Nacional
             </TabsTrigger>
             <TabsTrigger value="companies">
               <Building2 className="mr-2 h-4 w-4" /> Empresas
