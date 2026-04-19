@@ -5,8 +5,7 @@ const API_BASE = "https://bxzefwentojlteyjerpc.supabase.co/functions/v1";
 const EXTRACT_URL = `${API_BASE}/simples-nacional-extract`;
 
 export const PDF_API_LIMITS = {
-  maxFiles: 10,
-  maxBytes: 20 * 1024 * 1024, // 20 MB
+  maxBytes: 20 * 1024 * 1024, // 20 MB por arquivo
 };
 
 export interface ExtractedRpa {
@@ -58,9 +57,6 @@ export function describeError(code: string): string {
 
 export async function extractPdfsSync(files: File[]): Promise<ExtractResponse> {
   if (files.length === 0) throw new Error("Selecione ao menos um PDF.");
-  if (files.length > PDF_API_LIMITS.maxFiles) {
-    throw new Error(`Máximo de ${PDF_API_LIMITS.maxFiles} PDFs por envio.`);
-  }
   const tooBig = files.find((f) => f.size > PDF_API_LIMITS.maxBytes);
   if (tooBig) throw new Error(`O arquivo "${tooBig.name}" excede 20MB.`);
 
