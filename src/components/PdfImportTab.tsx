@@ -58,7 +58,7 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
     const list = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (list.length === 0) return;
-    const merged = [...files, ...list].slice(0, PDF_API_LIMITS.maxFiles);
+    const merged = [...files, ...list];
     setFiles(merged);
     setRows([]);
     setErrors([]);
@@ -219,7 +219,7 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
             <strong>Importação automática via PDF</strong>
           </p>
           <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-            <li>Envie até <strong>{PDF_API_LIMITS.maxFiles} PDFs</strong> de extratos PGDAS-D / DAS por vez (máx. 20MB cada).</li>
+            <li>Envie quantos PDFs precisar de extratos PGDAS-D / DAS (máx. 20MB por arquivo).</li>
             <li>A API extrai CNPJ, razão social, competência, faturamento (RPA) e valor pago do DAS.</li>
             <li>Empresas inexistentes são criadas automaticamente.</li>
             <li>Competências repetidas são <strong>atualizadas</strong> (upsert).</li>
