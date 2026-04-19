@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { useCompany } from "@/hooks/useCompany";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BatchImportDialog } from "@/components/BatchImportDialog";
 import { formatCNPJ } from "@/lib/format";
 
 export default function Companies() {
@@ -28,6 +29,7 @@ export default function Companies() {
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
   const [form, setForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
@@ -108,7 +110,11 @@ export default function Companies() {
             <p className="text-sm text-muted-foreground">Escolha uma empresa para gerenciar o movimento fiscal</p>
           </div>
           {canCreate && (
-            <Dialog open={open} onOpenChange={setOpen}>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setBatchOpen(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar planilha
+              </Button>
+              <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> Nova empresa</Button>
               </DialogTrigger>
