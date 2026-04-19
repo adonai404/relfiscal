@@ -241,6 +241,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          status: Database["public"]["Enums"]["user_status"]
           updated_at: string
           user_id: string
           username: string | null
@@ -251,6 +252,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
           user_id: string
           username?: string | null
@@ -261,40 +263,12 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
           user_id?: string
           username?: string | null
         }
         Relationships: []
-      }
-      user_companies: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_companies_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_roles: {
         Row: {
@@ -330,14 +304,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       user_has_company_access: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      user_is_active: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "super_admin"
       tax_regime: "simples_nacional" | "lucro_presumido" | "lucro_real" | "mei"
+      user_status: "ativo" | "bloqueado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -465,8 +442,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "super_admin"],
       tax_regime: ["simples_nacional", "lucro_presumido", "lucro_real", "mei"],
+      user_status: ["ativo", "bloqueado"],
     },
   },
 } as const

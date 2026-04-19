@@ -14,13 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatCNPJ } from "@/lib/format";
 
 export default function Companies() {
   const { user, loading, signOut } = useAuth();
   const { companies, loadingCompanies, setSelectedCompany, refetch } = useCompany();
-  const { isAdmin } = useUserRole();
+  const { isSuperAdmin } = useUserRole();
+  const { isActive } = useProfile();
+  const canCreate = isActive || isSuperAdmin;
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -79,16 +82,14 @@ export default function Companies() {
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
-            {isAdmin && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => navigate("/admin/usuarios")}>
-                  <Users className="mr-2 h-4 w-4" /> Usuários
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-                </Button>
-              </>
+            {isSuperAdmin && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin/usuarios")}>
+                <Users className="mr-2 h-4 w-4" /> Usuários
+              </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
+              <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+            </Button>
             <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
               <Layers className="mr-2 h-4 w-4" /> Combo
             </Button>
@@ -106,7 +107,7 @@ export default function Companies() {
             <h2 className="text-2xl font-bold">Suas empresas</h2>
             <p className="text-sm text-muted-foreground">Escolha uma empresa para gerenciar o movimento fiscal</p>
           </div>
-          {isAdmin && (
+          {canCreate && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> Nova empresa</Button>
@@ -168,7 +169,7 @@ export default function Companies() {
         ) : companies.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              {isAdmin ? "Nenhuma empresa ainda. Cadastre a primeira." : "Nenhuma empresa vinculada a você. Peça ao administrador."}
+              {canCreate ? "Nenhuma empresa ainda. Cadastre a primeira." : "Sua conta está bloqueada. Contate o administrador."}
             </CardContent>
           </Card>
         ) : filtered.length === 0 ? (

@@ -16,5 +16,11 @@ export function useUserRole() {
       return data?.map((r) => r.role) ?? [];
     },
   });
-  return { roles, isAdmin: roles.includes("admin") };
+  const isSuperAdmin = roles.includes("super_admin" as any);
+  return {
+    roles,
+    isSuperAdmin,
+    /** @deprecated use isSuperAdmin */
+    isAdmin: isSuperAdmin,
+  };
 }
