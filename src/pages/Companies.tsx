@@ -127,7 +127,7 @@ export default function Companies() {
           {canCreate && (
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => setBatchOpen(true)}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar planilha
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importação
               </Button>
               <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
