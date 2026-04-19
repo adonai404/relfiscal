@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,8 @@ export default function Companies() {
   const [form, setForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
+  const [toDelete, setToDelete] = useState<typeof companies[number] | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -54,6 +57,18 @@ export default function Companies() {
     toast.success("Empresa criada");
     setOpen(false);
     setForm({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
+    qc.invalidateQueries({ queryKey: ["companies"] });
+    refetch();
+  };
+
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("companies").delete().eq("id", toDelete.id);
+    setDeleting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Empresa excluída");
+    setToDelete(null);
     qc.invalidateQueries({ queryKey: ["companies"] });
     refetch();
   };
@@ -189,6 +204,7 @@ export default function Companies() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
+              const canDelete = isSuperAdmin || (c as any).created_by === user.id;
               return (
                 <Card key={c.id} className="cursor-pointer transition hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5" onClick={() => select(c)}>
                   <CardHeader>
@@ -197,9 +213,22 @@ export default function Companies() {
                         <CardTitle className="text-lg truncate">{c.nome_fantasia}</CardTitle>
                         <CardDescription className="line-clamp-1">{c.razao_social}</CardDescription>
                       </div>
-                      {regime && (
-                        <Badge variant="secondary" className="shrink-0">{regimeLabels[regime] ?? regime}</Badge>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {regime && (
+                          <Badge variant="secondary">{regimeLabels[regime] ?? regime}</Badge>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setToDelete(c); }}
+                            aria-label="Excluir empresa"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground space-y-1">
@@ -214,6 +243,27 @@ export default function Companies() {
       </main>
 
       <BatchImportDialog open={batchOpen} onOpenChange={setBatchOpen} />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir empresa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{toDelete?.nome_fantasia}</strong>? Todos os movimentos fiscais e configurações vinculados também serão removidos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
