@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
-import { DEMO_MOVEMENTS, isDemoCompany } from "@/lib/demoData";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber } from "@/lib/format";
@@ -64,9 +63,6 @@ export default function Movement() {
     queryKey: ["fiscal_movement", companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      if (isDemoCompany(companyId)) {
-        return (DEMO_MOVEMENTS[companyId!] ?? []) as MovementRow[];
-      }
       const { data, error } = await supabase
         .from("fiscal_movement")
         .select("*")
@@ -76,8 +72,6 @@ export default function Movement() {
       return (data ?? []) as MovementRow[];
     },
   });
-
-  const demoMode = isDemoCompany(companyId);
 
   // Apply auto-calculate Simples Nacional if enabled (display-only)
   const computedRows = useMemo(() => {
@@ -120,7 +114,6 @@ export default function Movement() {
 
   const updateCell = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: keyof MovementRow; value: number }) => {
-      if (demoMode) throw new Error("Modo demonstração — solicite acesso para editar.");
       const payload: Record<string, number> = { [field]: value };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase.from("fiscal_movement").update(payload as any).eq("id", id);
@@ -133,7 +126,6 @@ export default function Movement() {
   const addRow = useMutation({
     mutationFn: async (competencia: string) => {
       if (!companyId) return;
-      if (demoMode) throw new Error("Modo demonstração — solicite acesso para adicionar competências.");
       const { error } = await supabase.from("fiscal_movement").insert({ company_id: companyId, competencia });
       if (error) throw error;
     },
@@ -147,7 +139,6 @@ export default function Movement() {
 
   const deleteRow = useMutation({
     mutationFn: async (id: string) => {
-      if (demoMode) throw new Error("Modo demonstração — solicite acesso para excluir.");
       const { error } = await supabase.from("fiscal_movement").delete().eq("id", id);
       if (error) throw error;
     },
@@ -199,9 +190,9 @@ export default function Movement() {
     toast.success("Link público copiado!");
   };
 
-  // Cell editor disabled for simples_nacional when auto-calc is on, or in demo mode
+  // Cell editor disabled for simples_nacional when auto-calc is on
   const isCellReadonly = (col: ColumnKey) =>
-    demoMode || (col === "simples_nacional" && !!config?.auto_calculate_simples_nacional);
+    col === "simples_nacional" && !!config?.auto_calculate_simples_nacional;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>

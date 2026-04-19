@@ -16,11 +16,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useApproval } from "@/hooks/useApproval";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
-import { DEMO_COMPANIES, DEMO_MOVEMENTS } from "@/lib/demoData";
 
 interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
 interface MovementLite {
@@ -44,14 +42,12 @@ const COLORS = [
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useUserRole();
-  const { approved } = useApproval();
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
-  const isDemo = !!user && !approved;
 
-  const { data: realCompanies = [], isLoading: loadingCompaniesReal } = useQuery({
+  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ["dashboard_companies"],
-    enabled: !!user && approved,
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
@@ -61,9 +57,9 @@ export default function Dashboard() {
     },
   });
 
-  const { data: realMovements = [], isLoading: loadingMovReal } = useQuery({
+  const { data: rawMovements = [], isLoading: loadingMov } = useQuery({
     queryKey: ["dashboard_movements"],
-    enabled: !!user && approved,
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fiscal_movement")
@@ -72,13 +68,6 @@ export default function Dashboard() {
       return (data ?? []) as MovementLite[];
     },
   });
-
-  const companies = isDemo ? (DEMO_COMPANIES as CompanyLite[]) : realCompanies;
-  const rawMovements = isDemo
-    ? (Object.values(DEMO_MOVEMENTS).flat() as MovementLite[])
-    : realMovements;
-  const loadingCompanies = !isDemo && loadingCompaniesReal;
-  const loadingMov = !isDemo && loadingMovReal;
 
   const availableComps = useMemo(
     () => Array.from(new Set(rawMovements.map((m) => m.competencia))).sort(),

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +7,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompanyProvider } from "@/hooks/useCompany";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { DemoBanner } from "@/components/DemoBanner";
 import Index from "./pages/Index.tsx";
 import Landing from "./pages/Landing.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -16,19 +15,10 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
 import Settings from "./pages/Settings.tsx";
-import UsersAdmin from "./pages/UsersAdmin.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
-
-// Hide banner on landing, auth, and public pages
-function GlobalBanner() {
-  const location = useLocation();
-  const path = location.pathname;
-  if (path === "/" || path === "/auth" || path.startsWith("/p/")) return null;
-  return <DemoBanner />;
-}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -39,7 +29,6 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <CompanyProvider>
-              <GlobalBanner />
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/app" element={<Index />} />
@@ -49,7 +38,6 @@ const App = () => (
                 <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/usuarios" element={<ProtectedRoute><UsersAdmin /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
