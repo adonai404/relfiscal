@@ -130,8 +130,8 @@
 /* Print optimizations */
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 10mm;
+    size: A4 portrait;
+    margin: 8mm;
   }
   html, body {
     background: white !important;
@@ -161,20 +161,23 @@
     padding: 0 0 8px 0;
     margin-bottom: 10px;
   }
-  .print-title { font-size: 16pt; font-weight: 700; margin: 0; }
-  .print-sub { font-size: 9pt; color: #333; }
-  .print-qr { width: 110px; height: 110px; }
+  .print-title { font-size: 14pt; font-weight: 700; margin: 0; }
+  .print-sub { font-size: 8pt; color: #333; }
+  .print-qr { width: 90px; height: 90px; }
   .print-cards {
     display: flex !important;
     flex-wrap: wrap;
-    gap: 6px !important;
-    margin-bottom: 8px !important;
+    gap: 4px !important;
+    margin-bottom: 6px !important;
   }
   .print-cards > * { flex: 1 1 0; min-width: 0; }
-  .print-cards .text-xl { font-size: 11pt !important; }
-  .print-cards .text-xs { font-size: 7pt !important; }
-  table { font-size: 9pt; width: 100%; border-collapse: collapse; }
-  th, td { padding: 4px 6px !important; }
+  .print-cards .text-xl { font-size: 9pt !important; }
+  .print-cards .text-xs { font-size: 6pt !important; }
+  table { font-size: 7pt; width: 100%; border-collapse: collapse; table-layout: auto; }
+  th, td { padding: 2px 3px !important; white-space: nowrap; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  .print-container .overflow-x-auto { overflow: visible !important; }
   .print-footer {
     margin-top: 12px;
     font-size: 8pt;
