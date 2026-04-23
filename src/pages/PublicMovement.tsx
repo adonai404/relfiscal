@@ -13,6 +13,7 @@ import {
   isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
 import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
+import { formatCustomValue } from "@/lib/format";
 
 interface Company {
   id: string;
