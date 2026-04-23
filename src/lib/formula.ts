@@ -10,6 +10,7 @@
 export type FormulaToken =
   | { t: "col"; key: string }
   | { t: "num"; v: number }
+  | { t: "pct"; v: number }
   | { t: "op"; v: "+" | "-" | "*" | "/" }
   | { t: "lp" }
   | { t: "rp" };
@@ -24,6 +25,7 @@ export function tokenToText(tk: FormulaToken, labelOf: (key: string) => string):
   switch (tk.t) {
     case "col": return labelOf(tk.key);
     case "num": return String(tk.v);
+    case "pct": return `${tk.v}%`;
     case "op":  return ` ${tk.v} `;
     case "lp":  return "(";
     case "rp":  return ")";
@@ -54,7 +56,7 @@ export function validateFormula(f: Formula): string | null {
         if (t.v !== "-") return "Operador em posição inválida";
       }
     }
-    if ((t.t === "num" || t.t === "col") && prev && (prev.t === "num" || prev.t === "col" || prev.t === "rp")) {
+    if ((t.t === "num" || t.t === "col" || t.t === "pct") && prev && (prev.t === "num" || prev.t === "col" || prev.t === "pct" || prev.t === "rp")) {
       return "Faltando operador";
     }
   }
@@ -71,7 +73,7 @@ function toRPN(tokens: FormulaToken[]): FormulaToken[] {
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     const prev = tokens[i - 1];
-    if (t.t === "num" || t.t === "col") {
+    if (t.t === "num" || t.t === "col" || t.t === "pct") {
       out.push(t);
     } else if (t.t === "op") {
       // unary minus: insert 0 before it
@@ -108,6 +110,7 @@ export function evaluateFormula(
   const stack: number[] = [];
   for (const t of rpn) {
     if (t.t === "num") stack.push(t.v);
+    else if (t.t === "pct") stack.push(t.v / 100);
     else if (t.t === "col") stack.push(Number(resolve(t.key) || 0));
     else if (t.t === "op") {
       const b = stack.pop() ?? 0;

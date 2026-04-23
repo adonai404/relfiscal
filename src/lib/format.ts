@@ -5,6 +5,29 @@ export const brl = (n: number | null | undefined) =>
     minimumFractionDigits: 2,
   }).format(Number(n ?? 0));
 
+// Format a custom-column value as either currency (R$) or percentage (%).
+// For percent, the stored value is treated as a fraction (0.15 -> 15%).
+export const formatCustomValue = (
+  n: number | null | undefined,
+  format: "currency" | "percent" = "currency",
+  decimals = 2,
+) => {
+  const v = Number(n ?? 0);
+  if (format === "percent") {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "percent",
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(v);
+  }
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(v);
+};
+
 export const formatCNPJ = (cnpj: string) => {
   const d = (cnpj || "").replace(/\D/g, "").padStart(14, "0").slice(0, 14);
   return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");

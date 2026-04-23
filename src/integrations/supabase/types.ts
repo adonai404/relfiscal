@@ -133,6 +133,7 @@ export type Database = {
           company_id: string
           created_at: string
           decimals: number
+          format: string
           formula: Json
           id: string
           key: string
@@ -146,6 +147,7 @@ export type Database = {
           company_id: string
           created_at?: string
           decimals?: number
+          format?: string
           formula?: Json
           id?: string
           key: string
@@ -159,6 +161,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           decimals?: number
+          format?: string
           formula?: Json
           id?: string
           key?: string

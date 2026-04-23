@@ -13,6 +13,7 @@ import {
   isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
 import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
+import { formatCustomValue } from "@/lib/format";
 
 interface Company {
   id: string;
@@ -269,7 +270,7 @@ export default function PublicMovement() {
                         const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
                         return (
                           <TableCell key={cc.id} className="text-right whitespace-nowrap tabular-nums">
-                            {brl(resolver(cc.key))}
+                            {formatCustomValue(resolver(cc.key), cc.format, cc.decimals)}
                           </TableCell>
                         );
                       })}
@@ -284,7 +285,7 @@ export default function PublicMovement() {
                     ))}
                     {visibleCustom.map((cc) => (
                       <TableCell key={cc.id} className="text-right whitespace-nowrap tabular-nums">
-                        {brl(totals.byCol[cc.key] || 0)}
+                        {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
                       </TableCell>
                     ))}
                   </TableRow>

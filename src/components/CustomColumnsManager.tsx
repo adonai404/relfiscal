@@ -39,7 +39,10 @@ export function CustomColumnsManager({ companyId, config }: Props) {
     };
   }, [columns, config]);
 
-  const handleSave = async (data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number }, existing?: CustomColumn) => {
+  const handleSave = async (
+    data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number; format: "currency" | "percent" },
+    existing?: CustomColumn,
+  ) => {
     const label = data.label.trim();
     if (!label) return toast.error("Informe um nome para a coluna");
     if (data.kind === "formula") {
@@ -50,7 +53,7 @@ export function CustomColumnsManager({ companyId, config }: Props) {
       if (existing) {
         await updateMut.mutateAsync({
           id: existing.id,
-          patch: { label, kind: data.kind, formula: data.formula, decimals: data.decimals },
+          patch: { label, kind: data.kind, formula: data.formula, decimals: data.decimals, format: data.format },
         });
         toast.success("Coluna atualizada");
       } else {
@@ -60,7 +63,7 @@ export function CustomColumnsManager({ companyId, config }: Props) {
         let k = baseKey, i = 2;
         while (existingKeys.has(k)) { k = `${baseKey}_${i++}`; }
         await createMut.mutateAsync({
-          key: k, label, kind: data.kind, formula: data.formula, decimals: data.decimals,
+          key: k, label, kind: data.kind, formula: data.formula, decimals: data.decimals, format: data.format,
           position: columns.length,
         });
         toast.success("Coluna criada");
@@ -184,14 +187,16 @@ function ColumnEditor({
   columns: CustomColumn[];
   config: FiscalConfig | null | undefined;
   onClose: () => void;
-  onSave: (data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number }) => void;
+  onSave: (data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number; format: "currency" | "percent" }) => void;
   saving: boolean;
 }) {
   const [label, setLabel] = useState(existing?.label ?? "");
   const [kind, setKind] = useState<"manual" | "formula">(existing?.kind ?? "manual");
   const [tokens, setTokens] = useState<FormulaToken[]>(existing?.formula?.tokens ?? []);
   const [decimals, setDecimals] = useState<number>(existing?.decimals ?? 2);
+  const [format, setFormat] = useState<"currency" | "percent">(existing?.format ?? "currency");
   const [numInput, setNumInput] = useState("");
+  const [pctInput, setPctInput] = useState("");
 
   // Reset state when dialog re-opens with new target
   useMemo(() => {
@@ -200,7 +205,9 @@ function ColumnEditor({
       setKind(existing?.kind ?? "manual");
       setTokens(existing?.formula?.tokens ?? []);
       setDecimals(existing?.decimals ?? 2);
+      setFormat(existing?.format ?? "currency");
       setNumInput("");
+      setPctInput("");
     }
   }, [open, existing]);
 
@@ -260,16 +267,40 @@ function ColumnEditor({
             </RadioGroup>
           </div>
 
-          <div className="space-y-1.5 max-w-xs">
-            <Label htmlFor="col-decimals">Casas decimais</Label>
-            <Input
-              id="col-decimals"
-              type="number"
-              min={0}
-              max={6}
-              value={decimals}
-              onChange={(e) => setDecimals(Math.max(0, Math.min(6, parseInt(e.target.value || "0"))))}
-            />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="col-decimals">Casas decimais</Label>
+              <Input
+                id="col-decimals"
+                type="number"
+                min={0}
+                max={6}
+                value={decimals}
+                onChange={(e) => setDecimals(Math.max(0, Math.min(6, parseInt(e.target.value || "0"))))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Formato de exibição</Label>
+              <RadioGroup
+                value={format}
+                onValueChange={(v) => setFormat(v as "currency" | "percent")}
+                className="grid grid-cols-2 gap-2"
+              >
+                <label className={`flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm ${format === "currency" ? "border-primary bg-accent" : ""}`}>
+                  <RadioGroupItem value="currency" />
+                  <span>Moeda (R$)</span>
+                </label>
+                <label className={`flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm ${format === "percent" ? "border-primary bg-accent" : ""}`}>
+                  <RadioGroupItem value="percent" />
+                  <span>Porcentagem (%)</span>
+                </label>
+              </RadioGroup>
+              {format === "percent" && (
+                <p className="text-xs text-muted-foreground">
+                  Valores manuais devem ser informados como fração (ex: 0,15 = 15%) ou usando o botão "%" no construtor de fórmula.
+                </p>
+              )}
+            </div>
           </div>
 
           {kind === "formula" && (
@@ -326,25 +357,49 @@ function ColumnEditor({
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground">Inserir número</Label>
-                <div className="mt-1.5 flex gap-2">
-                  <Input
-                    inputMode="decimal"
-                    placeholder="Ex: 0.5"
-                    value={numInput}
-                    onChange={(e) => setNumInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const n = parseFloat(numInput.replace(",", "."));
-                        if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={() => {
-                    const n = parseFloat(numInput.replace(",", "."));
-                    if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
-                  }}>Inserir</Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Inserir número</Label>
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      inputMode="decimal"
+                      placeholder="Ex: 0,5"
+                      value={numInput}
+                      onChange={(e) => setNumInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const n = parseFloat(numInput.replace(",", "."));
+                          if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
+                        }
+                      }}
+                    />
+                    <Button type="button" onClick={() => {
+                      const n = parseFloat(numInput.replace(",", "."));
+                      if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
+                    }}>Inserir</Button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Inserir porcentagem (%)</Label>
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      inputMode="decimal"
+                      placeholder="Ex: 15  (= 15%)"
+                      value={pctInput}
+                      onChange={(e) => setPctInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const n = parseFloat(pctInput.replace(",", "."));
+                          if (!isNaN(n)) { push({ t: "pct", v: n }); setPctInput(""); }
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="secondary" onClick={() => {
+                      const n = parseFloat(pctInput.replace(",", "."));
+                      if (!isNaN(n)) { push({ t: "pct", v: n }); setPctInput(""); }
+                    }}>%</Button>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Ex: ICMS × 15% multiplica por 0,15.</p>
                 </div>
               </div>
 
@@ -363,7 +418,7 @@ function ColumnEditor({
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button
-            onClick={() => onSave({ label, kind, formula: { tokens }, decimals })}
+            onClick={() => onSave({ label, kind, formula: { tokens }, decimals, format })}
             disabled={saving || !label.trim() || (kind === "formula" && (!!error || tokens.length === 0))}
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

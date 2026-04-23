@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
-import { brl, displayCompetencia, formatCNPJ, parseBrNumber } from "@/lib/format";
+import { brl, displayCompetencia, formatCNPJ, parseBrNumber, formatCustomValue } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
@@ -426,7 +426,7 @@ export default function Movement() {
                           return (
                             <TableCell key={cc.id} className="p-1">
                               <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
-                                {brl(v)}
+                                {formatCustomValue(v, cc.format, cc.decimals)}
                               </div>
                             </TableCell>
                           );
@@ -465,7 +465,7 @@ export default function Movement() {
                       ))}
                       {visibleCustom.map((cc) => (
                         <TableCell key={cc.id} className="text-right whitespace-nowrap">
-                          {brl(totals.byCol[cc.key] || 0)}
+                          {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
                         </TableCell>
                       ))}
                       <TableCell className="no-print" />
