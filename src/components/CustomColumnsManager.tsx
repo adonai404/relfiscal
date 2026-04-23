@@ -187,14 +187,16 @@ function ColumnEditor({
   columns: CustomColumn[];
   config: FiscalConfig | null | undefined;
   onClose: () => void;
-  onSave: (data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number }) => void;
+  onSave: (data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number; format: "currency" | "percent" }) => void;
   saving: boolean;
 }) {
   const [label, setLabel] = useState(existing?.label ?? "");
   const [kind, setKind] = useState<"manual" | "formula">(existing?.kind ?? "manual");
   const [tokens, setTokens] = useState<FormulaToken[]>(existing?.formula?.tokens ?? []);
   const [decimals, setDecimals] = useState<number>(existing?.decimals ?? 2);
+  const [format, setFormat] = useState<"currency" | "percent">(existing?.format ?? "currency");
   const [numInput, setNumInput] = useState("");
+  const [pctInput, setPctInput] = useState("");
 
   // Reset state when dialog re-opens with new target
   useMemo(() => {
@@ -203,7 +205,9 @@ function ColumnEditor({
       setKind(existing?.kind ?? "manual");
       setTokens(existing?.formula?.tokens ?? []);
       setDecimals(existing?.decimals ?? 2);
+      setFormat(existing?.format ?? "currency");
       setNumInput("");
+      setPctInput("");
     }
   }, [open, existing]);
 
