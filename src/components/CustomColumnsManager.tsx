@@ -357,25 +357,49 @@ function ColumnEditor({
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground">Inserir número</Label>
-                <div className="mt-1.5 flex gap-2">
-                  <Input
-                    inputMode="decimal"
-                    placeholder="Ex: 0.5"
-                    value={numInput}
-                    onChange={(e) => setNumInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const n = parseFloat(numInput.replace(",", "."));
-                        if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={() => {
-                    const n = parseFloat(numInput.replace(",", "."));
-                    if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
-                  }}>Inserir</Button>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Inserir número</Label>
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      inputMode="decimal"
+                      placeholder="Ex: 0,5"
+                      value={numInput}
+                      onChange={(e) => setNumInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const n = parseFloat(numInput.replace(",", "."));
+                          if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
+                        }
+                      }}
+                    />
+                    <Button type="button" onClick={() => {
+                      const n = parseFloat(numInput.replace(",", "."));
+                      if (!isNaN(n)) { push({ t: "num", v: n }); setNumInput(""); }
+                    }}>Inserir</Button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Inserir porcentagem (%)</Label>
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      inputMode="decimal"
+                      placeholder="Ex: 15  (= 15%)"
+                      value={pctInput}
+                      onChange={(e) => setPctInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const n = parseFloat(pctInput.replace(",", "."));
+                          if (!isNaN(n)) { push({ t: "pct", v: n }); setPctInput(""); }
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="secondary" onClick={() => {
+                      const n = parseFloat(pctInput.replace(",", "."));
+                      if (!isNaN(n)) { push({ t: "pct", v: n }); setPctInput(""); }
+                    }}>%</Button>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Ex: ICMS × 15% multiplica por 0,15.</p>
                 </div>
               </div>
 
@@ -394,7 +418,7 @@ function ColumnEditor({
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button
-            onClick={() => onSave({ label, kind, formula: { tokens }, decimals })}
+            onClick={() => onSave({ label, kind, formula: { tokens }, decimals, format })}
             disabled={saving || !label.trim() || (kind === "formula" && (!!error || tokens.length === 0))}
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
