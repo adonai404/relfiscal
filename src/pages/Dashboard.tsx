@@ -142,7 +142,7 @@ export default function Dashboard() {
     const cargaTributaria = totals.saida > 0 ? totalImpostos / totals.saida : 0;
 
     // Per company aggregated
-    const perCompany = companies.map((c) => {
+    const perCompany = filteredCompanies.map((c) => {
       const ms = byCompany.get(c.id) ?? [];
       const t = ms.reduce(
         (a, m) => {
@@ -219,7 +219,7 @@ export default function Dashboard() {
       perCompany, ativas, inativas, topFaturamento, topCarga, menorCarga,
       porUf, serieFmt, composicao, saudaveis, alerta,
     };
-  }, [companies, movements]);
+  }, [filteredCompanies, movements]);
 
   if (loading || loadingCompanies || loadingMov) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -256,7 +256,7 @@ export default function Dashboard() {
           <KpiCard
             icon={<Building2 className="h-5 w-5" />}
             title="Empresas Monitoradas"
-            value={String(companies.length)}
+            value={String(filteredCompanies.length)}
             hint={`${metrics.ativas.length} ativas · ${metrics.inativas.length} sem dados`}
           />
           <KpiCard
