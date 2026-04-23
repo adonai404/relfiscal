@@ -12,6 +12,7 @@ import {
   type FiscalConfig, isColumnVisible, getColumnLabel,
   isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
+import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
 
 interface Company {
   id: string;
@@ -96,6 +97,18 @@ export default function PublicMovement() {
     [config]
   );
 
+  const { data: customCols = [] } = useCustomColumns(companyId);
+  const { data: customValues = [] } = useCustomColumnValues(companyId);
+  const valuesByMov = useMemo(() => {
+    const out: Record<string, Record<string, number>> = {};
+    customValues.forEach((v) => { (out[v.movement_id] ||= {})[v.column_id] = Number(v.value || 0); });
+    return out;
+  }, [customValues]);
+  const visibleCustom = useMemo(
+    () => [...customCols].filter((c) => c.visible).sort((a, b) => a.position - b.position),
+    [customCols]
+  );
+
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
     ALL_COLUMNS.forEach((c) => {
@@ -106,10 +119,18 @@ export default function PublicMovement() {
       }
     });
     if (byCol.saida) byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
+    visibleCustom.forEach((cc) => {
+      let s = 0;
+      rows.forEach((r) => {
+        const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
+        s += resolver(cc.key);
+      });
+      byCol[cc.key] = s;
+    });
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     return { byCol, totalImpostos, totalSimples, economia: totalImpostos - totalSimples };
-  }, [rows]);
+  }, [rows, visibleCustom, customCols, valuesByMov]);
 
   const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
   const showSimplesCard = isColumnVisible(config ?? undefined, "simples_nacional");
@@ -227,6 +248,9 @@ export default function PublicMovement() {
                         {getColumnLabel(config ?? undefined, c)}
                       </TableHead>
                     ))}
+                    {visibleCustom.map((cc) => (
+                      <TableHead key={cc.id} className="text-right whitespace-nowrap">{cc.label}</TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -241,6 +265,14 @@ export default function PublicMovement() {
                           </TableCell>
                         );
                       })}
+                      {visibleCustom.map((cc) => {
+                        const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
+                        return (
+                          <TableCell key={cc.id} className="text-right whitespace-nowrap tabular-nums">
+                            {brl(resolver(cc.key))}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))}
                   <TableRow className="font-semibold bg-muted/50">
@@ -248,6 +280,11 @@ export default function PublicMovement() {
                     {visibleCols.map((c) => (
                       <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
                         {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                      </TableCell>
+                    ))}
+                    {visibleCustom.map((cc) => (
+                      <TableCell key={cc.id} className="text-right whitespace-nowrap tabular-nums">
+                        {brl(totals.byCol[cc.key] || 0)}
                       </TableCell>
                     ))}
                   </TableRow>

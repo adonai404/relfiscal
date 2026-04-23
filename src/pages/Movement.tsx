@@ -23,6 +23,10 @@ import {
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
+import {
+  type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
+  buildRowResolver,
+} from "@/hooks/useCustomColumns";
 
 interface MovementRow {
   id: string;
@@ -58,6 +62,23 @@ export default function Movement() {
 
   const companyId = selectedCompany?.id;
   const { data: config } = useFiscalConfig(companyId);
+  const { data: customCols = [] } = useCustomColumns(companyId);
+  const { data: customValues = [] } = useCustomColumnValues(companyId);
+  const upsertCustom = useUpsertCustomValue(companyId);
+
+  // Map: movement_id -> column_id -> value
+  const valuesByMov = useMemo(() => {
+    const out: Record<string, Record<string, number>> = {};
+    customValues.forEach((v) => {
+      (out[v.movement_id] ||= {})[v.column_id] = Number(v.value || 0);
+    });
+    return out;
+  }, [customValues]);
+
+  const visibleCustom: CustomColumn[] = useMemo(
+    () => [...customCols].filter((c) => c.visible).sort((a, b) => a.position - b.position),
+    [customCols]
+  );
 
   const { data: rawRows = [], isLoading } = useQuery({
     queryKey: ["fiscal_movement", companyId],
@@ -95,7 +116,8 @@ export default function Movement() {
     if (entries.length > 0) {
       r = r.filter((row) => {
         for (const [col, f] of entries) {
-          const val = computeColumnValue(row, col as ColumnKey);
+          const resolver = buildRowResolver(row, customCols, valuesByMov[row.id] ?? {});
+          const val = resolver(col);
           const a = parseBrNumber(f.a);
           const b = parseBrNumber(f.b);
           if (f.op === "gte" && f.a !== "" && !(val >= a)) return false;
@@ -107,7 +129,7 @@ export default function Movement() {
       });
     }
     return r;
-  }, [computedRows, period, colFilters]);
+  }, [computedRows, period, colFilters, customCols, valuesByMov]);
 
   const filtersActive = !!(period.from || period.to) || Object.keys(colFilters).length > 0;
   const clearAllFilters = () => { setPeriod({ from: "", to: "" }); setColFilters({}); };
@@ -171,11 +193,20 @@ export default function Movement() {
     if (byCol.saida) {
       byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
     }
+    // Sum custom columns: per-row evaluation, then sum
+    visibleCustom.forEach((cc) => {
+      let s = 0;
+      rows.forEach((r) => {
+        const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
+        s += resolver(cc.key);
+      });
+      byCol[cc.key] = s;
+    });
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
     return { byCol, totalImpostos, totalSimples, economia };
-  }, [rows]);
+  }, [rows, visibleCustom, customCols, valuesByMov]);
 
   // Card visibility rules
   const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
@@ -344,13 +375,21 @@ export default function Movement() {
                         </TableHead>
                       );
                     })}
+                    {visibleCustom.map((cc) => (
+                      <TableHead key={cc.id} className="text-right whitespace-nowrap">
+                        <span>{cc.label}</span>
+                        {cc.kind === "formula" && (
+                          <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
+                        )}
+                      </TableHead>
+                    ))}
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={visibleCols.length + 2} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={visibleCols.length + visibleCustom.length + 2} className="text-center text-muted-foreground py-8">
                         {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
@@ -379,6 +418,29 @@ export default function Movement() {
                           </TableCell>
                         );
                       })}
+                      {visibleCustom.map((cc) => {
+                        const valuesForRow = valuesByMov[r.id] ?? {};
+                        if (cc.kind === "formula") {
+                          const resolver = buildRowResolver(r, customCols, valuesForRow);
+                          const v = resolver(cc.key);
+                          return (
+                            <TableCell key={cc.id} className="p-1">
+                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
+                                {brl(v)}
+                              </div>
+                            </TableCell>
+                          );
+                        }
+                        const current = Number(valuesForRow[cc.id] ?? 0);
+                        return (
+                          <TableCell key={cc.id} className="p-1">
+                            <CellEditor
+                              value={current}
+                              onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: cc.id, value: v })}
+                            />
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="no-print">
                         <Button
                           variant="ghost"
@@ -399,6 +461,11 @@ export default function Movement() {
                       {visibleCols.map((c) => (
                         <TableCell key={c} className="text-right whitespace-nowrap">
                           {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                        </TableCell>
+                      ))}
+                      {visibleCustom.map((cc) => (
+                        <TableCell key={cc.id} className="text-right whitespace-nowrap">
+                          {brl(totals.byCol[cc.key] || 0)}
                         </TableCell>
                       ))}
                       <TableCell className="no-print" />
