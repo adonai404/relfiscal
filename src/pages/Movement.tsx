@@ -62,6 +62,23 @@ export default function Movement() {
 
   const companyId = selectedCompany?.id;
   const { data: config } = useFiscalConfig(companyId);
+  const { data: customCols = [] } = useCustomColumns(companyId);
+  const { data: customValues = [] } = useCustomColumnValues(companyId);
+  const upsertCustom = useUpsertCustomValue(companyId);
+
+  // Map: movement_id -> column_id -> value
+  const valuesByMov = useMemo(() => {
+    const out: Record<string, Record<string, number>> = {};
+    customValues.forEach((v) => {
+      (out[v.movement_id] ||= {})[v.column_id] = Number(v.value || 0);
+    });
+    return out;
+  }, [customValues]);
+
+  const visibleCustom: CustomColumn[] = useMemo(
+    () => [...customCols].filter((c) => c.visible).sort((a, b) => a.position - b.position),
+    [customCols]
+  );
 
   const { data: rawRows = [], isLoading } = useQuery({
     queryKey: ["fiscal_movement", companyId],
@@ -99,7 +116,8 @@ export default function Movement() {
     if (entries.length > 0) {
       r = r.filter((row) => {
         for (const [col, f] of entries) {
-          const val = computeColumnValue(row, col as ColumnKey);
+          const resolver = buildRowResolver(row, customCols, valuesByMov[row.id] ?? {});
+          const val = resolver(col);
           const a = parseBrNumber(f.a);
           const b = parseBrNumber(f.b);
           if (f.op === "gte" && f.a !== "" && !(val >= a)) return false;
@@ -111,7 +129,7 @@ export default function Movement() {
       });
     }
     return r;
-  }, [computedRows, period, colFilters]);
+  }, [computedRows, period, colFilters, customCols, valuesByMov]);
 
   const filtersActive = !!(period.from || period.to) || Object.keys(colFilters).length > 0;
   const clearAllFilters = () => { setPeriod({ from: "", to: "" }); setColFilters({}); };
