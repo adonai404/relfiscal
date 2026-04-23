@@ -460,15 +460,15 @@ export default function Movement() {
                     </TableRow>
                   ))}
                   {rows.length > 0 && (
-                    <TableRow className="font-semibold bg-muted/50">
-                      <TableCell className="sticky left-0 bg-muted/50">TOTAL</TableCell>
+                    <TableRow className="total-row font-semibold">
+                      <TableCell data-col-cat="competencia" className="sticky left-0">TOTAL</TableCell>
                       {visibleCols.map((c) => (
-                        <TableCell key={c} className="text-right whitespace-nowrap">
+                        <TableCell key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
                           {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
                         </TableCell>
                       ))}
                       {visibleCustom.map((cc) => (
-                        <TableCell key={cc.id} className="text-right whitespace-nowrap">
+                        <TableCell key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">
                           {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
                         </TableCell>
                       ))}
