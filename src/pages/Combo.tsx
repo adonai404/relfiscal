@@ -233,9 +233,9 @@ export default function Combo() {
   const selectAll = () => setSelectedIds(filteredCompanies.map((c) => c.id));
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
+    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
@@ -257,7 +257,7 @@ export default function Combo() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[300px_1fr]">
+      <main className="grid w-full gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_1fr]">
         {/* Sidebar - selector */}
         <Card className="h-fit lg:sticky lg:top-4">
           <CardHeader className="pb-3">

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +40,13 @@ export default function Companies() {
   const [search, setSearch] = useState("");
   const [toDelete, setToDelete] = useState<typeof companies[number] | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "table">(
+    () => (typeof window !== "undefined" && (localStorage.getItem("companies:view") as any)) || "grid"
+  );
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("companies:view", viewMode);
+  }, [viewMode]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -92,9 +101,9 @@ export default function Companies() {
     : companies;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
+    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-semibold">Selecionar Empresa</h1>
@@ -120,7 +129,7 @@ export default function Companies() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="w-full px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Suas empresas</h2>
@@ -178,14 +187,33 @@ export default function Companies() {
           )}
         </div>
 
-        <div className="mb-4 relative max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar por nome, CNPJ, UF ou regime..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative w-full max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar por nome, CNPJ, UF ou regime..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              {filtered.length} {filtered.length === 1 ? "empresa" : "empresas"}
+            </span>
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && setViewMode(v as any)}
+              variant="outline"
+              size="sm"
+              aria-label="Modo de visualização"
+            >
+              <ToggleGroupItem value="grid" aria-label="Cartões"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="Lista"><Rows3 className="h-4 w-4" /></ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Tabela"><List className="h-4 w-4" /></ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
 
         {loadingCompanies ? (
@@ -202,8 +230,8 @@ export default function Companies() {
               Nenhuma empresa encontrada para "{search}".
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ) : viewMode === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
               const canDelete = isSuperAdmin || (c as any).created_by === user.id;
@@ -255,6 +283,112 @@ export default function Companies() {
                 </Card>
               );
             })}
+          </div>
+        ) : viewMode === "list" ? (
+          <div className="flex flex-col divide-y rounded-lg border bg-card">
+            {filtered.map((c) => {
+              const regime = (c as any).regime as string | undefined;
+              const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => select(c)}
+                  className="group flex cursor-pointer items-center gap-4 px-4 py-3 transition hover:bg-accent/50"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-medium">{c.nome_fantasia}</span>
+                      {regime && <Badge variant="secondary" className="shrink-0">{regimeLabels[regime] ?? regime}</Badge>}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {c.razao_social} · CNPJ {formatCNPJ(c.cnpj)} · {c.uf}
+                    </div>
+                    <div className="mt-1"><CompanyTagsChips companyId={c.id} /></div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <CompanyTagsPicker
+                      companyId={c.id}
+                      trigger={
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
+                          <TagIcon className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => setToDelete(c)}
+                        aria-label="Excluir empresa"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome Fantasia</TableHead>
+                  <TableHead>Razão Social</TableHead>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead className="w-16">UF</TableHead>
+                  <TableHead>Regime</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead className="w-28 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((c) => {
+                  const regime = (c as any).regime as string | undefined;
+                  const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+                  return (
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => select(c)}>
+                      <TableCell className="font-medium">{c.nome_fantasia}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.razao_social}</TableCell>
+                      <TableCell className="font-mono text-xs">{formatCNPJ(c.cnpj)}</TableCell>
+                      <TableCell>{c.uf}</TableCell>
+                      <TableCell>
+                        {regime && <Badge variant="secondary">{regimeLabels[regime] ?? regime}</Badge>}
+                      </TableCell>
+                      <TableCell><CompanyTagsChips companyId={c.id} /></TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <CompanyTagsPicker
+                            companyId={c.id}
+                            trigger={
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
+                                <TagIcon className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => setToDelete(c)}
+                              aria-label="Excluir empresa"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
       </main>
