@@ -375,13 +375,21 @@ export default function Movement() {
                         </TableHead>
                       );
                     })}
+                    {visibleCustom.map((cc) => (
+                      <TableHead key={cc.id} className="text-right whitespace-nowrap">
+                        <span>{cc.label}</span>
+                        {cc.kind === "formula" && (
+                          <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
+                        )}
+                      </TableHead>
+                    ))}
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={visibleCols.length + 2} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={visibleCols.length + visibleCustom.length + 2} className="text-center text-muted-foreground py-8">
                         {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
@@ -410,6 +418,29 @@ export default function Movement() {
                           </TableCell>
                         );
                       })}
+                      {visibleCustom.map((cc) => {
+                        const valuesForRow = valuesByMov[r.id] ?? {};
+                        if (cc.kind === "formula") {
+                          const resolver = buildRowResolver(r, customCols, valuesForRow);
+                          const v = resolver(cc.key);
+                          return (
+                            <TableCell key={cc.id} className="p-1">
+                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
+                                {brl(v)}
+                              </div>
+                            </TableCell>
+                          );
+                        }
+                        const current = Number(valuesForRow[cc.id] ?? 0);
+                        return (
+                          <TableCell key={cc.id} className="p-1">
+                            <CellEditor
+                              value={current}
+                              onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: cc.id, value: v })}
+                            />
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="no-print">
                         <Button
                           variant="ghost"
@@ -430,6 +461,11 @@ export default function Movement() {
                       {visibleCols.map((c) => (
                         <TableCell key={c} className="text-right whitespace-nowrap">
                           {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                        </TableCell>
+                      ))}
+                      {visibleCustom.map((cc) => (
+                        <TableCell key={cc.id} className="text-right whitespace-nowrap">
+                          {brl(totals.byCol[cc.key] || 0)}
                         </TableCell>
                       ))}
                       <TableCell className="no-print" />
