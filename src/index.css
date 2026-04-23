@@ -226,6 +226,37 @@
     page-break-inside: avoid;
     break-inside: avoid;
   }
+  tr.font-semibold td, tr[class*="bg-muted"] td {
+    background: #eee !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Remove sticky em impressão (estava sobrepondo / cortando colunas) */
+  .print-container [class*="sticky"] {
+    position: static !important;
+  }
+  /* Botões e inputs dentro das células: renderizam como texto preto */
+  .print-container td button,
+  .print-container td input {
+    color: black !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: right !important;
+    font: inherit !important;
+    display: block !important;
+  }
+  /* Cards de resumo: mantém leve diferenciação com borda */
+  .print-cards [class*="card"], .print-cards .rounded-lg {
+    border: 0.5px solid #999 !important;
+    background: white !important;
+  }
+  /* Cabeçalho da impressão: garante texto preto */
+  .print-header, .print-header * {
+    color: black !important;
+  }
   thead { display: table-header-group; }
   tfoot { display: table-footer-group; }
   tr { page-break-inside: avoid; }
