@@ -193,11 +193,20 @@ export default function Movement() {
     if (byCol.saida) {
       byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
     }
+    // Sum custom columns: per-row evaluation, then sum
+    visibleCustom.forEach((cc) => {
+      let s = 0;
+      rows.forEach((r) => {
+        const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
+        s += resolver(cc.key);
+      });
+      byCol[cc.key] = s;
+    });
     const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
     return { byCol, totalImpostos, totalSimples, economia };
-  }, [rows]);
+  }, [rows, visibleCustom, customCols, valuesByMov]);
 
   // Card visibility rules
   const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
