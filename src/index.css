@@ -141,6 +141,39 @@
   .fiscal-table thead th {
     border-bottom: 2px solid hsl(var(--border));
     background: hsl(var(--muted) / 0.6);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  /* Fundo opaco no cabeçalho para não vazar conteúdo ao rolar.
+   * As tints por categoria continuam aplicadas por cima via data-col-cat. */
+  .fiscal-table thead tr::after {
+    content: "";
+  }
+  .fiscal-table thead th[data-col-cat] {
+    background-color: hsl(var(--card));
+  }
+  .fiscal-table thead th[data-col-cat="entrada"]    { background-color: color-mix(in hsl, hsl(var(--success)) 12%, hsl(var(--card))); }
+  .fiscal-table thead th[data-col-cat="saida"]      { background-color: color-mix(in hsl, hsl(var(--primary)) 10%, hsl(var(--card))); }
+  .fiscal-table thead th[data-col-cat="tax"]        { background-color: color-mix(in hsl, hsl(var(--warning)) 12%, hsl(var(--card))); }
+  .fiscal-table thead th[data-col-cat="simples"]    { background-color: hsl(var(--accent)); }
+  .fiscal-table thead th[data-col-cat="aliquota"]   { background-color: hsl(var(--muted)); }
+  .fiscal-table thead th[data-col-cat="payroll"]    { background-color: hsl(var(--secondary)); }
+  .fiscal-table thead th[data-col-cat="custom"]     { background-color: color-mix(in hsl, hsl(var(--primary-glow)) 10%, hsl(var(--card))); }
+  .fiscal-table thead th[data-col-cat="competencia"]{ background-color: hsl(var(--muted)); }
+
+  /* Cabeçalho da Competência: sticky em duas direções (topo + esquerda) */
+  .fiscal-table thead th.sticky.left-0 {
+    z-index: 30;
+  }
+  /* Célula de competência no corpo continua sticky à esquerda */
+  .fiscal-table tbody td.sticky.left-0,
+  .fiscal-table tr.total-row td.sticky.left-0 {
+    background-color: hsl(var(--card));
+    z-index: 10;
+  }
+  .fiscal-table tr.total-row td.sticky.left-0 {
+    background-color: hsl(var(--muted));
   }
 
   /* Tints de coluna — aplicados em <th> e <td> via data-col-cat */
