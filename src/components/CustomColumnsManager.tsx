@@ -267,16 +267,40 @@ function ColumnEditor({
             </RadioGroup>
           </div>
 
-          <div className="space-y-1.5 max-w-xs">
-            <Label htmlFor="col-decimals">Casas decimais</Label>
-            <Input
-              id="col-decimals"
-              type="number"
-              min={0}
-              max={6}
-              value={decimals}
-              onChange={(e) => setDecimals(Math.max(0, Math.min(6, parseInt(e.target.value || "0"))))}
-            />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="col-decimals">Casas decimais</Label>
+              <Input
+                id="col-decimals"
+                type="number"
+                min={0}
+                max={6}
+                value={decimals}
+                onChange={(e) => setDecimals(Math.max(0, Math.min(6, parseInt(e.target.value || "0"))))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Formato de exibição</Label>
+              <RadioGroup
+                value={format}
+                onValueChange={(v) => setFormat(v as "currency" | "percent")}
+                className="grid grid-cols-2 gap-2"
+              >
+                <label className={`flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm ${format === "currency" ? "border-primary bg-accent" : ""}`}>
+                  <RadioGroupItem value="currency" />
+                  <span>Moeda (R$)</span>
+                </label>
+                <label className={`flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm ${format === "percent" ? "border-primary bg-accent" : ""}`}>
+                  <RadioGroupItem value="percent" />
+                  <span>Porcentagem (%)</span>
+                </label>
+              </RadioGroup>
+              {format === "percent" && (
+                <p className="text-xs text-muted-foreground">
+                  Valores manuais devem ser informados como fração (ex: 0,15 = 15%) ou usando o botão "%" no construtor de fórmula.
+                </p>
+              )}
+            </div>
           </div>
 
           {kind === "formula" && (
