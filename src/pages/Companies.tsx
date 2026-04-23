@@ -230,8 +230,8 @@ export default function Companies() {
               Nenhuma empresa encontrada para "{search}".
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        ) : viewMode === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
               const canDelete = isSuperAdmin || (c as any).created_by === user.id;
@@ -283,6 +283,112 @@ export default function Companies() {
                 </Card>
               );
             })}
+          </div>
+        ) : viewMode === "list" ? (
+          <div className="flex flex-col divide-y rounded-lg border bg-card">
+            {filtered.map((c) => {
+              const regime = (c as any).regime as string | undefined;
+              const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => select(c)}
+                  className="group flex cursor-pointer items-center gap-4 px-4 py-3 transition hover:bg-accent/50"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-medium">{c.nome_fantasia}</span>
+                      {regime && <Badge variant="secondary" className="shrink-0">{regimeLabels[regime] ?? regime}</Badge>}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {c.razao_social} · CNPJ {formatCNPJ(c.cnpj)} · {c.uf}
+                    </div>
+                    <div className="mt-1"><CompanyTagsChips companyId={c.id} /></div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <CompanyTagsPicker
+                      companyId={c.id}
+                      trigger={
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
+                          <TagIcon className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => setToDelete(c)}
+                        aria-label="Excluir empresa"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome Fantasia</TableHead>
+                  <TableHead>Razão Social</TableHead>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead className="w-16">UF</TableHead>
+                  <TableHead>Regime</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead className="w-28 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((c) => {
+                  const regime = (c as any).regime as string | undefined;
+                  const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+                  return (
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => select(c)}>
+                      <TableCell className="font-medium">{c.nome_fantasia}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.razao_social}</TableCell>
+                      <TableCell className="font-mono text-xs">{formatCNPJ(c.cnpj)}</TableCell>
+                      <TableCell>{c.uf}</TableCell>
+                      <TableCell>
+                        {regime && <Badge variant="secondary">{regimeLabels[regime] ?? regime}</Badge>}
+                      </TableCell>
+                      <TableCell><CompanyTagsChips companyId={c.id} /></TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <CompanyTagsPicker
+                            companyId={c.id}
+                            trigger={
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
+                                <TagIcon className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => setToDelete(c)}
+                              aria-label="Excluir empresa"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
       </main>
