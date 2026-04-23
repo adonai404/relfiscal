@@ -19,6 +19,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BatchImportDialog } from "@/components/BatchImportDialog";
 import { formatCNPJ } from "@/lib/format";
+import { CompanyTagsPicker, CompanyTagsChips } from "@/components/CompanyTagsPicker";
+import { Tag as TagIcon } from "lucide-react";
 
 export default function Companies() {
   const { user, loading, signOut } = useAuth();
@@ -217,6 +219,20 @@ export default function Companies() {
                         {regime && (
                           <Badge variant="secondary">{regimeLabels[regime] ?? regime}</Badge>
                         )}
+                        <CompanyTagsPicker
+                          companyId={c.id}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="Gerenciar tags"
+                            >
+                              <TagIcon className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
                         {canDelete && (
                           <Button
                             variant="ghost"
@@ -234,6 +250,7 @@ export default function Companies() {
                   <CardContent className="text-sm text-muted-foreground space-y-1">
                     <div>CNPJ: {formatCNPJ(c.cnpj)}</div>
                     <div>UF: {c.uf}</div>
+                    <div className="pt-1"><CompanyTagsChips companyId={c.id} /></div>
                   </CardContent>
                 </Card>
               );
