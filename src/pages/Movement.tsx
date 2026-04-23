@@ -23,6 +23,10 @@ import {
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent,
 } from "@/hooks/useFiscalConfig";
+import {
+  type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
+  buildRowResolver,
+} from "@/hooks/useCustomColumns";
 
 interface MovementRow {
   id: string;
