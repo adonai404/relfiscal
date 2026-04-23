@@ -39,7 +39,10 @@ export function CustomColumnsManager({ companyId, config }: Props) {
     };
   }, [columns, config]);
 
-  const handleSave = async (data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number }, existing?: CustomColumn) => {
+  const handleSave = async (
+    data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number; format: "currency" | "percent" },
+    existing?: CustomColumn,
+  ) => {
     const label = data.label.trim();
     if (!label) return toast.error("Informe um nome para a coluna");
     if (data.kind === "formula") {
@@ -50,7 +53,7 @@ export function CustomColumnsManager({ companyId, config }: Props) {
       if (existing) {
         await updateMut.mutateAsync({
           id: existing.id,
-          patch: { label, kind: data.kind, formula: data.formula, decimals: data.decimals },
+          patch: { label, kind: data.kind, formula: data.formula, decimals: data.decimals, format: data.format },
         });
         toast.success("Coluna atualizada");
       } else {
@@ -60,7 +63,7 @@ export function CustomColumnsManager({ companyId, config }: Props) {
         let k = baseKey, i = 2;
         while (existingKeys.has(k)) { k = `${baseKey}_${i++}`; }
         await createMut.mutateAsync({
-          key: k, label, kind: data.kind, formula: data.formula, decimals: data.decimals,
+          key: k, label, kind: data.kind, formula: data.formula, decimals: data.decimals, format: data.format,
           position: columns.length,
         });
         toast.success("Coluna criada");
