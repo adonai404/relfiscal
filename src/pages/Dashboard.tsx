@@ -19,6 +19,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
+import { useTags, useCompanyTags } from "@/hooks/useTags";
+import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
+import { X } from "lucide-react";
 
 interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
 interface MovementLite {
@@ -44,6 +47,10 @@ export default function Dashboard() {
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  const { data: tags = [] } = useTags();
+  const { data: companyTagLinks = [] } = useCompanyTags();
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ["dashboard_companies"],
@@ -57,7 +64,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: rawMovements = [], isLoading: loadingMov } = useQuery({
+  const { data: allMovements = [], isLoading: loadingMov } = useQuery({
     queryKey: ["dashboard_movements"],
     enabled: !!user,
     queryFn: async () => {
@@ -68,6 +75,25 @@ export default function Dashboard() {
       return (data ?? []) as MovementLite[];
     },
   });
+
+  // Filter companies by selected tags (OR / multi-select)
+  const filteredCompanyIds = useMemo(() => {
+    if (selectedTagIds.length === 0) return new Set(companies.map((c) => c.id));
+    const sel = new Set(selectedTagIds);
+    const ids = new Set<string>();
+    companyTagLinks.forEach((ct) => { if (sel.has(ct.tag_id)) ids.add(ct.company_id); });
+    return ids;
+  }, [companies, companyTagLinks, selectedTagIds]);
+
+  const filteredCompanies = useMemo(
+    () => companies.filter((c) => filteredCompanyIds.has(c.id)),
+    [companies, filteredCompanyIds]
+  );
+
+  const rawMovements = useMemo(
+    () => allMovements.filter((m) => filteredCompanyIds.has(m.company_id)),
+    [allMovements, filteredCompanyIds]
+  );
 
   const availableComps = useMemo(
     () => Array.from(new Set(rawMovements.map((m) => m.competencia))).sort(),
