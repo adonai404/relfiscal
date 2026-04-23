@@ -187,14 +187,33 @@ export default function Companies() {
           )}
         </div>
 
-        <div className="mb-4 relative max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar por nome, CNPJ, UF ou regime..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative w-full max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar por nome, CNPJ, UF ou regime..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              {filtered.length} {filtered.length === 1 ? "empresa" : "empresas"}
+            </span>
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && setViewMode(v as any)}
+              variant="outline"
+              size="sm"
+              aria-label="Modo de visualização"
+            >
+              <ToggleGroupItem value="grid" aria-label="Cartões"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="Lista"><Rows3 className="h-4 w-4" /></ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Tabela"><List className="h-4 w-4" /></ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
 
         {loadingCompanies ? (
