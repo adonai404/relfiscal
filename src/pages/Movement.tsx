@@ -234,6 +234,15 @@ export default function Movement() {
           <div className="print-sub">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
           <div className="print-sub">Movimento Fiscal · gerado em {new Date().toLocaleString("pt-BR")}</div>
         </div>
+        <img
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+            `${window.location.origin}/p/${selectedCompany.slug}`
+          )}`}
+          alt="QR Code do painel público"
+          className="print-qr"
+          width={110}
+          height={110}
+        />
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-6 print-main">
