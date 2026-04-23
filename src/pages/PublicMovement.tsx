@@ -10,7 +10,7 @@ import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   type FiscalConfig, isColumnVisible, getColumnLabel,
-  isComputedColumn, computeColumnValue, formatPercent,
+  isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
 } from "@/hooks/useFiscalConfig";
 import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
 import { formatCustomValue } from "@/lib/format";
@@ -240,28 +240,28 @@ export default function PublicMovement() {
             ) : rows.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhuma competência registrada.</p>
             ) : (
-              <Table>
+              <Table className="fiscal-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{config?.label_competencia ?? "Competência"}</TableHead>
+                    <TableHead data-col-cat="competencia">{config?.label_competencia ?? "Competência"}</TableHead>
                     {visibleCols.map((c) => (
-                      <TableHead key={c} className="text-right whitespace-nowrap">
+                      <TableHead key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
                         {getColumnLabel(config ?? undefined, c)}
                       </TableHead>
                     ))}
                     {visibleCustom.map((cc) => (
-                      <TableHead key={cc.id} className="text-right whitespace-nowrap">{cc.label}</TableHead>
+                      <TableHead key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">{cc.label}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="font-medium">{displayCompetencia(r.competencia)}</TableCell>
+                      <TableCell data-col-cat="competencia" className="font-medium">{displayCompetencia(r.competencia)}</TableCell>
                       {visibleCols.map((c) => {
                         const value = computeColumnValue(r, c);
                         return (
-                          <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
+                          <TableCell key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap tabular-nums">
                             {isComputedColumn(c) ? formatPercent(value) : brl(value)}
                           </TableCell>
                         );
@@ -269,22 +269,22 @@ export default function PublicMovement() {
                       {visibleCustom.map((cc) => {
                         const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
                         return (
-                          <TableCell key={cc.id} className="text-right whitespace-nowrap tabular-nums">
+                          <TableCell key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap tabular-nums">
                             {formatCustomValue(resolver(cc.key), cc.format, cc.decimals)}
                           </TableCell>
                         );
                       })}
                     </TableRow>
                   ))}
-                  <TableRow className="font-semibold bg-muted/50">
-                    <TableCell>TOTAL</TableCell>
+                  <TableRow className="total-row font-semibold">
+                    <TableCell data-col-cat="competencia">TOTAL</TableCell>
                     {visibleCols.map((c) => (
-                      <TableCell key={c} className="text-right whitespace-nowrap tabular-nums">
+                      <TableCell key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap tabular-nums">
                         {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
                       </TableCell>
                     ))}
                     {visibleCustom.map((cc) => (
-                      <TableCell key={cc.id} className="text-right whitespace-nowrap tabular-nums">
+                      <TableCell key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap tabular-nums">
                         {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
                       </TableCell>
                     ))}
