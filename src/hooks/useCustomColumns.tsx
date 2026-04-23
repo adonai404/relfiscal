@@ -12,6 +12,7 @@ export interface CustomColumn {
   position: number;
   visible: boolean;
   decimals: number;
+  format: "currency" | "percent";
 }
 
 export interface CustomColumnValue {
@@ -82,7 +83,7 @@ export function useCreateCustomColumn(companyId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
-      key: string; label: string; kind: "manual" | "formula"; formula?: Formula; position?: number; decimals?: number;
+      key: string; label: string; kind: "manual" | "formula"; formula?: Formula; position?: number; decimals?: number; format?: "currency" | "percent";
     }) => {
       if (!companyId) throw new Error("Empresa não selecionada");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,6 +95,7 @@ export function useCreateCustomColumn(companyId: string | undefined) {
         formula: input.formula ?? { tokens: [] },
         position: input.position ?? 0,
         decimals: input.decimals ?? 2,
+        format: input.format ?? "currency",
         visible: true,
       });
       if (error) throw error;
