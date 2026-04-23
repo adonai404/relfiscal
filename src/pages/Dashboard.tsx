@@ -19,6 +19,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
+import { useTags, useCompanyTags } from "@/hooks/useTags";
+import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
+import { X } from "lucide-react";
 
 interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
 interface MovementLite {
@@ -44,6 +47,10 @@ export default function Dashboard() {
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  const { data: tags = [] } = useTags();
+  const { data: companyTagLinks = [] } = useCompanyTags();
 
   const { data: companies = [], isLoading: loadingCompanies } = useQuery({
     queryKey: ["dashboard_companies"],
@@ -57,7 +64,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: rawMovements = [], isLoading: loadingMov } = useQuery({
+  const { data: allMovements = [], isLoading: loadingMov } = useQuery({
     queryKey: ["dashboard_movements"],
     enabled: !!user,
     queryFn: async () => {
@@ -68,6 +75,25 @@ export default function Dashboard() {
       return (data ?? []) as MovementLite[];
     },
   });
+
+  // Filter companies by selected tags (OR / multi-select)
+  const filteredCompanyIds = useMemo(() => {
+    if (selectedTagIds.length === 0) return new Set(companies.map((c) => c.id));
+    const sel = new Set(selectedTagIds);
+    const ids = new Set<string>();
+    companyTagLinks.forEach((ct) => { if (sel.has(ct.tag_id)) ids.add(ct.company_id); });
+    return ids;
+  }, [companies, companyTagLinks, selectedTagIds]);
+
+  const filteredCompanies = useMemo(
+    () => companies.filter((c) => filteredCompanyIds.has(c.id)),
+    [companies, filteredCompanyIds]
+  );
+
+  const rawMovements = useMemo(
+    () => allMovements.filter((m) => filteredCompanyIds.has(m.company_id)),
+    [allMovements, filteredCompanyIds]
+  );
 
   const availableComps = useMemo(
     () => Array.from(new Set(rawMovements.map((m) => m.competencia))).sort(),
@@ -116,7 +142,7 @@ export default function Dashboard() {
     const cargaTributaria = totals.saida > 0 ? totalImpostos / totals.saida : 0;
 
     // Per company aggregated
-    const perCompany = companies.map((c) => {
+    const perCompany = filteredCompanies.map((c) => {
       const ms = byCompany.get(c.id) ?? [];
       const t = ms.reduce(
         (a, m) => {
@@ -193,7 +219,7 @@ export default function Dashboard() {
       perCompany, ativas, inativas, topFaturamento, topCarga, menorCarga,
       porUf, serieFmt, composicao, saudaveis, alerta,
     };
-  }, [companies, movements]);
+  }, [filteredCompanies, movements]);
 
   if (loading || loadingCompanies || loadingMov) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -225,12 +251,46 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
+        {/* Tag filter */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
+            <span className="text-xs font-medium text-muted-foreground">Filtrar por tag:</span>
+            {tags.map((t) => {
+              const active = selectedTagIds.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedTagIds((prev) =>
+                    prev.includes(t.id) ? prev.filter((id) => id !== t.id) : [...prev, t.id]
+                  )}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    active ? "ring-2 ring-offset-1 ring-offset-background" : "opacity-70 hover:opacity-100"
+                  }`}
+                  style={{
+                    backgroundColor: active ? t.color : `${t.color}22`,
+                    color: active ? "#fff" : t.color,
+                    borderColor: `${t.color}55`,
+                  }}
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+            {selectedTagIds.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setSelectedTagIds([])} className="ml-auto h-7">
+                <X className="mr-1 h-3 w-3" /> Limpar ({selectedTagIds.length})
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             icon={<Building2 className="h-5 w-5" />}
             title="Empresas Monitoradas"
-            value={String(companies.length)}
+            value={String(filteredCompanies.length)}
             hint={`${metrics.ativas.length} ativas · ${metrics.inativas.length} sem dados`}
           />
           <KpiCard
