@@ -378,7 +378,7 @@ export default function Movement() {
                       );
                     })}
                     {visibleCustom.map((cc) => (
-                      <TableHead key={cc.id} className="text-right whitespace-nowrap">
+                      <TableHead key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">
                         <span>{cc.label}</span>
                         {cc.kind === "formula" && (
                           <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
@@ -398,12 +398,14 @@ export default function Movement() {
                   )}
                   {rows.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="sticky left-0 bg-card font-medium">{displayCompetencia(r.competencia)}</TableCell>
+                      <TableCell data-col-cat="competencia" className="sticky left-0 font-medium">
+                        {displayCompetencia(r.competencia)}
+                      </TableCell>
                       {visibleCols.map((c) => {
                         const value = computeColumnValue(r, c);
                         if (isComputedColumn(c)) {
                           return (
-                            <TableCell key={c} className="p-1">
+                            <TableCell key={c} data-col-cat={getColumnCategory(c)} className="p-1">
                               <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
                                 {formatPercent(value)}
                               </div>
@@ -411,7 +413,7 @@ export default function Movement() {
                           );
                         }
                         return (
-                          <TableCell key={c} className="p-1">
+                          <TableCell key={c} data-col-cat={getColumnCategory(c)} className="p-1">
                             <CellEditor
                               value={value}
                               readonly={isCellReadonly(c)}
@@ -426,7 +428,7 @@ export default function Movement() {
                           const resolver = buildRowResolver(r, customCols, valuesForRow);
                           const v = resolver(cc.key);
                           return (
-                            <TableCell key={cc.id} className="p-1">
+                            <TableCell key={cc.id} data-col-cat="custom" className="p-1">
                               <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
                                 {formatCustomValue(v, cc.format, cc.decimals)}
                               </div>
@@ -435,7 +437,7 @@ export default function Movement() {
                         }
                         const current = Number(valuesForRow[cc.id] ?? 0);
                         return (
-                          <TableCell key={cc.id} className="p-1">
+                          <TableCell key={cc.id} data-col-cat="custom" className="p-1">
                             <CellEditor
                               value={current}
                               onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: cc.id, value: v })}
