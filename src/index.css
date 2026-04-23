@@ -137,6 +137,24 @@
     background: white !important;
     color: black !important;
   }
+  /* Força tema light na impressão (mesmo se o usuário estiver em dark mode) */
+  .dark, html.dark, body.dark {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 25%;
+    --border: 0 0% 80%;
+    --primary: 158 64% 32%;
+    --accent: 152 35% 92%;
+  }
+  /* Força TODO texto a ser preto e visível na impressão */
+  .print-container, .print-container * {
+    color: black !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
   .no-print, .no-print * {
     display: none !important;
   }
