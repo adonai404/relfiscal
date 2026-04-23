@@ -56,6 +56,22 @@ export const TAX_COLUMNS: ColumnKey[] = ["icms", "difal", "pis", "cofins", "irpj
 export const COMPUTED_COLUMNS: ColumnKey[] = ["aliquota_simples_calc"];
 export const isComputedColumn = (col: ColumnKey) => COMPUTED_COLUMNS.includes(col);
 
+// Categoria visual usada para tint das colunas na tabela.
+export type ColumnCategory =
+  | "competencia" | "entrada" | "saida" | "tax" | "simples"
+  | "aliquota" | "payroll" | "custom";
+
+export const getColumnCategory = (col: ColumnKey): ColumnCategory => {
+  if (col === "entrada") return "entrada";
+  if (col === "saida") return "saida";
+  if (col === "simples_nacional") return "simples";
+  if (col === "aliquota_simples_calc") return "aliquota";
+  if (col === "honorarios" || col === "folha" || col === "encargos_patronal") return "payroll";
+  if (col === "impostos_federais") return "tax";
+  if (TAX_COLUMNS.includes(col)) return "tax";
+  return "tax";
+};
+
 export const isColumnVisible = (cfg: FiscalConfig | undefined, col: ColumnKey): boolean => {
   if (!cfg) return true;
   if (col === "entrada" || col === "saida") return true;
