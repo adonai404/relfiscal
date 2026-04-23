@@ -251,6 +251,40 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
+        {/* Tag filter */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
+            <span className="text-xs font-medium text-muted-foreground">Filtrar por tag:</span>
+            {tags.map((t) => {
+              const active = selectedTagIds.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedTagIds((prev) =>
+                    prev.includes(t.id) ? prev.filter((id) => id !== t.id) : [...prev, t.id]
+                  )}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    active ? "ring-2 ring-offset-1 ring-offset-background" : "opacity-70 hover:opacity-100"
+                  }`}
+                  style={{
+                    backgroundColor: active ? t.color : `${t.color}22`,
+                    color: active ? "#fff" : t.color,
+                    borderColor: `${t.color}55`,
+                  }}
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+            {selectedTagIds.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setSelectedTagIds([])} className="ml-auto h-7">
+                <X className="mr-1 h-3 w-3" /> Limpar ({selectedTagIds.length})
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KpiCard
