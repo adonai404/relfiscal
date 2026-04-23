@@ -226,9 +226,19 @@ export default function Movement() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      {/* Print-only header */}
+      <div className="print-only print-header">
+        <div className="print-header-info">
+          <h1 className="print-title">{selectedCompany.nome_fantasia}</h1>
+          <div className="print-sub">{selectedCompany.razao_social}</div>
+          <div className="print-sub">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
+          <div className="print-sub">Movimento Fiscal · gerado em {new Date().toLocaleString("pt-BR")}</div>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-7xl px-4 py-6 print-main">
         {/* Summary cards */}
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
           <SummaryCard label="Total Saída" value={totals.byCol.saida || 0} />
           {anyTaxVisible && (
