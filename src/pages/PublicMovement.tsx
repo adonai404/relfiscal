@@ -234,7 +234,7 @@ export default function PublicMovement() {
           <CardHeader>
             <CardTitle>Movimento Fiscal</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="overflow-x-auto fiscal-table-wrap">
             {loadingRows ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : rows.length === 0 ? (
