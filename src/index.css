@@ -127,6 +127,77 @@
   }
 }
 
+/* === Tabela Fiscal: cores por coluna + divisórias === */
+@layer components {
+  /* Divisórias verticais entre todas as células (corpo + cabeçalho) */
+  .fiscal-table th,
+  .fiscal-table td {
+    border-right: 1px solid hsl(var(--border));
+  }
+  .fiscal-table th:last-child,
+  .fiscal-table td:last-child {
+    border-right: 0;
+  }
+  .fiscal-table thead th {
+    border-bottom: 2px solid hsl(var(--border));
+    background: hsl(var(--muted) / 0.6);
+  }
+
+  /* Tints de coluna — aplicados em <th> e <td> via data-col-cat */
+  .fiscal-table [data-col-cat="competencia"] {
+    background: hsl(var(--muted) / 0.5);
+    font-weight: 600;
+  }
+  .fiscal-table [data-col-cat="entrada"] {
+    background: hsl(var(--success) / 0.08);
+  }
+  .fiscal-table thead [data-col-cat="entrada"] { color: hsl(var(--success)); }
+
+  .fiscal-table [data-col-cat="saida"] {
+    background: hsl(var(--primary) / 0.07);
+  }
+  .fiscal-table thead [data-col-cat="saida"] { color: hsl(var(--primary)); }
+
+  .fiscal-table [data-col-cat="tax"] {
+    background: hsl(var(--warning) / 0.08);
+  }
+  .fiscal-table thead [data-col-cat="tax"] { color: hsl(var(--warning)); }
+
+  .fiscal-table [data-col-cat="simples"] {
+    background: hsl(var(--accent) / 0.7);
+  }
+  .fiscal-table thead [data-col-cat="simples"] { color: hsl(var(--accent-foreground)); }
+
+  .fiscal-table [data-col-cat="aliquota"] {
+    background: hsl(var(--muted) / 0.7);
+    font-style: italic;
+  }
+
+  .fiscal-table [data-col-cat="payroll"] {
+    background: hsl(var(--secondary) / 0.6);
+  }
+
+  .fiscal-table [data-col-cat="custom"] {
+    background: hsl(var(--primary-glow) / 0.07);
+  }
+  .fiscal-table thead [data-col-cat="custom"] { color: hsl(var(--primary)); }
+
+  /* Hover: sobrepõe tint sem perder a categoria */
+  .fiscal-table tbody tr:hover td {
+    filter: brightness(0.97);
+  }
+  .dark .fiscal-table tbody tr:hover td {
+    filter: brightness(1.15);
+  }
+
+  /* Linha de TOTAL: reforça e mantém divisórias */
+  .fiscal-table tr.total-row td {
+    background: hsl(var(--muted));
+    border-top: 2px solid hsl(var(--border));
+    font-weight: 700;
+  }
+}
+
 /* Print optimizations */
 @media print {
   @page {
