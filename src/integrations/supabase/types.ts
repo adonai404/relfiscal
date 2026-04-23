@@ -53,6 +53,98 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_column_values: {
+        Row: {
+          column_id: string
+          created_at: string
+          id: string
+          movement_id: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          column_id: string
+          created_at?: string
+          id?: string
+          movement_id: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          column_id?: string
+          created_at?: string
+          id?: string
+          movement_id?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_column_values_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "custom_columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_column_values_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_movement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_columns: {
+        Row: {
+          company_id: string
+          created_at: string
+          decimals: number
+          formula: Json
+          id: string
+          key: string
+          kind: string
+          label: string
+          position: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decimals?: number
+          formula?: Json
+          id?: string
+          key: string
+          kind?: string
+          label: string
+          position?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decimals?: number
+          formula?: Json
+          id?: string
+          key?: string
+          kind?: string
+          label?: string
+          position?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_columns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_config: {
         Row: {
           aliquota_simples_nacional: number
