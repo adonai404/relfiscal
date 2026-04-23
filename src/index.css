@@ -137,6 +137,24 @@
     background: white !important;
     color: black !important;
   }
+  /* Força tema light na impressão (mesmo se o usuário estiver em dark mode) */
+  .dark, html.dark, body.dark {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 25%;
+    --border: 0 0% 80%;
+    --primary: 158 64% 32%;
+    --accent: 152 35% 92%;
+  }
+  /* Força TODO texto a ser preto e visível na impressão */
+  .print-container, .print-container * {
+    color: black !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
   .no-print, .no-print * {
     display: none !important;
   }
@@ -207,6 +225,37 @@
     print-color-adjust: exact;
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+  tr.font-semibold td, tr[class*="bg-muted"] td {
+    background: #eee !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Remove sticky em impressão (estava sobrepondo / cortando colunas) */
+  .print-container [class*="sticky"] {
+    position: static !important;
+  }
+  /* Botões e inputs dentro das células: renderizam como texto preto */
+  .print-container td button,
+  .print-container td input {
+    color: black !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: right !important;
+    font: inherit !important;
+    display: block !important;
+  }
+  /* Cards de resumo: mantém leve diferenciação com borda */
+  .print-cards [class*="card"], .print-cards .rounded-lg {
+    border: 0.5px solid #999 !important;
+    background: white !important;
+  }
+  /* Cabeçalho da impressão: garante texto preto */
+  .print-header, .print-header * {
+    color: black !important;
   }
   thead { display: table-header-group; }
   tfoot { display: table-footer-group; }
