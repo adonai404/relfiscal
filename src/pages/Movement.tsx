@@ -21,7 +21,7 @@ import { brl, displayCompetencia, formatCNPJ, parseBrNumber, formatCustomValue }
 import {
   ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
-  isComputedColumn, computeColumnValue, formatPercent,
+  isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
 } from "@/hooks/useFiscalConfig";
 import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
@@ -339,15 +339,17 @@ export default function Movement() {
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
-              <Table>
+              <Table className="fiscal-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-card">{config?.label_competencia ?? "Competência"}</TableHead>
+                    <TableHead data-col-cat="competencia" className="sticky left-0 bg-card">
+                      {config?.label_competencia ?? "Competência"}
+                    </TableHead>
                     {visibleCols.map((c) => {
                       const f = colFilters[c];
                       const active = !!f;
                       return (
-                        <TableHead key={c} className="text-right whitespace-nowrap">
+                        <TableHead key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
                           <div className="inline-flex items-center justify-end gap-1">
                             <span>{getColumnLabel(config ?? undefined, c)}</span>
                             <Popover>
