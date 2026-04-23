@@ -400,6 +400,10 @@ export default function Movement() {
             )}
           </CardContent>
         </Card>
+
+        <footer className="print-only print-footer">
+          Documento gerado em {new Date().toLocaleString("pt-BR")}
+        </footer>
       </main>
     </div>
   );
