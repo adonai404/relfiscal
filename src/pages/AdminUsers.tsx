@@ -123,9 +123,9 @@ export default function AdminUsers() {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
+    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
               <ArrowLeft className="h-4 w-4" />
@@ -137,7 +137,7 @@ export default function AdminUsers() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+      <main className="w-full px-4 py-8 sm:px-6 space-y-6">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin" />

@@ -226,9 +226,9 @@ export default function Movement() {
     col === "simples_nacional" && !!config?.auto_calculate_simples_nacional;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
+    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="no-print border-b bg-card/60 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
@@ -276,7 +276,7 @@ export default function Movement() {
         />
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 print-main">
+      <main className="w-full px-4 py-6 sm:px-6 print-main">
         {/* Summary cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />

@@ -228,9 +228,9 @@ export default function Dashboard() {
   if (!isAdmin) return <Navigate to="/empresas" replace />;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
+    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
@@ -250,7 +250,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
+      <main className="w-full space-y-6 px-4 py-6 sm:px-6">
         {/* Tag filter */}
         {tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
