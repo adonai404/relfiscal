@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { downloadTemplate, exportMovementToXlsx } from "@/lib/xlsx";
 import { useXlsxImport } from "@/hooks/useXlsxImport";
 import { CustomColumnsManager } from "@/components/CustomColumnsManager";
+import { useCustomColumns, useCustomColumnValues } from "@/hooks/useCustomColumns";
 
 const TOGGLE_LABELS: Record<ColumnKey, string> = {
   entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
@@ -54,7 +55,15 @@ export default function Settings() {
   const companyId = selectedCompany?.id;
   const { data: config, isLoading } = useFiscalConfig(companyId);
   const update = useUpdateFiscalConfig(companyId);
-  const xlsx = useXlsxImport(companyId, config);
+  const { data: customCols = [] } = useCustomColumns(companyId);
+  const { data: customValues = [] } = useCustomColumnValues(companyId);
+  const xlsx = useXlsxImport(companyId, config, customCols);
+
+  const valuesByMov = (() => {
+    const out: Record<string, Record<string, number>> = {};
+    customValues.forEach((v) => { (out[v.movement_id] ||= {})[v.column_id] = Number(v.value || 0); });
+    return out;
+  })();
 
   // Lightweight fetch of rows just for export
   const { data: exportRows = [] } = useQuery({
@@ -261,7 +270,7 @@ export default function Settings() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`)}
+                    onClick={() => downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`, customCols)}
                   >
                     <Download className="mr-2 h-4 w-4" /> Baixar Template
                   </Button>
@@ -279,7 +288,9 @@ export default function Settings() {
                       exportMovementToXlsx(
                         exportRows as Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
                         config ?? undefined,
-                        `movimento-${selectedCompany.slug}.xlsx`
+                        `movimento-${selectedCompany.slug}.xlsx`,
+                        customCols,
+                        valuesByMov,
                       )
                     }
                     disabled={exportRows.length === 0}
