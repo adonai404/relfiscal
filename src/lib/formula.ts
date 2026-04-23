@@ -10,6 +10,7 @@
 export type FormulaToken =
   | { t: "col"; key: string }
   | { t: "num"; v: number }
+  | { t: "pct"; v: number }
   | { t: "op"; v: "+" | "-" | "*" | "/" }
   | { t: "lp" }
   | { t: "rp" };
@@ -24,6 +25,7 @@ export function tokenToText(tk: FormulaToken, labelOf: (key: string) => string):
   switch (tk.t) {
     case "col": return labelOf(tk.key);
     case "num": return String(tk.v);
+    case "pct": return `${tk.v}%`;
     case "op":  return ` ${tk.v} `;
     case "lp":  return "(";
     case "rp":  return ")";
