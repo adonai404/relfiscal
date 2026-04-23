@@ -21,6 +21,7 @@ import { formatCNPJ } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadTemplate, exportMovementToXlsx } from "@/lib/xlsx";
 import { useXlsxImport } from "@/hooks/useXlsxImport";
+import { CustomColumnsManager } from "@/components/CustomColumnsManager";
 
 const TOGGLE_LABELS: Record<ColumnKey, string> = {
   entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
@@ -237,6 +238,9 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Card — Custom columns */}
+            {companyId && <CustomColumnsManager companyId={companyId} config={config} />}
 
             {/* Card 4 — Import / Export XLSX */}
             <Card>
