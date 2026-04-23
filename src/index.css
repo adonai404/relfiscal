@@ -134,6 +134,14 @@
   .fiscal-table td {
     border-right: 1px solid hsl(var(--border));
   }
+  /* O wrapper do componente Table usa overflow-auto, o que cria um contexto
+   * de scroll vertical próprio e quebra o sticky relativo à janela.
+   * Mantemos só o scroll horizontal aqui — o vertical é da página. */
+  .fiscal-table-wrap > div[class*="overflow-auto"],
+  .fiscal-table-wrap {
+    overflow-y: visible !important;
+    overflow-x: auto;
+  }
   .fiscal-table th:last-child,
   .fiscal-table td:last-child {
     border-right: 0;
