@@ -84,6 +84,22 @@ export function exportMovementToXlsx(
     ];
   });
   const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+  // Apply percentage cell format to custom columns whose format is "percent".
+  // Layout: col 0 = competencia; cols 1..cols.length = built-in; then visibleCustom.
+  const customStartCol = 1 + cols.length;
+  visibleCustom.forEach((cc, i) => {
+    if (cc.format !== "percent") return;
+    const fmt = `0.${"0".repeat(Math.max(0, Math.min(6, cc.decimals)))}%`;
+    const colIdx = customStartCol + i;
+    for (let r = 0; r < dataRows.length; r++) {
+      const cellRef = XLSX.utils.encode_cell({ c: colIdx, r: r + 1 }); // +1 for header row
+      const cell = ws[cellRef];
+      if (cell && typeof cell.v === "number") {
+        cell.t = "n";
+        cell.z = fmt;
+      }
+    }
+  });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Movimento");
   XLSX.writeFile(wb, fileName);
