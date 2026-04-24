@@ -34,6 +34,7 @@ import {
   type FiscalConfig,
   getTaxColumns,
 } from "@/hooks/useFiscalConfig";
+import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 
 interface MovementRow {
   id: string;
@@ -104,6 +105,9 @@ export default function Presentation() {
   // Mostrar tabela detalhada no comparativo lado-a-lado
   const [showComparisonTable, setShowComparisonTable] = useState(true);
 
+  // Filtro de período (competência) aplicado a todos os slides
+  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+
   // Resolve final list based on chosen filter mode
   const finalCompanyIds = useMemo(() => {
     if (filterTab === "tags") {
@@ -159,7 +163,8 @@ export default function Presentation() {
 
   // Apply auto-calc Simples Nacional to all movements once
   const adjustedMovements = useMemo(() => {
-    return movements.map((m) => {
+    const filtered = filterByPeriod(movements, period);
+    return filtered.map((m) => {
       const cfg = configByCompany[m.company_id];
       if (cfg?.auto_calculate_simples_nacional) {
         const a = Number(cfg.aliquota_simples_nacional || 0) / 100;
@@ -167,7 +172,14 @@ export default function Presentation() {
       }
       return m;
     });
-  }, [movements, configByCompany]);
+  }, [movements, configByCompany, period]);
+
+  // Lista de competências disponíveis para presets do filtro
+  const availableCompetencias = useMemo(() => {
+    const set = new Set<string>();
+    movements.forEach((m) => set.add(m.competencia));
+    return Array.from(set).sort();
+  }, [movements]);
 
   // Slide deck: overview + one per company + (comparison if 2+)
   type SlideKind =
