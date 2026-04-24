@@ -1746,7 +1746,11 @@ function OverviewSlide({
   configByCompany: Record<string, FiscalConfig>;
 }) {
   // Helper: tax columns for a given company (falls back to default if missing)
-  const taxColsFor = (companyId: string) => getTaxColumns(configByCompany[companyId]);
+  // Respeita colunas desligadas no fiscal_config — colunas ocultas não entram no cálculo.
+  const taxColsFor = (companyId: string) => {
+    const cfg = configByCompany[companyId];
+    return getTaxColumns(cfg).filter((c) => isColumnVisible(cfg, c));
+  };
 
   // Compute per-row tax respecting each company's fiscal_config.
   const taxOf = (m: MovementRow) =>
