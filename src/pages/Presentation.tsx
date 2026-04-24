@@ -438,30 +438,15 @@ export default function Presentation() {
     );
   }
 
-  const cfg = configByCompany[currentCompany.id];
-  const visibleCols: ColumnKey[] = ALL_COLUMNS.filter((c) => isColumnVisible(cfg, c));
-
-  // Totals for current company
-  const totals: Record<string, number> = {};
-  ALL_COLUMNS.forEach((c) => {
-    if (isComputedColumn(c)) {
-      totals[c] = 0;
-    } else {
-      totals[c] = currentRows.reduce(
-        (s, r) => s + Number((r as unknown as Record<string, number>)[c] || 0),
-        0,
-      );
-    }
-  });
-  if (totals.saida) totals.aliquota_simples_calc = (totals.simples_nacional || 0) / totals.saida;
-
-  const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (totals[c] || 0), 0)
-    + (totals.impostos_federais || 0) + (totals.simples_nacional || 0);
-  const margem = (totals.saida || 0) - (totals.entrada || 0);
-  const cargaTrib = totals.saida ? (totalImpostos / totals.saida) : 0;
-
   const goPrev = () => setCurrentSlide((s) => Math.max(s - 1, 0));
   const goNext = () => setCurrentSlide((s) => Math.min(s + 1, slides.length - 1));
+
+  // Slide title for header
+  const slideTitle = currentSlideDef?.kind === "overview"
+    ? "Visão Geral Consolidada"
+    : currentSlideDef?.kind === "comparison"
+      ? "Comparativo entre Empresas"
+      : currentCompany?.nome_fantasia ?? "";
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -474,7 +459,7 @@ export default function Presentation() {
             </Button>
             <PresentationIcon className="h-4 w-4 text-primary shrink-0" />
             <span className="text-sm font-medium truncate">
-              {currentSlide + 1} / {slides.length} — {currentCompany.nome_fantasia}
+              {currentSlide + 1} / {slides.length} — {slideTitle}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -503,111 +488,33 @@ export default function Presentation() {
 
       {/* Slide content */}
       <main className="relative w-full px-4 py-6 sm:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
-          {/* Title block */}
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Empresa</p>
-            <h1 className="mt-1 text-3xl font-bold sm:text-4xl">{currentCompany.nome_fantasia}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {currentCompany.razao_social} · CNPJ {formatCNPJ(currentCompany.cnpj)} · {currentCompany.uf}
-            </p>
-          </div>
-
+        <div className="mx-auto max-w-[1600px] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key={currentSlide}>
           {loadingMov ? (
             <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>
-          ) : (
-            <>
-              {/* KPIs */}
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <KPI label="Entrada" value={brl(totals.entrada || 0)} tone="entrada" />
-                <KPI label="Saída" value={brl(totals.saida || 0)} tone="saida" />
-                <KPI label="Margem Bruta" value={brl(margem)} tone={margem >= 0 ? "positive" : "negative"} />
-                <KPI label="Total Impostos" value={brl(totalImpostos)} tone="tax" />
-                <KPI label="Carga Trib." value={formatPercent(cargaTrib)} tone="aliquota" />
-              </div>
-
-              {/* Movements table */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Movimento Fiscal — {currentRows.length} competência(s)</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {currentRows.length === 0 ? (
-                    <p className="p-12 text-center text-sm text-muted-foreground">
-                      Nenhum movimento cadastrado para esta empresa.
-                    </p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table className="fiscal-table">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="sticky left-0 bg-card">
-                              {getColumnLabel(cfg, "entrada") && "Competência"}
-                            </TableHead>
-                            {visibleCols.map((col) => (
-                              <TableHead
-                                key={col}
-                                className="text-right whitespace-nowrap"
-                                data-cat={getColumnCategory(col)}
-                              >
-                                {getColumnLabel(cfg, col)}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {currentRows.map((r) => (
-                            <TableRow key={r.id}>
-                              <TableCell className="sticky left-0 bg-card font-medium">
-                                {displayCompetencia(r.competencia)}
-                              </TableCell>
-                              {visibleCols.map((col) => {
-                                const v = computeColumnValue(r, col);
-                                const isPct = col === "aliquota_simples_calc";
-                                return (
-                                  <TableCell
-                                    key={col}
-                                    className="text-right tabular-nums whitespace-nowrap"
-                                    data-cat={getColumnCategory(col)}
-                                  >
-                                    {isPct ? formatPercent(v) : brl(v)}
-                                  </TableCell>
-                                );
-                              })}
-                            </TableRow>
-                          ))}
-                          {/* Totals row */}
-                          <TableRow className="font-semibold border-t-2">
-                            <TableCell className="sticky left-0 bg-card">Total</TableCell>
-                            {visibleCols.map((col) => {
-                              const v = totals[col] || 0;
-                              const isPct = col === "aliquota_simples_calc";
-                              return (
-                                <TableCell
-                                  key={col}
-                                  className="text-right tabular-nums whitespace-nowrap"
-                                  data-cat={getColumnCategory(col)}
-                                >
-                                  {isPct ? formatPercent(v) : brl(v)}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
+          ) : currentSlideDef?.kind === "overview" ? (
+            <OverviewSlide
+              companies={finalCompanies}
+              movements={adjustedMovements}
+            />
+          ) : currentSlideDef?.kind === "comparison" ? (
+            <ComparisonSlide
+              companies={finalCompanies}
+              movements={adjustedMovements}
+            />
+          ) : currentCompany ? (
+            <CompanySlide
+              company={currentCompany}
+              rows={currentRows}
+              cfg={configByCompany[currentCompany.id]}
+            />
+          ) : null}
 
           {/* Slide dots */}
           {slides.length > 1 && (
             <div className="flex flex-wrap justify-center gap-1.5 pt-2">
-              {slides.map((s, i) => (
+              {slides.map((_s, i) => (
                 <button
-                  key={s.id}
+                  key={i}
                   type="button"
                   onClick={() => setCurrentSlide(i)}
                   aria-label={`Ir para slide ${i + 1}`}
