@@ -1139,7 +1139,8 @@ function aggregateRows(rows: MovementRow[], cfg?: FiscalConfig) {
     }
   });
   if (totals.saida) totals.aliquota_simples_calc = (totals.simples_nacional || 0) / totals.saida;
-  const taxCols = getTaxColumns(cfg);
+  // Respeita colunas desligadas: colunas ocultas não entram no cálculo de impostos.
+  const taxCols = getTaxColumns(cfg).filter((c) => isColumnVisible(cfg, c));
   const totalImpostos = taxCols.reduce((s, c) => s + (totals[c] || 0), 0);
   const margem = (totals.saida || 0) - (totals.entrada || 0);
   const cargaTrib = totals.saida ? (totalImpostos / totals.saida) : 0;
@@ -1745,7 +1746,11 @@ function OverviewSlide({
   configByCompany: Record<string, FiscalConfig>;
 }) {
   // Helper: tax columns for a given company (falls back to default if missing)
-  const taxColsFor = (companyId: string) => getTaxColumns(configByCompany[companyId]);
+  // Respeita colunas desligadas no fiscal_config — colunas ocultas não entram no cálculo.
+  const taxColsFor = (companyId: string) => {
+    const cfg = configByCompany[companyId];
+    return getTaxColumns(cfg).filter((c) => isColumnVisible(cfg, c));
+  };
 
   // Compute per-row tax respecting each company's fiscal_config.
   const taxOf = (m: MovementRow) =>
@@ -2016,15 +2021,19 @@ function ScenariosSlide({
     let entrada = 0, saida = 0, impostos = 0, folha = 0, honorarios = 0, encargos = 0;
     rows.forEach((r) => {
       const cfg = configByCompany[r.company_id];
-      const taxCols = getTaxColumns(cfg);
+      // Colunas desligadas não entram no cálculo do cenário.
+      const taxCols = getTaxColumns(cfg).filter((c) => isColumnVisible(cfg, c));
+      const showFolha = isColumnVisible(cfg, "folha");
+      const showHonor = isColumnVisible(cfg, "honorarios");
+      const showEnc = isColumnVisible(cfg, "encargos_patronal");
       entrada += Number(r.entrada || 0);
       saida += Number(r.saida || 0);
       impostos += taxCols.reduce(
         (s, c) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0,
       );
-      folha += Number(r.folha || 0);
-      honorarios += Number(r.honorarios || 0);
-      encargos += Number(r.encargos_patronal || 0);
+      if (showFolha) folha += Number(r.folha || 0);
+      if (showHonor) honorarios += Number(r.honorarios || 0);
+      if (showEnc) encargos += Number(r.encargos_patronal || 0);
     });
     const totalGasto = impostos + folha + honorarios + encargos;
     return {
