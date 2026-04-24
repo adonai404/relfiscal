@@ -1098,7 +1098,7 @@ function CompanySlide({
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <KPI label="Entrada" value={brl(totals.entrada || 0)} tone="entrada"
           icon={Wallet} trend={trendEntrada} sparkline={sparkEntrada} sub="Total no período" />
         <KPI label="Saída" value={brl(totals.saida || 0)} tone="saida"
