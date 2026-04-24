@@ -523,6 +523,111 @@ export default function Presentation() {
                 </div>
               </div>
 
+              {/* Empresas no comparativo lado a lado */}
+              {includeSideBySide && finalCompanies.length > 0 && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <Label className="text-sm font-medium">Empresas no comparativo lado a lado</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Selecione um sub-conjunto das empresas escolhidas acima para aparecerem em colunas paralelas.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => setComparisonCompanyIds(finalCompanies.map((c) => c.id))}
+                      >
+                        Todas
+                      </Button>
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => setComparisonCompanyIds([])}
+                      >
+                        Nenhuma
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 max-h-56 overflow-auto">
+                    {finalCompanies.map((c) => {
+                      const activeIds = comparisonCompanyIds ?? finalCompanies.map((x) => x.id);
+                      const checked = activeIds.includes(c.id);
+                      return (
+                        <label
+                          key={c.id}
+                          className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm bg-background hover:bg-accent/40 ${
+                            checked ? "border-primary/50 ring-1 ring-primary/20" : ""
+                          }`}
+                        >
+                          <Checkbox checked={checked} onCheckedChange={() => toggleComparisonCompany(c.id)} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium">{c.nome_fantasia}</p>
+                            <p className="truncate text-[10px] text-muted-foreground">{c.uf}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {(comparisonCompanyIds ?? finalCompanies.map((c) => c.id)).length} empresa(s) no comparativo lado a lado.
+                  </div>
+
+                  {/* Opções de consolidação e exibição */}
+                  <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-primary/20">
+                    <div>
+                      <Label className="text-xs font-medium">Modo do consolidado</Label>
+                      <div className="mt-1.5 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConsolidationMode("sum")}
+                          className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
+                            consolidationMode === "sum"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "bg-background hover:bg-accent"
+                          }`}
+                        >
+                          Soma
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConsolidationMode("avg")}
+                          className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition ${
+                            consolidationMode === "avg"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "bg-background hover:bg-accent"
+                          }`}
+                        >
+                          Média
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Componentes do slide</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                          showConsolidated ? "border-primary/50 bg-primary/10" : "bg-background"
+                        }`}>
+                          <Checkbox checked={showConsolidated} onCheckedChange={(v) => setShowConsolidated(!!v)} />
+                          Coluna Consolidado
+                        </label>
+                        <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                          showComparisonChart ? "border-primary/50 bg-primary/10" : "bg-background"
+                        }`}>
+                          <Checkbox checked={showComparisonChart} onCheckedChange={(v) => setShowComparisonChart(!!v)} />
+                          Gráfico
+                        </label>
+                        <label className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                          showComparisonTable ? "border-primary/50 bg-primary/10" : "bg-background"
+                        }`}>
+                          <Checkbox checked={showComparisonTable} onCheckedChange={(v) => setShowComparisonTable(!!v)} />
+                          Tabela detalhada
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <Label className="text-sm font-medium">Métricas calculadas</Label>
                 <p className="text-xs text-muted-foreground mb-2">
