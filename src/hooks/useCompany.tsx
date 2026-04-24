@@ -11,6 +11,10 @@ export interface Company {
   nome_fantasia: string;
   uf: string;
   slug: string;
+  status?: "ativa" | "inativa" | "arquivada";
+  folder_id?: string | null;
+  regime?: string;
+  created_by?: string | null;
 }
 
 interface CompanyCtx {
@@ -42,7 +46,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       let query = supabase
         .from("companies")
-        .select("id, cnpj, razao_social, nome_fantasia, uf, slug, regime, created_by")
+        .select("id, cnpj, razao_social, nome_fantasia, uf, slug, regime, created_by, status, folder_id")
         .order("nome_fantasia");
 
       // Super admin vê todas; usuários comuns só veem as próprias
