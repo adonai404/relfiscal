@@ -1064,14 +1064,15 @@ function OverviewSlide({
 // =================== Comparison Slide ===================
 
 function ComparisonSlide({
-  companies, movements,
+  companies, movements, configByCompany,
 }: {
   companies: Array<{ id: string; nome_fantasia: string; uf: string }>;
   movements: MovementRow[];
+  configByCompany: Record<string, FiscalConfig>;
 }) {
   const perCompany = companies.map((c) => {
     const rs = movements.filter((m) => m.company_id === c.id);
-    const agg = aggregateRows(rs);
+    const agg = aggregateRows(rs, configByCompany[c.id]);
     return {
       id: c.id,
       name: c.nome_fantasia,
