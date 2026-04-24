@@ -71,6 +71,27 @@ export default function Presentation() {
   const [intervalSec, setIntervalSec] = useState(8);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // ---- Customização da apresentação ----
+  // Quais slides exibir
+  const [includeOverview, setIncludeOverview] = useState(true);
+  const [includeCompanySlides, setIncludeCompanySlides] = useState(true);
+  const [includeComparison, setIncludeComparison] = useState(true);
+  const [includeSideBySide, setIncludeSideBySide] = useState(true);
+  // Quais colunas/métricas entram no comparativo lado-a-lado
+  // (default: principais métricas financeiras + impostos)
+  const DEFAULT_METRICS: ColumnKey[] = [
+    "entrada", "saida", "icms", "impostos_federais", "simples_nacional",
+    "pis", "cofins", "irpj", "csll", "difal",
+  ];
+  const [comparisonMetrics, setComparisonMetrics] = useState<ColumnKey[]>(DEFAULT_METRICS);
+  // Métricas derivadas opcionais
+  const [includeDerived, setIncludeDerived] = useState({
+    margem: true,
+    margemPct: true,
+    totalImpostos: true,
+    cargaTrib: true,
+  });
+
   // Resolve final list based on chosen filter mode
   const finalCompanyIds = useMemo(() => {
     if (filterTab === "tags") {
@@ -140,15 +161,22 @@ export default function Presentation() {
   type SlideKind =
     | { kind: "overview" }
     | { kind: "company"; companyId: string }
-    | { kind: "comparison" };
+    | { kind: "comparison" }
+    | { kind: "sidebyside" };
 
   const slides: SlideKind[] = useMemo(() => {
     if (finalCompanies.length === 0) return [];
-    const out: SlideKind[] = [{ kind: "overview" }];
-    finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
-    if (finalCompanies.length >= 2) out.push({ kind: "comparison" });
+    const out: SlideKind[] = [];
+    if (includeOverview) out.push({ kind: "overview" });
+    if (includeCompanySlides) {
+      finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
+    }
+    if (finalCompanies.length >= 2 && includeSideBySide) out.push({ kind: "sidebyside" });
+    if (finalCompanies.length >= 2 && includeComparison) out.push({ kind: "comparison" });
+    // Garante pelo menos um slide se o usuário desmarcar tudo
+    if (out.length === 0) out.push({ kind: "overview" });
     return out;
-  }, [finalCompanies]);
+  }, [finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide]);
 
   const currentSlideDef = slides[currentSlide];
   const currentCompany = currentSlideDef?.kind === "company"
@@ -447,7 +475,9 @@ export default function Presentation() {
     ? "Visão Geral Consolidada"
     : currentSlideDef?.kind === "comparison"
       ? "Comparativo entre Empresas"
-      : currentCompany?.nome_fantasia ?? "";
+      : currentSlideDef?.kind === "sidebyside"
+        ? "Comparativo Lado a Lado"
+        : currentCompany?.nome_fantasia ?? "";
 
   return (
     <div className="min-h-screen w-full bg-background">
