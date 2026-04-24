@@ -408,7 +408,130 @@ export default function Presentation() {
 
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-base">2. Opções da apresentação</CardTitle>
+              <CardTitle className="text-base">2. Personalize a apresentação</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div>
+                <Label className="text-sm font-medium">Slides incluídos</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Escolha quais tipos de slides farão parte da apresentação.
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeOverview} onCheckedChange={(v) => setIncludeOverview(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Visão Geral Consolidada</p>
+                      <p className="text-xs text-muted-foreground">KPIs, evolução e ranking de todas as empresas.</p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeCompanySlides} onCheckedChange={(v) => setIncludeCompanySlides(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Slide individual por empresa</p>
+                      <p className="text-xs text-muted-foreground">Detalhes completos com gráficos e tabela.</p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeSideBySide} onCheckedChange={(v) => setIncludeSideBySide(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Comparativo Lado a Lado <Badge variant="secondary" className="ml-1">Novo</Badge></p>
+                      <p className="text-xs text-muted-foreground">Empresas em colunas paralelas + total consolidado.</p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeComparison} onCheckedChange={(v) => setIncludeComparison(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Ranking comparativo</p>
+                      <p className="text-xs text-muted-foreground">Gráficos de ranking entre empresas.</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label className="text-sm font-medium">Métricas no comparativo lado a lado</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione as colunas que serão mostradas para cada empresa.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => setComparisonMetrics(ALL_COLUMNS.filter((c) => !isComputedColumn(c)))}
+                    >
+                      Todas
+                    </Button>
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => setComparisonMetrics([])}
+                    >
+                      Nenhuma
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+                  {ALL_COLUMNS.filter((c) => !isComputedColumn(c)).map((col) => {
+                    const checked = comparisonMetrics.includes(col);
+                    return (
+                      <label
+                        key={col}
+                        className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm hover:bg-accent/40 ${
+                          checked ? "border-primary/40 bg-primary/5" : ""
+                        }`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() =>
+                            setComparisonMetrics((p) =>
+                              p.includes(col) ? p.filter((x) => x !== col) : [...p, col],
+                            )
+                          }
+                        />
+                        <span className="truncate">{getColumnLabel(undefined, col)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Métricas calculadas</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Indicadores derivados exibidos no comparativo lado a lado.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["margem", "Margem (Saída − Entrada)"],
+                    ["margemPct", "Margem %"],
+                    ["totalImpostos", "Total de Impostos"],
+                    ["cargaTrib", "Carga Tributária"],
+                  ] as const).map(([key, label]) => {
+                    const checked = includeDerived[key];
+                    return (
+                      <label
+                        key={key}
+                        className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm hover:bg-accent/40 ${
+                          checked ? "border-primary/50 bg-primary/5" : ""
+                        }`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => setIncludeDerived((p) => ({ ...p, [key]: !!v }))}
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">3. Opções de reprodução</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-4">
