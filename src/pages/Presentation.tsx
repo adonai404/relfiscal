@@ -1143,18 +1143,6 @@ function SideBySideSlide({
   showChart?: boolean;
   showTable?: boolean;
 }) {
-  if (companies.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-20 text-center">
-        <Trophy className="h-10 w-10 text-muted-foreground/40" />
-        <h2 className="text-xl font-semibold">Nenhuma empresa selecionada para o comparativo</h2>
-        <p className="max-w-md text-sm text-muted-foreground">
-          Volte ao setup e marque pelo menos uma empresa em "Empresas no comparativo lado a lado".
-        </p>
-      </div>
-    );
-  }
-
   // Aggregations per company
   const perCompany = companies.map((c) => {
     const rs = movements.filter((m) => m.company_id === c.id);
@@ -1193,6 +1181,18 @@ function SideBySideSlide({
     });
     return row;
   });
+
+  if (companies.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <Trophy className="h-10 w-10 text-muted-foreground/40" />
+        <h2 className="text-xl font-semibold">Nenhuma empresa selecionada para o comparativo</h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Volte ao setup e marque pelo menos uma empresa em "Empresas no comparativo lado a lado".
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
