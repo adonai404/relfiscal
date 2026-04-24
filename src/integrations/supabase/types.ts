@@ -19,11 +19,13 @@ export type Database = {
           cnpj: string
           created_at: string
           created_by: string | null
+          folder_id: string | null
           id: string
           nome_fantasia: string
           razao_social: string
           regime: Database["public"]["Enums"]["tax_regime"]
           slug: string
+          status: Database["public"]["Enums"]["company_status"]
           uf: string
           updated_at: string
         }
@@ -31,11 +33,13 @@ export type Database = {
           cnpj: string
           created_at?: string
           created_by?: string | null
+          folder_id?: string | null
           id?: string
           nome_fantasia: string
           razao_social: string
           regime?: Database["public"]["Enums"]["tax_regime"]
           slug: string
+          status?: Database["public"]["Enums"]["company_status"]
           uf: string
           updated_at?: string
         }
@@ -43,12 +47,52 @@ export type Database = {
           cnpj?: string
           created_at?: string
           created_by?: string | null
+          folder_id?: string | null
           id?: string
           nome_fantasia?: string
           razao_social?: string
           regime?: Database["public"]["Enums"]["tax_regime"]
           slug?: string
+          status?: Database["public"]["Enums"]["company_status"]
           uf?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "company_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_folders: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          position?: number
           updated_at?: string
         }
         Relationships: []
@@ -471,6 +515,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
+      company_status: "ativa" | "inativa" | "arquivada"
       tax_regime: "simples_nacional" | "lucro_presumido" | "lucro_real" | "mei"
       user_status: "ativo" | "bloqueado"
     }
@@ -601,6 +646,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "super_admin"],
+      company_status: ["ativa", "inativa", "arquivada"],
       tax_regime: ["simples_nacional", "lucro_presumido", "lucro_real", "mei"],
       user_status: ["ativo", "bloqueado"],
     },
