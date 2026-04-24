@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Building2, ChevronLeft, ChevronRight, Loader2, LogOut, Maximize2, Minimize2,
   Play, Presentation as PresentationIcon, Tag as TagIcon, Pause,
+  TrendingUp, TrendingDown, Minus, Trophy, Receipt, Wallet, Activity, PieChart as PieIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, CartesianGrid, Legend, LineChart, Line,
+} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
