@@ -19,9 +19,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber, formatCustomValue } from "@/lib/format";
 import {
-  ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
+  ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
 import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
