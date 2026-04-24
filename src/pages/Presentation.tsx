@@ -71,6 +71,27 @@ export default function Presentation() {
   const [intervalSec, setIntervalSec] = useState(8);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // ---- Customização da apresentação ----
+  // Quais slides exibir
+  const [includeOverview, setIncludeOverview] = useState(true);
+  const [includeCompanySlides, setIncludeCompanySlides] = useState(true);
+  const [includeComparison, setIncludeComparison] = useState(true);
+  const [includeSideBySide, setIncludeSideBySide] = useState(true);
+  // Quais colunas/métricas entram no comparativo lado-a-lado
+  // (default: principais métricas financeiras + impostos)
+  const DEFAULT_METRICS: ColumnKey[] = [
+    "entrada", "saida", "icms", "impostos_federais", "simples_nacional",
+    "pis", "cofins", "irpj", "csll", "difal",
+  ];
+  const [comparisonMetrics, setComparisonMetrics] = useState<ColumnKey[]>(DEFAULT_METRICS);
+  // Métricas derivadas opcionais
+  const [includeDerived, setIncludeDerived] = useState({
+    margem: true,
+    margemPct: true,
+    totalImpostos: true,
+    cargaTrib: true,
+  });
+
   // Resolve final list based on chosen filter mode
   const finalCompanyIds = useMemo(() => {
     if (filterTab === "tags") {
@@ -140,15 +161,22 @@ export default function Presentation() {
   type SlideKind =
     | { kind: "overview" }
     | { kind: "company"; companyId: string }
-    | { kind: "comparison" };
+    | { kind: "comparison" }
+    | { kind: "sidebyside" };
 
   const slides: SlideKind[] = useMemo(() => {
     if (finalCompanies.length === 0) return [];
-    const out: SlideKind[] = [{ kind: "overview" }];
-    finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
-    if (finalCompanies.length >= 2) out.push({ kind: "comparison" });
+    const out: SlideKind[] = [];
+    if (includeOverview) out.push({ kind: "overview" });
+    if (includeCompanySlides) {
+      finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
+    }
+    if (finalCompanies.length >= 2 && includeSideBySide) out.push({ kind: "sidebyside" });
+    if (finalCompanies.length >= 2 && includeComparison) out.push({ kind: "comparison" });
+    // Garante pelo menos um slide se o usuário desmarcar tudo
+    if (out.length === 0) out.push({ kind: "overview" });
     return out;
-  }, [finalCompanies]);
+  }, [finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide]);
 
   const currentSlideDef = slides[currentSlide];
   const currentCompany = currentSlideDef?.kind === "company"
@@ -380,7 +408,130 @@ export default function Presentation() {
 
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-base">2. Opções da apresentação</CardTitle>
+              <CardTitle className="text-base">2. Personalize a apresentação</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div>
+                <Label className="text-sm font-medium">Slides incluídos</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Escolha quais tipos de slides farão parte da apresentação.
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeOverview} onCheckedChange={(v) => setIncludeOverview(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Visão Geral Consolidada</p>
+                      <p className="text-xs text-muted-foreground">KPIs, evolução e ranking de todas as empresas.</p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeCompanySlides} onCheckedChange={(v) => setIncludeCompanySlides(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Slide individual por empresa</p>
+                      <p className="text-xs text-muted-foreground">Detalhes completos com gráficos e tabela.</p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeSideBySide} onCheckedChange={(v) => setIncludeSideBySide(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Comparativo Lado a Lado <Badge variant="secondary" className="ml-1">Novo</Badge></p>
+                      <p className="text-xs text-muted-foreground">Empresas em colunas paralelas + total consolidado.</p>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeComparison} onCheckedChange={(v) => setIncludeComparison(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Ranking comparativo</p>
+                      <p className="text-xs text-muted-foreground">Gráficos de ranking entre empresas.</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label className="text-sm font-medium">Métricas no comparativo lado a lado</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione as colunas que serão mostradas para cada empresa.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => setComparisonMetrics(ALL_COLUMNS.filter((c) => !isComputedColumn(c)))}
+                    >
+                      Todas
+                    </Button>
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => setComparisonMetrics([])}
+                    >
+                      Nenhuma
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+                  {ALL_COLUMNS.filter((c) => !isComputedColumn(c)).map((col) => {
+                    const checked = comparisonMetrics.includes(col);
+                    return (
+                      <label
+                        key={col}
+                        className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm hover:bg-accent/40 ${
+                          checked ? "border-primary/40 bg-primary/5" : ""
+                        }`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() =>
+                            setComparisonMetrics((p) =>
+                              p.includes(col) ? p.filter((x) => x !== col) : [...p, col],
+                            )
+                          }
+                        />
+                        <span className="truncate">{getColumnLabel(undefined, col)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Métricas calculadas</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Indicadores derivados exibidos no comparativo lado a lado.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["margem", "Margem (Saída − Entrada)"],
+                    ["margemPct", "Margem %"],
+                    ["totalImpostos", "Total de Impostos"],
+                    ["cargaTrib", "Carga Tributária"],
+                  ] as const).map(([key, label]) => {
+                    const checked = includeDerived[key];
+                    return (
+                      <label
+                        key={key}
+                        className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm hover:bg-accent/40 ${
+                          checked ? "border-primary/50 bg-primary/5" : ""
+                        }`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => setIncludeDerived((p) => ({ ...p, [key]: !!v }))}
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">3. Opções de reprodução</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-4">
@@ -447,7 +598,9 @@ export default function Presentation() {
     ? "Visão Geral Consolidada"
     : currentSlideDef?.kind === "comparison"
       ? "Comparativo entre Empresas"
-      : currentCompany?.nome_fantasia ?? "";
+      : currentSlideDef?.kind === "sidebyside"
+        ? "Comparativo Lado a Lado"
+        : currentCompany?.nome_fantasia ?? "";
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -503,6 +656,14 @@ export default function Presentation() {
               companies={finalCompanies}
               movements={adjustedMovements}
               configByCompany={configByCompany}
+            />
+          ) : currentSlideDef?.kind === "sidebyside" ? (
+            <SideBySideSlide
+              companies={finalCompanies}
+              movements={adjustedMovements}
+              configByCompany={configByCompany}
+              metrics={comparisonMetrics}
+              derived={includeDerived}
             />
           ) : currentCompany ? (
             <CompanySlide
@@ -931,6 +1092,311 @@ function CompanySlide({
           )}
         </CardContent>
       </Card>
+    </>
+  );
+}
+
+// =================== Side-by-Side Slide ===================
+
+function SideBySideSlide({
+  companies, movements, configByCompany, metrics, derived,
+}: {
+  companies: Array<{ id: string; nome_fantasia: string; uf: string }>;
+  movements: MovementRow[];
+  configByCompany: Record<string, FiscalConfig>;
+  metrics: ColumnKey[];
+  derived: { margem: boolean; margemPct: boolean; totalImpostos: boolean; cargaTrib: boolean };
+}) {
+  // Aggregations per company
+  const perCompany = companies.map((c) => {
+    const rs = movements.filter((m) => m.company_id === c.id);
+    const agg = aggregateRows(rs, configByCompany[c.id]);
+    return { company: c, rows: rs, agg };
+  });
+
+  // Consolidated totals
+  const consolidated = useMemo(() => {
+    const totals: Record<string, number> = {};
+    metrics.forEach((m) => {
+      totals[m] = perCompany.reduce((s, p) => s + (p.agg.totals[m] || 0), 0);
+    });
+    const totalEntrada = perCompany.reduce((s, p) => s + (p.agg.totals.entrada || 0), 0);
+    const totalSaida = perCompany.reduce((s, p) => s + (p.agg.totals.saida || 0), 0);
+    const totalImpostos = perCompany.reduce((s, p) => s + p.agg.totalImpostos, 0);
+    const margem = totalSaida - totalEntrada;
+    const margemPct = totalSaida ? margem / totalSaida : 0;
+    const cargaTrib = totalSaida ? totalImpostos / totalSaida : 0;
+    return { totals, totalEntrada, totalSaida, totalImpostos, margem, margemPct, cargaTrib };
+  }, [perCompany, metrics]);
+
+  // Use first company's config for label fallback (labels may differ; prefer most common).
+  const labelFor = (col: ColumnKey) => getColumnLabel(undefined, col);
+
+  // Bar chart per-metric grouped by company
+  const chartData = metrics.slice(0, 8).map((m) => {
+    const row: Record<string, number | string> = { metric: labelFor(m) };
+    perCompany.forEach((p) => {
+      row[p.company.nome_fantasia] = p.agg.totals[m] || 0;
+    });
+    return row;
+  });
+
+  return (
+    <>
+      <div className="text-center">
+        <p className="text-xs uppercase tracking-widest text-primary font-semibold">Lado a Lado</p>
+        <h1 className="mt-1 text-3xl font-bold sm:text-4xl">Comparativo Detalhado</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {companies.length} empresa(s) · {metrics.length} métrica(s) selecionada(s) · 1 consolidado
+        </p>
+      </div>
+
+      {/* Side-by-side cards */}
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${perCompany.length + 1}, minmax(220px, 1fr))` }}
+      >
+        {perCompany.map(({ company, agg }, idx) => {
+          const color = CHART_COLORS[idx % CHART_COLORS.length];
+          return (
+            <Card key={company.id} className="overflow-hidden border-t-4" style={{ borderTopColor: color }}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                  <CardTitle className="text-sm truncate">{company.nome_fantasia}</CardTitle>
+                </div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{company.uf}</p>
+              </CardHeader>
+              <CardContent className="space-y-2 pt-0">
+                {metrics.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Nenhuma métrica selecionada.</p>
+                )}
+                {metrics.map((m) => (
+                  <div key={m} className="flex items-baseline justify-between border-b border-dashed py-1 last:border-0">
+                    <span className="text-xs text-muted-foreground truncate pr-2">
+                      {getColumnLabel(configByCompany[company.id], m)}
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums">
+                      {brl(agg.totals[m] || 0)}
+                    </span>
+                  </div>
+                ))}
+                {(derived.margem || derived.margemPct || derived.totalImpostos || derived.cargaTrib) && (
+                  <div className="mt-3 space-y-1.5 rounded-md bg-muted/40 p-2">
+                    {derived.margem && (
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">Margem</span>
+                        <span className={`text-sm font-semibold tabular-nums ${agg.margem >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                          {brl(agg.margem)}
+                        </span>
+                      </div>
+                    )}
+                    {derived.margemPct && (
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">Margem %</span>
+                        <span className="text-sm font-semibold tabular-nums">
+                          {(agg.margemPct * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                    {derived.totalImpostos && (
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">Total Impostos</span>
+                        <span className="text-sm font-semibold tabular-nums text-amber-600">
+                          {brl(agg.totalImpostos)}
+                        </span>
+                      </div>
+                    )}
+                    {derived.cargaTrib && (
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs text-muted-foreground">Carga Trib.</span>
+                        <span className="text-sm font-semibold tabular-nums">
+                          {formatPercent(agg.cargaTrib)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        {/* Consolidated column */}
+        <Card className="overflow-hidden border-t-4 border-primary bg-primary/5">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm">Consolidado</CardTitle>
+            </div>
+            <p className="text-[10px] uppercase tracking-wide text-primary/80 font-semibold">
+              Soma de todas as empresas
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-0">
+            {metrics.map((m) => (
+              <div key={m} className="flex items-baseline justify-between border-b border-dashed py-1 last:border-0">
+                <span className="text-xs text-muted-foreground truncate pr-2">{labelFor(m)}</span>
+                <span className="text-sm font-bold tabular-nums">
+                  {brl(consolidated.totals[m] || 0)}
+                </span>
+              </div>
+            ))}
+            {(derived.margem || derived.margemPct || derived.totalImpostos || derived.cargaTrib) && (
+              <div className="mt-3 space-y-1.5 rounded-md bg-background/70 p-2 ring-1 ring-primary/20">
+                {derived.margem && (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs text-muted-foreground">Margem</span>
+                    <span className={`text-sm font-bold tabular-nums ${consolidated.margem >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                      {brl(consolidated.margem)}
+                    </span>
+                  </div>
+                )}
+                {derived.margemPct && (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs text-muted-foreground">Margem %</span>
+                    <span className="text-sm font-bold tabular-nums">{(consolidated.margemPct * 100).toFixed(1)}%</span>
+                  </div>
+                )}
+                {derived.totalImpostos && (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs text-muted-foreground">Total Impostos</span>
+                    <span className="text-sm font-bold tabular-nums text-amber-600">
+                      {brl(consolidated.totalImpostos)}
+                    </span>
+                  </div>
+                )}
+                {derived.cargaTrib && (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs text-muted-foreground">Carga Trib.</span>
+                    <span className="text-sm font-bold tabular-nums">{formatPercent(consolidated.cargaTrib)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Grouped bar chart: each metric, bars per company */}
+      {metrics.length > 0 && perCompany.length > 0 && (
+        <ChartCard title="Comparativo Visual por Métrica" icon={Activity}>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="metric" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60}
+                  stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtAxisBR} stroke="hsl(var(--muted-foreground))" />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => brl(v)} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                {perCompany.map((p, i) => (
+                  <Bar
+                    key={p.company.id}
+                    dataKey={p.company.nome_fantasia}
+                    fill={CHART_COLORS[i % CHART_COLORS.length]}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+      )}
+
+      {/* Detailed comparison table */}
+      {metrics.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Tabela Comparativa Detalhada</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky left-0 bg-card">Métrica</TableHead>
+                  {perCompany.map((p) => (
+                    <TableHead key={p.company.id} className="text-right whitespace-nowrap">
+                      {p.company.nome_fantasia}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-right whitespace-nowrap bg-primary/5 font-bold text-primary">
+                    Consolidado
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {metrics.map((m) => (
+                  <TableRow key={m}>
+                    <TableCell className="sticky left-0 bg-card font-medium">{labelFor(m)}</TableCell>
+                    {perCompany.map((p) => (
+                      <TableCell key={p.company.id} className="text-right tabular-nums">
+                        {brl(p.agg.totals[m] || 0)}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right tabular-nums font-bold bg-primary/5">
+                      {brl(consolidated.totals[m] || 0)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {derived.totalImpostos && (
+                  <TableRow className="bg-amber-500/5">
+                    <TableCell className="sticky left-0 bg-amber-500/5 font-semibold">Total Impostos</TableCell>
+                    {perCompany.map((p) => (
+                      <TableCell key={p.company.id} className="text-right tabular-nums font-semibold text-amber-700 dark:text-amber-400">
+                        {brl(p.agg.totalImpostos)}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right tabular-nums font-bold bg-primary/10 text-amber-700 dark:text-amber-400">
+                      {brl(consolidated.totalImpostos)}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {derived.margem && (
+                  <TableRow className="border-t-2">
+                    <TableCell className="sticky left-0 bg-card font-semibold">Margem</TableCell>
+                    {perCompany.map((p) => (
+                      <TableCell key={p.company.id}
+                        className={`text-right tabular-nums font-semibold ${p.agg.margem >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                        {brl(p.agg.margem)}
+                      </TableCell>
+                    ))}
+                    <TableCell className={`text-right tabular-nums font-bold bg-primary/5 ${consolidated.margem >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                      {brl(consolidated.margem)}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {derived.margemPct && (
+                  <TableRow>
+                    <TableCell className="sticky left-0 bg-card font-semibold">Margem %</TableCell>
+                    {perCompany.map((p) => (
+                      <TableCell key={p.company.id} className="text-right tabular-nums">
+                        {(p.agg.margemPct * 100).toFixed(1)}%
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right tabular-nums font-bold bg-primary/5">
+                      {(consolidated.margemPct * 100).toFixed(1)}%
+                    </TableCell>
+                  </TableRow>
+                )}
+                {derived.cargaTrib && (
+                  <TableRow>
+                    <TableCell className="sticky left-0 bg-card font-semibold">Carga Tributária</TableCell>
+                    {perCompany.map((p) => (
+                      <TableCell key={p.company.id} className="text-right tabular-nums">
+                        {formatPercent(p.agg.cargaTrib)}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-right tabular-nums font-bold bg-primary/5">
+                      {formatPercent(consolidated.cargaTrib)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }
