@@ -203,14 +203,14 @@ export default function Movement() {
       });
       byCol[cc.key] = s;
     });
-    const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
+    const totalImpostos = taxCols.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
     return { byCol, totalImpostos, totalSimples, economia };
-  }, [rows, visibleCustom, customCols, valuesByMov]);
+  }, [rows, visibleCustom, customCols, valuesByMov, taxCols]);
 
   // Card visibility rules
-  const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
+  const anyTaxVisible = taxCols.some((c) => isColumnVisible(config ?? undefined, c));
   const showSimplesCard = isColumnVisible(config ?? undefined, "simples_nacional");
   const showEconomiaCard = anyTaxVisible && showSimplesCard;
 
