@@ -111,6 +111,8 @@ export default function PublicMovement() {
     [customCols]
   );
 
+  const taxCols = useMemo(() => getTaxColumns(config ?? undefined), [config]);
+
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
     ALL_COLUMNS.forEach((c) => {
@@ -129,12 +131,12 @@ export default function PublicMovement() {
       });
       byCol[cc.key] = s;
     });
-    const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
+    const totalImpostos = taxCols.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     return { byCol, totalImpostos, totalSimples, economia: totalImpostos - totalSimples };
-  }, [rows, visibleCustom, customCols, valuesByMov]);
+  }, [rows, visibleCustom, customCols, valuesByMov, taxCols]);
 
-  const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
+  const anyTaxVisible = taxCols.some((c) => isColumnVisible(config ?? undefined, c));
   const showSimplesCard = isColumnVisible(config ?? undefined, "simples_nacional");
   const showEconomiaCard = anyTaxVisible && showSimplesCard;
 
