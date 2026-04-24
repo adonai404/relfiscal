@@ -15,7 +15,10 @@ import {
   type ColumnKey,
   useFiscalConfig,
   useUpdateFiscalConfig,
+  TAX_ELIGIBLE_COLUMNS,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatCNPJ } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
