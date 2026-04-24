@@ -517,6 +517,13 @@ export default function Presentation() {
                       <p className="text-xs text-muted-foreground">Gráficos de ranking entre empresas.</p>
                     </div>
                   </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeScenarios} onCheckedChange={(v) => setIncludeScenarios(!!v)} />
+                    <div className="text-sm">
+                      <p className="font-medium">Cenários: Atual × Projetado <Badge variant="secondary" className="ml-1">Economia</Badge></p>
+                      <p className="text-xs text-muted-foreground">Compare dois cenários e destaque a economia.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
