@@ -451,6 +451,25 @@ export default function Presentation() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
+                <Label className="text-sm font-medium">Período</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Filtre os dados por competência. Vale para todos os slides (geral, individual, lado a lado e ranking).
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <PeriodFilter
+                    value={period}
+                    onChange={setPeriod}
+                    available={availableCompetencias}
+                  />
+                  {(period.from || period.to) && (
+                    <span className="text-xs text-muted-foreground">
+                      {period.from ? displayCompetencia(period.from) : "início"} → {period.to ? displayCompetencia(period.to) : "hoje"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
                 <Label className="text-sm font-medium">Slides incluídos</Label>
                 <p className="text-xs text-muted-foreground mb-2">
                   Escolha quais tipos de slides farão parte da apresentação.
