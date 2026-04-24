@@ -79,6 +79,12 @@ export default function Presentation() {
   const [includeCompanySlides, setIncludeCompanySlides] = useState(true);
   const [includeComparison, setIncludeComparison] = useState(true);
   const [includeSideBySide, setIncludeSideBySide] = useState(true);
+  // Slide de Cenários (Atual x Projetado) — foco em economia
+  const [includeScenarios, setIncludeScenarios] = useState(true);
+  const [scenarioALabel, setScenarioALabel] = useState("Cenário Atual");
+  const [scenarioBLabel, setScenarioBLabel] = useState("Cenário Projetado");
+  const [scenarioACompanyIds, setScenarioACompanyIds] = useState<string[]>([]);
+  const [scenarioBCompanyIds, setScenarioBCompanyIds] = useState<string[]>([]);
   // Quais colunas/métricas entram no comparativo lado-a-lado
   // (default: principais métricas financeiras + impostos)
   const DEFAULT_METRICS: ColumnKey[] = [
