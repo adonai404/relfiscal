@@ -92,6 +92,18 @@ export default function Presentation() {
     cargaTrib: true,
   });
 
+  // Quais empresas entram especificamente no comparativo lado-a-lado
+  // (sub-conjunto das empresas selecionadas). null = "todas as selecionadas".
+  const [comparisonCompanyIds, setComparisonCompanyIds] = useState<string[] | null>(null);
+  // Como calcular a coluna "Consolidado": soma ou média das empresas comparadas
+  const [consolidationMode, setConsolidationMode] = useState<"sum" | "avg">("sum");
+  // Mostrar coluna "Consolidado" no comparativo
+  const [showConsolidated, setShowConsolidated] = useState(true);
+  // Mostrar gráfico visual no comparativo lado-a-lado
+  const [showComparisonChart, setShowComparisonChart] = useState(true);
+  // Mostrar tabela detalhada no comparativo lado-a-lado
+  const [showComparisonTable, setShowComparisonTable] = useState(true);
+
   // Resolve final list based on chosen filter mode
   const finalCompanyIds = useMemo(() => {
     if (filterTab === "tags") {
