@@ -173,6 +173,14 @@ export default function Presentation() {
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
+  const filteredCompanyList = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((c) =>
+      [c.nome_fantasia, c.razao_social, c.cnpj, c.uf].some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [companies, search]);
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -182,14 +190,6 @@ export default function Presentation() {
   const toggleTag = (id: string) => {
     setSelectedTagIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   };
-
-  const filteredCompanyList = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return companies;
-    return companies.filter((c) =>
-      [c.nome_fantasia, c.razao_social, c.cnpj, c.uf].some((v) => String(v).toLowerCase().includes(q)),
-    );
-  }, [companies, search]);
 
   const startPresentation = () => {
     if (finalCompanyIds.length === 0) return;
