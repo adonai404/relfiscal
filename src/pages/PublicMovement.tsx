@@ -8,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
-  ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
+  ALL_COLUMNS, type ColumnKey,
   type FiscalConfig, isColumnVisible, getColumnLabel,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
 import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
 import { formatCustomValue } from "@/lib/format";
