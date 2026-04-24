@@ -713,7 +713,8 @@ function CompanySlide({
   cfg: FiscalConfig | undefined;
 }) {
   const visibleCols: ColumnKey[] = ALL_COLUMNS.filter((c) => isColumnVisible(cfg, c));
-  const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(rows);
+  const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(rows, cfg);
+  const taxCols = getTaxColumns(cfg);
 
   // Trend: last vs previous competence
   const sortedByComp = [...rows].sort((a, b) => a.competencia.localeCompare(b.competencia));
@@ -731,8 +732,9 @@ function CompanySlide({
 
   // Time-series chart data
   const chartData = sortedByComp.map((r) => {
-    const tax = TAX_COLUMNS.reduce((s, c) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0)
-      + Number(r.impostos_federais || 0) + Number(r.simples_nacional || 0);
+    const tax = taxCols.reduce(
+      (s, c) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0,
+    );
     return {
       periodo: displayCompetencia(r.competencia),
       Entrada: Number(r.entrada || 0),
