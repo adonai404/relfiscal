@@ -193,7 +193,8 @@ export default function Presentation() {
     | { kind: "overview" }
     | { kind: "company"; companyId: string }
     | { kind: "comparison" }
-    | { kind: "sidebyside" };
+    | { kind: "sidebyside" }
+    | { kind: "scenarios" };
 
   const slides: SlideKind[] = useMemo(() => {
     if (finalCompanies.length === 0) return [];
@@ -202,12 +203,18 @@ export default function Presentation() {
     if (includeCompanySlides) {
       finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
     }
+    if (includeScenarios && (scenarioACompanyIds.length > 0 || scenarioBCompanyIds.length > 0)) {
+      out.push({ kind: "scenarios" });
+    }
     if (finalCompanies.length >= 2 && includeSideBySide) out.push({ kind: "sidebyside" });
     if (finalCompanies.length >= 2 && includeComparison) out.push({ kind: "comparison" });
     // Garante pelo menos um slide se o usuário desmarcar tudo
     if (out.length === 0) out.push({ kind: "overview" });
     return out;
-  }, [finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide]);
+  }, [
+    finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide,
+    includeScenarios, scenarioACompanyIds, scenarioBCompanyIds,
+  ]);
 
   const currentSlideDef = slides[currentSlide];
   const currentCompany = currentSlideDef?.kind === "company"
