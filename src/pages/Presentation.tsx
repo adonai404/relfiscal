@@ -680,6 +680,123 @@ export default function Presentation() {
                 </div>
               )}
 
+              {/* Configuração dos Cenários (Atual × Projetado) */}
+              {includeScenarios && finalCompanies.length > 0 && (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-emerald-600" />
+                    <Label className="text-sm font-medium">Cenários — Atual × Projetado</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Monte dois cenários selecionando empresas para cada um. A apresentação mostra o
+                    total geral de cada cenário, a diferença, e destaca qual é mais vantajoso.
+                  </p>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {/* Cenário A */}
+                    <div className="rounded-md border bg-background p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />
+                        <Input
+                          value={scenarioALabel}
+                          onChange={(e) => setScenarioALabel(e.target.value)}
+                          className="h-8 font-semibold"
+                          placeholder="Cenário Atual"
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {scenarioACompanyIds.length} empresa(s)
+                        </span>
+                        <div className="flex gap-1.5">
+                          <Button type="button" variant="outline" size="sm"
+                            onClick={() => setScenarioACompanyIds(finalCompanies.map((c) => c.id))}>
+                            Todas
+                          </Button>
+                          <Button type="button" variant="outline" size="sm"
+                            onClick={() => setScenarioACompanyIds([])}>
+                            Limpar
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-auto pr-1">
+                        {finalCompanies.map((c) => {
+                          const checked = scenarioACompanyIds.includes(c.id);
+                          return (
+                            <label key={c.id}
+                              className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-xs hover:bg-accent/40 ${
+                                checked ? "border-primary/50 bg-primary/5" : ""
+                              }`}>
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() =>
+                                  setScenarioACompanyIds((p) =>
+                                    p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id],
+                                  )
+                                }
+                              />
+                              <span className="truncate">{c.nome_fantasia}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Cenário B */}
+                    <div className="rounded-md border bg-background p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        <Input
+                          value={scenarioBLabel}
+                          onChange={(e) => setScenarioBLabel(e.target.value)}
+                          className="h-8 font-semibold"
+                          placeholder="Cenário Projetado"
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {scenarioBCompanyIds.length} empresa(s)
+                        </span>
+                        <div className="flex gap-1.5">
+                          <Button type="button" variant="outline" size="sm"
+                            onClick={() => setScenarioBCompanyIds(finalCompanies.map((c) => c.id))}>
+                            Todas
+                          </Button>
+                          <Button type="button" variant="outline" size="sm"
+                            onClick={() => setScenarioBCompanyIds([])}>
+                            Limpar
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-auto pr-1">
+                        {finalCompanies.map((c) => {
+                          const checked = scenarioBCompanyIds.includes(c.id);
+                          return (
+                            <label key={c.id}
+                              className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-xs hover:bg-accent/40 ${
+                                checked ? "border-emerald-500/50 bg-emerald-500/10" : ""
+                              }`}>
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() =>
+                                  setScenarioBCompanyIds((p) =>
+                                    p.includes(c.id) ? p.filter((x) => x !== c.id) : [...p, c.id],
+                                  )
+                                }
+                              />
+                              <span className="truncate">{c.nome_fantasia}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Dica: a mesma empresa pode aparecer nos dois cenários se quiser projetar uma reorganização.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <Label className="text-sm font-medium">Métricas calculadas</Label>
                 <p className="text-xs text-muted-foreground mb-2">
