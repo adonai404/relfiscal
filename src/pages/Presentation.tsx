@@ -848,6 +848,16 @@ export default function Presentation() {
               showChart={showComparisonChart}
               showTable={showComparisonTable}
             />
+          ) : currentSlideDef?.kind === "scenarios" ? (
+            <ScenariosSlide
+              allCompanies={finalCompanies}
+              scenarioACompanyIds={scenarioACompanyIds}
+              scenarioBCompanyIds={scenarioBCompanyIds}
+              scenarioALabel={scenarioALabel}
+              scenarioBLabel={scenarioBLabel}
+              movements={adjustedMovements}
+              configByCompany={configByCompany}
+            />
           ) : currentCompany ? (
             <CompanySlide
               company={currentCompany}
