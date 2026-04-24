@@ -1131,13 +1131,30 @@ function CompanySlide({
 
 function SideBySideSlide({
   companies, movements, configByCompany, metrics, derived,
+  consolidationMode = "sum", showConsolidated = true, showChart = true, showTable = true,
 }: {
   companies: Array<{ id: string; nome_fantasia: string; uf: string }>;
   movements: MovementRow[];
   configByCompany: Record<string, FiscalConfig>;
   metrics: ColumnKey[];
   derived: { margem: boolean; margemPct: boolean; totalImpostos: boolean; cargaTrib: boolean };
+  consolidationMode?: "sum" | "avg";
+  showConsolidated?: boolean;
+  showChart?: boolean;
+  showTable?: boolean;
 }) {
+  if (companies.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <Trophy className="h-10 w-10 text-muted-foreground/40" />
+        <h2 className="text-xl font-semibold">Nenhuma empresa selecionada para o comparativo</h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Volte ao setup e marque pelo menos uma empresa em "Empresas no comparativo lado a lado".
+        </p>
+      </div>
+    );
+  }
+
   // Aggregations per company
   const perCompany = companies.map((c) => {
     const rs = movements.filter((m) => m.company_id === c.id);
@@ -1148,17 +1165,22 @@ function SideBySideSlide({
   // Consolidated totals
   const consolidated = useMemo(() => {
     const totals: Record<string, number> = {};
+    const n = perCompany.length || 1;
     metrics.forEach((m) => {
-      totals[m] = perCompany.reduce((s, p) => s + (p.agg.totals[m] || 0), 0);
+      const sum = perCompany.reduce((s, p) => s + (p.agg.totals[m] || 0), 0);
+      totals[m] = consolidationMode === "avg" ? sum / n : sum;
     });
-    const totalEntrada = perCompany.reduce((s, p) => s + (p.agg.totals.entrada || 0), 0);
-    const totalSaida = perCompany.reduce((s, p) => s + (p.agg.totals.saida || 0), 0);
-    const totalImpostos = perCompany.reduce((s, p) => s + p.agg.totalImpostos, 0);
+    const sumEntrada = perCompany.reduce((s, p) => s + (p.agg.totals.entrada || 0), 0);
+    const sumSaida = perCompany.reduce((s, p) => s + (p.agg.totals.saida || 0), 0);
+    const sumImpostos = perCompany.reduce((s, p) => s + p.agg.totalImpostos, 0);
+    const totalEntrada = consolidationMode === "avg" ? sumEntrada / n : sumEntrada;
+    const totalSaida = consolidationMode === "avg" ? sumSaida / n : sumSaida;
+    const totalImpostos = consolidationMode === "avg" ? sumImpostos / n : sumImpostos;
     const margem = totalSaida - totalEntrada;
     const margemPct = totalSaida ? margem / totalSaida : 0;
-    const cargaTrib = totalSaida ? totalImpostos / totalSaida : 0;
+    const cargaTrib = sumSaida ? sumImpostos / sumSaida : 0;
     return { totals, totalEntrada, totalSaida, totalImpostos, margem, margemPct, cargaTrib };
-  }, [perCompany, metrics]);
+  }, [perCompany, metrics, consolidationMode]);
 
   // Use first company's config for label fallback (labels may differ; prefer most common).
   const labelFor = (col: ColumnKey) => getColumnLabel(undefined, col);
@@ -1178,14 +1200,15 @@ function SideBySideSlide({
         <p className="text-xs uppercase tracking-widest text-primary font-semibold">Lado a Lado</p>
         <h1 className="mt-1 text-3xl font-bold sm:text-4xl">Comparativo Detalhado</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {companies.length} empresa(s) · {metrics.length} métrica(s) selecionada(s) · 1 consolidado
+          {companies.length} empresa(s) · {metrics.length} métrica(s) selecionada(s)
+          {showConsolidated && ` · Consolidado (${consolidationMode === "avg" ? "média" : "soma"})`}
         </p>
       </div>
 
       {/* Side-by-side cards */}
       <div
         className="grid gap-3"
-        style={{ gridTemplateColumns: `repeat(${perCompany.length + 1}, minmax(220px, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${perCompany.length + (showConsolidated ? 1 : 0)}, minmax(220px, 1fr))` }}
       >
         {perCompany.map(({ company, agg }, idx) => {
           const color = CHART_COLORS[idx % CHART_COLORS.length];
@@ -1254,6 +1277,7 @@ function SideBySideSlide({
         })}
 
         {/* Consolidated column */}
+        {showConsolidated && (
         <Card className="overflow-hidden border-t-4 border-primary bg-primary/5">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
@@ -1261,7 +1285,7 @@ function SideBySideSlide({
               <CardTitle className="text-sm">Consolidado</CardTitle>
             </div>
             <p className="text-[10px] uppercase tracking-wide text-primary/80 font-semibold">
-              Soma de todas as empresas
+              {consolidationMode === "avg" ? "Média" : "Soma"} de {perCompany.length} empresa(s)
             </p>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
@@ -1307,10 +1331,11 @@ function SideBySideSlide({
             )}
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Grouped bar chart: each metric, bars per company */}
-      {metrics.length > 0 && perCompany.length > 0 && (
+      {showChart && metrics.length > 0 && perCompany.length > 0 && (
         <ChartCard title="Comparativo Visual por Métrica" icon={Activity}>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -1336,7 +1361,7 @@ function SideBySideSlide({
       )}
 
       {/* Detailed comparison table */}
-      {metrics.length > 0 && (
+      {showTable && metrics.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Tabela Comparativa Detalhada</CardTitle>
@@ -1351,9 +1376,11 @@ function SideBySideSlide({
                       {p.company.nome_fantasia}
                     </TableHead>
                   ))}
-                  <TableHead className="text-right whitespace-nowrap bg-primary/5 font-bold text-primary">
-                    Consolidado
-                  </TableHead>
+                  {showConsolidated && (
+                    <TableHead className="text-right whitespace-nowrap bg-primary/5 font-bold text-primary">
+                      Consolidado
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1365,9 +1392,11 @@ function SideBySideSlide({
                         {brl(p.agg.totals[m] || 0)}
                       </TableCell>
                     ))}
-                    <TableCell className="text-right tabular-nums font-bold bg-primary/5">
-                      {brl(consolidated.totals[m] || 0)}
-                    </TableCell>
+                    {showConsolidated && (
+                      <TableCell className="text-right tabular-nums font-bold bg-primary/5">
+                        {brl(consolidated.totals[m] || 0)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
                 {derived.totalImpostos && (
@@ -1378,9 +1407,11 @@ function SideBySideSlide({
                         {brl(p.agg.totalImpostos)}
                       </TableCell>
                     ))}
-                    <TableCell className="text-right tabular-nums font-bold bg-primary/10 text-amber-700 dark:text-amber-400">
-                      {brl(consolidated.totalImpostos)}
-                    </TableCell>
+                    {showConsolidated && (
+                      <TableCell className="text-right tabular-nums font-bold bg-primary/10 text-amber-700 dark:text-amber-400">
+                        {brl(consolidated.totalImpostos)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 )}
                 {derived.margem && (
@@ -1392,9 +1423,11 @@ function SideBySideSlide({
                         {brl(p.agg.margem)}
                       </TableCell>
                     ))}
-                    <TableCell className={`text-right tabular-nums font-bold bg-primary/5 ${consolidated.margem >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                      {brl(consolidated.margem)}
-                    </TableCell>
+                    {showConsolidated && (
+                      <TableCell className={`text-right tabular-nums font-bold bg-primary/5 ${consolidated.margem >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                        {brl(consolidated.margem)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 )}
                 {derived.margemPct && (
@@ -1405,9 +1438,11 @@ function SideBySideSlide({
                         {(p.agg.margemPct * 100).toFixed(1)}%
                       </TableCell>
                     ))}
-                    <TableCell className="text-right tabular-nums font-bold bg-primary/5">
-                      {(consolidated.margemPct * 100).toFixed(1)}%
-                    </TableCell>
+                    {showConsolidated && (
+                      <TableCell className="text-right tabular-nums font-bold bg-primary/5">
+                        {(consolidated.margemPct * 100).toFixed(1)}%
+                      </TableCell>
+                    )}
                   </TableRow>
                 )}
                 {derived.cargaTrib && (
@@ -1418,9 +1453,11 @@ function SideBySideSlide({
                         {formatPercent(p.agg.cargaTrib)}
                       </TableCell>
                     ))}
-                    <TableCell className="text-right tabular-nums font-bold bg-primary/5">
-                      {formatPercent(consolidated.cargaTrib)}
-                    </TableCell>
+                    {showConsolidated && (
+                      <TableCell className="text-right tabular-nums font-bold bg-primary/5">
+                        {formatPercent(consolidated.cargaTrib)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 )}
               </TableBody>
