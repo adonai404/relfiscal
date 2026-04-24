@@ -28,10 +28,11 @@ import { useTags, useCompanyTags } from "@/hooks/useTags";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
-  ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
+  ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
   type FiscalConfig,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
 
 interface MovementRow {
@@ -646,7 +647,7 @@ function KPI({
 
 // =================== Aggregations ===================
 
-function aggregateRows(rows: MovementRow[]) {
+function aggregateRows(rows: MovementRow[], cfg?: FiscalConfig) {
   const totals: Record<string, number> = {};
   ALL_COLUMNS.forEach((c) => {
     if (isComputedColumn(c)) {
@@ -658,8 +659,8 @@ function aggregateRows(rows: MovementRow[]) {
     }
   });
   if (totals.saida) totals.aliquota_simples_calc = (totals.simples_nacional || 0) / totals.saida;
-  const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (totals[c] || 0), 0)
-    + (totals.impostos_federais || 0) + (totals.simples_nacional || 0);
+  const taxCols = getTaxColumns(cfg);
+  const totalImpostos = taxCols.reduce((s, c) => s + (totals[c] || 0), 0);
   const margem = (totals.saida || 0) - (totals.entrada || 0);
   const cargaTrib = totals.saida ? (totalImpostos / totals.saida) : 0;
   const margemPct = totals.saida ? (margem / totals.saida) : 0;
