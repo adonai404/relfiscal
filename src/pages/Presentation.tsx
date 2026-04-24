@@ -569,18 +569,18 @@ const TONE_CLASSES: Record<Tone, { border: string; icon: string; bg: string }> =
   neutral: { border: "border-l-muted-foreground", icon: "text-muted-foreground", bg: "bg-muted" },
 };
 
-// Chart palette using tailwind chart tokens (already defined in index.css)
+// Chart palette (HSL constants for cross-theme legibility)
 const CHART_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(217 91% 60%)",
-  "hsl(160 84% 39%)",
-  "hsl(45 93% 47%)",
-  "hsl(280 65% 60%)",
-  "hsl(0 84% 60%)",
+  "hsl(217 91% 60%)",  // blue
+  "hsl(160 84% 39%)",  // emerald
+  "hsl(45 93% 47%)",   // amber
+  "hsl(280 65% 60%)",  // purple
+  "hsl(0 84% 60%)",    // red
+  "hsl(190 80% 45%)",  // cyan
+  "hsl(330 80% 60%)",  // pink
+  "hsl(20 90% 55%)",   // orange
+  "hsl(140 60% 45%)",  // green
+  "hsl(250 70% 65%)",  // indigo
 ];
 
 function KPI({
