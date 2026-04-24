@@ -686,11 +686,15 @@ export default function Presentation() {
             />
           ) : currentSlideDef?.kind === "sidebyside" ? (
             <SideBySideSlide
-              companies={finalCompanies}
+              companies={comparisonCompanies}
               movements={adjustedMovements}
               configByCompany={configByCompany}
               metrics={comparisonMetrics}
               derived={includeDerived}
+              consolidationMode={consolidationMode}
+              showConsolidated={showConsolidated}
+              showChart={showComparisonChart}
+              showTable={showComparisonTable}
             />
           ) : currentCompany ? (
             <CompanySlide
