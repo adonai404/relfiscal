@@ -464,6 +464,48 @@ export default function Companies() {
 
       <BatchImportDialog open={batchOpen} onOpenChange={setBatchOpen} />
 
+      <Dialog open={!!toEdit} onOpenChange={(o) => !o && setToEdit(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar empresa</DialogTitle></DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>CNPJ</Label>
+              <Input required value={editForm.cnpj} onChange={(e) => setEditForm({ ...editForm, cnpj: e.target.value })} placeholder="00.000.000/0000-00" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Razão Social</Label>
+              <Input required value={editForm.razao_social} onChange={(e) => setEditForm({ ...editForm, razao_social: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nome Fantasia</Label>
+              <Input required value={editForm.nome_fantasia} onChange={(e) => setEditForm({ ...editForm, nome_fantasia: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>UF</Label>
+              <Input required maxLength={2} value={editForm.uf} onChange={(e) => setEditForm({ ...editForm, uf: e.target.value.toUpperCase() })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Regime Tributário</Label>
+              <Select value={editForm.regime} onValueChange={(v) => setEditForm({ ...editForm, regime: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simples_nacional">Simples Nacional</SelectItem>
+                  <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                  <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                  <SelectItem value="mei">MEI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setToEdit(null)} disabled={updating}>Cancelar</Button>
+              <Button type="submit" disabled={updating}>
+                {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
