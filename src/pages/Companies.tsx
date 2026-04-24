@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3 } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +117,9 @@ export default function Companies() {
             )}
             <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
               <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/apresentacao")}>
+              <PresentationIcon className="mr-2 h-4 w-4" /> Apresentação
             </Button>
             <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
               <Layers className="mr-2 h-4 w-4" /> Combo
