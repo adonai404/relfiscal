@@ -19,9 +19,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber, formatCustomValue } from "@/lib/format";
 import {
-  ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
+  ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
 import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
@@ -180,6 +181,8 @@ export default function Movement() {
     [config]
   );
 
+  const taxCols = useMemo(() => getTaxColumns(config ?? undefined), [config]);
+
   const totals = useMemo(() => {
     const byCol: Record<string, number> = {};
     ALL_COLUMNS.forEach((c) => {
@@ -202,14 +205,14 @@ export default function Movement() {
       });
       byCol[cc.key] = s;
     });
-    const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (byCol[c] || 0), 0);
+    const totalImpostos = taxCols.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
     const economia = totalImpostos - totalSimples;
     return { byCol, totalImpostos, totalSimples, economia };
-  }, [rows, visibleCustom, customCols, valuesByMov]);
+  }, [rows, visibleCustom, customCols, valuesByMov, taxCols]);
 
   // Card visibility rules
-  const anyTaxVisible = TAX_COLUMNS.some((c) => isColumnVisible(config ?? undefined, c));
+  const anyTaxVisible = taxCols.some((c) => isColumnVisible(config ?? undefined, c));
   const showSimplesCard = isColumnVisible(config ?? undefined, "simples_nacional");
   const showEconomiaCard = anyTaxVisible && showSimplesCard;
 

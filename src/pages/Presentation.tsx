@@ -28,10 +28,11 @@ import { useTags, useCompanyTags } from "@/hooks/useTags";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { brl, displayCompetencia, formatCNPJ } from "@/lib/format";
 import {
-  ALL_COLUMNS, TAX_COLUMNS, type ColumnKey,
+  ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
   type FiscalConfig,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
 
 interface MovementRow {
@@ -646,7 +647,7 @@ function KPI({
 
 // =================== Aggregations ===================
 
-function aggregateRows(rows: MovementRow[]) {
+function aggregateRows(rows: MovementRow[], cfg?: FiscalConfig) {
   const totals: Record<string, number> = {};
   ALL_COLUMNS.forEach((c) => {
     if (isComputedColumn(c)) {
@@ -658,8 +659,8 @@ function aggregateRows(rows: MovementRow[]) {
     }
   });
   if (totals.saida) totals.aliquota_simples_calc = (totals.simples_nacional || 0) / totals.saida;
-  const totalImpostos = TAX_COLUMNS.reduce((s, c) => s + (totals[c] || 0), 0)
-    + (totals.impostos_federais || 0) + (totals.simples_nacional || 0);
+  const taxCols = getTaxColumns(cfg);
+  const totalImpostos = taxCols.reduce((s, c) => s + (totals[c] || 0), 0);
   const margem = (totals.saida || 0) - (totals.entrada || 0);
   const cargaTrib = totals.saida ? (totalImpostos / totals.saida) : 0;
   const margemPct = totals.saida ? (margem / totals.saida) : 0;
@@ -712,7 +713,8 @@ function CompanySlide({
   cfg: FiscalConfig | undefined;
 }) {
   const visibleCols: ColumnKey[] = ALL_COLUMNS.filter((c) => isColumnVisible(cfg, c));
-  const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(rows);
+  const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(rows, cfg);
+  const taxCols = getTaxColumns(cfg);
 
   // Trend: last vs previous competence
   const sortedByComp = [...rows].sort((a, b) => a.competencia.localeCompare(b.competencia));
@@ -730,8 +732,9 @@ function CompanySlide({
 
   // Time-series chart data
   const chartData = sortedByComp.map((r) => {
-    const tax = TAX_COLUMNS.reduce((s, c) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0)
-      + Number(r.impostos_federais || 0) + Number(r.simples_nacional || 0);
+    const tax = taxCols.reduce(
+      (s, c) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0,
+    );
     return {
       periodo: displayCompetencia(r.competencia),
       Entrada: Number(r.entrada || 0),
@@ -939,6 +942,7 @@ function OverviewSlide({
   movements: MovementRow[];
 }) {
   const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(movements);
+  const taxCols = getTaxColumns(undefined);
 
   // Aggregate by competencia across all companies
   const byComp: Record<string, { Entrada: number; Saida: number; Impostos: number }> = {};
@@ -947,8 +951,9 @@ function OverviewSlide({
     if (!byComp[k]) byComp[k] = { Entrada: 0, Saida: 0, Impostos: 0 };
     byComp[k].Entrada += Number(m.entrada || 0);
     byComp[k].Saida += Number(m.saida || 0);
-    byComp[k].Impostos += TAX_COLUMNS.reduce((s, c) => s + Number((m as unknown as Record<string, number>)[c] || 0), 0)
-      + Number(m.impostos_federais || 0) + Number(m.simples_nacional || 0);
+    byComp[k].Impostos += taxCols.reduce(
+      (s, c) => s + Number((m as unknown as Record<string, number>)[c] || 0), 0,
+    );
   });
   const trendData = Object.entries(byComp)
     .sort(([a], [b]) => a.localeCompare(b))

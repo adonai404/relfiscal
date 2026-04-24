@@ -15,7 +15,10 @@ import {
   type ColumnKey,
   useFiscalConfig,
   useUpdateFiscalConfig,
+  TAX_ELIGIBLE_COLUMNS,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatCNPJ } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,6 +131,23 @@ export default function Settings() {
       onSuccess: () => toast.success("Alíquota atualizada"),
       onError: (e: Error) => toast.error(e.message),
     });
+  };
+
+  const currentTaxCols = getTaxColumns(config ?? undefined);
+  const toggleTaxColumn = (col: ColumnKey, checked: boolean) => {
+    const next = checked
+      ? Array.from(new Set([...currentTaxCols, col]))
+      : currentTaxCols.filter((c) => c !== col);
+    update.mutate(
+      { tax_columns: next } as Partial<FiscalConfig>,
+      {
+        onSuccess: () =>
+          toast.success(
+            `${TOGGLE_LABELS[col]} ${checked ? "passou a contar" : "deixou de contar"} como imposto`,
+          ),
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
   };
 
   return (
@@ -245,6 +265,43 @@ export default function Settings() {
                     onBlur={saveAliquota}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Card — Colunas que contam como imposto */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Colunas Consideradas Impostos</CardTitle>
+                <CardDescription>
+                  Selecione quais colunas entram nos cálculos de <strong>total de impostos</strong>,
+                  <strong> carga tributária</strong> e <strong>economia</strong>.
+                  Desmarque colunas que servem apenas para demonstração — elas continuam visíveis na
+                  tabela, mas não somam nas métricas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {TAX_ELIGIBLE_COLUMNS.map((col) => {
+                    const checked = currentTaxCols.includes(col);
+                    return (
+                      <label
+                        key={col}
+                        htmlFor={`tax-${col}`}
+                        className="flex items-center justify-between gap-3 rounded-lg border p-3 cursor-pointer hover:bg-accent/40 transition-colors"
+                      >
+                        <span className="text-sm font-medium">{TOGGLE_LABELS[col]}</span>
+                        <Checkbox
+                          id={`tax-${col}`}
+                          checked={checked}
+                          onCheckedChange={(v) => toggleTaxColumn(col, v === true)}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Por padrão, todas as colunas tributárias contam como imposto.
+                </p>
               </CardContent>
             </Card>
 

@@ -31,6 +31,12 @@ export interface FiscalConfig {
   label_csll: string;
   aliquota_simples_nacional: number;
   auto_calculate_simples_nacional: boolean;
+  /**
+   * Lista de colunas que entram nos cálculos de "impostos" (totais, cards,
+   * gráficos). Permite excluir colunas que servem apenas para demonstração.
+   * Default: todas as colunas tributárias do sistema.
+   */
+  tax_columns?: ColumnKey[];
 }
 
 export type ColumnKey =
@@ -51,6 +57,28 @@ export const TOGGLEABLE_COLUMNS: ColumnKey[] = [
 ];
 
 export const TAX_COLUMNS: ColumnKey[] = ["icms", "difal", "pis", "cofins", "irpj", "csll"];
+
+// Conjunto completo de colunas que PODEM ser marcadas como "imposto".
+// Inclui as clássicas tributárias + impostos_federais + simples_nacional.
+export const TAX_ELIGIBLE_COLUMNS: ColumnKey[] = [
+  "icms", "difal", "pis", "cofins", "irpj", "csll",
+  "impostos_federais", "simples_nacional",
+];
+
+// Default usado quando o config ainda não tem `tax_columns` salvo.
+const DEFAULT_TAX_COLUMNS: ColumnKey[] = [...TAX_ELIGIBLE_COLUMNS];
+
+/**
+ * Retorna as colunas que devem ser somadas como "impostos" para esta empresa.
+ * Respeita a configuração `tax_columns` do fiscal_config; se não houver,
+ * volta ao default (todas as colunas tributárias).
+ */
+export const getTaxColumns = (cfg: FiscalConfig | undefined | null): ColumnKey[] => {
+  const raw = cfg?.tax_columns;
+  if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_TAX_COLUMNS;
+  // Filtra apenas valores válidos para evitar lixo no banco.
+  return raw.filter((c): c is ColumnKey => TAX_ELIGIBLE_COLUMNS.includes(c as ColumnKey));
+};
 
 // Computed (virtual) columns are not stored in DB and not editable
 export const COMPUTED_COLUMNS: ColumnKey[] = ["aliquota_simples_calc"];

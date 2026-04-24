@@ -213,6 +213,7 @@ export type Database = {
           show_irpj_column: boolean
           show_pis_column: boolean
           show_simples_nacional_column: boolean
+          tax_columns: Json
           updated_at: string
         }
         Insert: {
@@ -246,6 +247,7 @@ export type Database = {
           show_irpj_column?: boolean
           show_pis_column?: boolean
           show_simples_nacional_column?: boolean
+          tax_columns?: Json
           updated_at?: string
         }
         Update: {
@@ -279,6 +281,7 @@ export type Database = {
           show_irpj_column?: boolean
           show_pis_column?: boolean
           show_simples_nacional_column?: boolean
+          tax_columns?: Json
           updated_at?: string
         }
         Relationships: [
