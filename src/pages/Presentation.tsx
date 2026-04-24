@@ -5,6 +5,7 @@ import {
   Building2, ChevronLeft, ChevronRight, Loader2, LogOut, Maximize2, Minimize2,
   Play, Presentation as PresentationIcon, Tag as TagIcon, Pause,
   TrendingUp, TrendingDown, Minus, Trophy, Receipt, Wallet, Activity, PieChart as PieIcon,
+  ArrowRight, Sparkles, Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
