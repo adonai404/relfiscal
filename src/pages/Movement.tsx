@@ -181,8 +181,9 @@ export default function Movement() {
     [config]
   );
 
+  const taxCols = useMemo(() => getTaxColumns(config ?? undefined), [config]);
+
   const totals = useMemo(() => {
-    const taxCols = getTaxColumns(config ?? undefined);
     const byCol: Record<string, number> = {};
     ALL_COLUMNS.forEach((c) => {
       if (isComputedColumn(c)) {
