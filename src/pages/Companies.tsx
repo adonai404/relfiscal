@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,9 @@ export default function Companies() {
   const [search, setSearch] = useState("");
   const [toDelete, setToDelete] = useState<typeof companies[number] | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [toEdit, setToEdit] = useState<typeof companies[number] | null>(null);
+  const [editForm, setEditForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
+  const [updating, setUpdating] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list" | "table">(
     () => (typeof window !== "undefined" && (localStorage.getItem("companies:view") as any)) || "grid"
   );
@@ -80,6 +83,33 @@ export default function Companies() {
     if (error) return toast.error(error.message);
     toast.success("Empresa excluída");
     setToDelete(null);
+    qc.invalidateQueries({ queryKey: ["companies"] });
+    refetch();
+  };
+
+  const openEdit = (c: typeof companies[number]) => {
+    setEditForm({
+      cnpj: c.cnpj ?? "",
+      razao_social: c.razao_social ?? "",
+      nome_fantasia: c.nome_fantasia ?? "",
+      uf: c.uf ?? "",
+      regime: ((c as any).regime as string) ?? "simples_nacional",
+    });
+    setToEdit(c);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!toEdit) return;
+    setUpdating(true);
+    const { error } = await supabase
+      .from("companies")
+      .update(editForm as never)
+      .eq("id", toEdit.id);
+    setUpdating(false);
+    if (error) return toast.error(error.message);
+    toast.success("Empresa atualizada");
+    setToEdit(null);
     qc.invalidateQueries({ queryKey: ["companies"] });
     refetch();
   };
@@ -238,6 +268,7 @@ export default function Companies() {
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
               const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+              const canEdit = canDelete;
               return (
                 <Card key={c.id} className="cursor-pointer transition hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5" onClick={() => select(c)}>
                   <CardHeader>
@@ -264,6 +295,17 @@ export default function Companies() {
                             </Button>
                           }
                         />
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                            aria-label="Editar empresa"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                         {canDelete && (
                           <Button
                             variant="ghost"
@@ -292,6 +334,7 @@ export default function Companies() {
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
               const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+              const canEdit = canDelete;
               return (
                 <div
                   key={c.id}
@@ -320,6 +363,17 @@ export default function Companies() {
                         </Button>
                       }
                     />
+                    {canEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => openEdit(c)}
+                        aria-label="Editar empresa"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                     {canDelete && (
                       <Button
                         variant="ghost"
@@ -354,6 +408,7 @@ export default function Companies() {
                 {filtered.map((c) => {
                   const regime = (c as any).regime as string | undefined;
                   const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+                  const canEdit = canDelete;
                   return (
                     <TableRow key={c.id} className="cursor-pointer" onClick={() => select(c)}>
                       <TableCell className="font-medium">{c.nome_fantasia}</TableCell>
@@ -374,6 +429,17 @@ export default function Companies() {
                               </Button>
                             }
                           />
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={() => openEdit(c)}
+                              aria-label="Editar empresa"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                           {canDelete && (
                             <Button
                               variant="ghost"
@@ -397,6 +463,48 @@ export default function Companies() {
       </main>
 
       <BatchImportDialog open={batchOpen} onOpenChange={setBatchOpen} />
+
+      <Dialog open={!!toEdit} onOpenChange={(o) => !o && setToEdit(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar empresa</DialogTitle></DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>CNPJ</Label>
+              <Input required value={editForm.cnpj} onChange={(e) => setEditForm({ ...editForm, cnpj: e.target.value })} placeholder="00.000.000/0000-00" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Razão Social</Label>
+              <Input required value={editForm.razao_social} onChange={(e) => setEditForm({ ...editForm, razao_social: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nome Fantasia</Label>
+              <Input required value={editForm.nome_fantasia} onChange={(e) => setEditForm({ ...editForm, nome_fantasia: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>UF</Label>
+              <Input required maxLength={2} value={editForm.uf} onChange={(e) => setEditForm({ ...editForm, uf: e.target.value.toUpperCase() })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Regime Tributário</Label>
+              <Select value={editForm.regime} onValueChange={(v) => setEditForm({ ...editForm, regime: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simples_nacional">Simples Nacional</SelectItem>
+                  <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                  <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                  <SelectItem value="mei">MEI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setToEdit(null)} disabled={updating}>Cancelar</Button>
+              <Button type="submit" disabled={updating}>
+                {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
