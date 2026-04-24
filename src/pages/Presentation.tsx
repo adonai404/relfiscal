@@ -534,6 +534,14 @@ export default function Presentation() {
               movements={adjustedMovements}
               configByCompany={configByCompany}
             />
+          ) : currentSlideDef?.kind === "sidebyside" ? (
+            <SideBySideSlide
+              companies={finalCompanies}
+              movements={adjustedMovements}
+              configByCompany={configByCompany}
+              metrics={comparisonMetrics}
+              derived={includeDerived}
+            />
           ) : currentCompany ? (
             <CompanySlide
               company={currentCompany}
