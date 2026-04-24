@@ -496,11 +496,13 @@ export default function Presentation() {
             <OverviewSlide
               companies={finalCompanies}
               movements={adjustedMovements}
+              configByCompany={configByCompany}
             />
           ) : currentSlideDef?.kind === "comparison" ? (
             <ComparisonSlide
               companies={finalCompanies}
               movements={adjustedMovements}
+              configByCompany={configByCompany}
             />
           ) : currentCompany ? (
             <CompanySlide
@@ -936,13 +938,25 @@ function CompanySlide({
 // =================== Overview Slide ===================
 
 function OverviewSlide({
-  companies, movements,
+  companies, movements, configByCompany,
 }: {
   companies: Array<{ id: string; nome_fantasia: string; uf: string }>;
   movements: MovementRow[];
+  configByCompany: Record<string, FiscalConfig>;
 }) {
-  const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(movements);
-  const taxCols = getTaxColumns(undefined);
+  // Helper: tax columns for a given company (falls back to default if missing)
+  const taxColsFor = (companyId: string) => getTaxColumns(configByCompany[companyId]);
+
+  // Compute per-row tax respecting each company's fiscal_config.
+  const taxOf = (m: MovementRow) =>
+    taxColsFor(m.company_id).reduce(
+      (s, c) => s + Number((m as unknown as Record<string, number>)[c] || 0), 0,
+    );
+
+  // Totals (entrada/saida do agregado padrão; impostos recalculado por empresa)
+  const { totals, margem, margemPct } = aggregateRows(movements);
+  const totalImpostos = movements.reduce((s, m) => s + taxOf(m), 0);
+  const cargaTrib = totals.saida ? totalImpostos / totals.saida : 0;
 
   // Aggregate by competencia across all companies
   const byComp: Record<string, { Entrada: number; Saida: number; Impostos: number }> = {};
@@ -951,9 +965,7 @@ function OverviewSlide({
     if (!byComp[k]) byComp[k] = { Entrada: 0, Saida: 0, Impostos: 0 };
     byComp[k].Entrada += Number(m.entrada || 0);
     byComp[k].Saida += Number(m.saida || 0);
-    byComp[k].Impostos += taxCols.reduce(
-      (s, c) => s + Number((m as unknown as Record<string, number>)[c] || 0), 0,
-    );
+    byComp[k].Impostos += taxOf(m);
   });
   const trendData = Object.entries(byComp)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -1052,14 +1064,15 @@ function OverviewSlide({
 // =================== Comparison Slide ===================
 
 function ComparisonSlide({
-  companies, movements,
+  companies, movements, configByCompany,
 }: {
   companies: Array<{ id: string; nome_fantasia: string; uf: string }>;
   movements: MovementRow[];
+  configByCompany: Record<string, FiscalConfig>;
 }) {
   const perCompany = companies.map((c) => {
     const rs = movements.filter((m) => m.company_id === c.id);
-    const agg = aggregateRows(rs);
+    const agg = aggregateRows(rs, configByCompany[c.id]);
     return {
       id: c.id,
       name: c.nome_fantasia,
