@@ -942,6 +942,7 @@ function OverviewSlide({
   movements: MovementRow[];
 }) {
   const { totals, totalImpostos, margem, cargaTrib, margemPct } = aggregateRows(movements);
+  const taxCols = getTaxColumns(undefined);
 
   // Aggregate by competencia across all companies
   const byComp: Record<string, { Entrada: number; Saida: number; Impostos: number }> = {};
@@ -950,8 +951,9 @@ function OverviewSlide({
     if (!byComp[k]) byComp[k] = { Entrada: 0, Saida: 0, Impostos: 0 };
     byComp[k].Entrada += Number(m.entrada || 0);
     byComp[k].Saida += Number(m.saida || 0);
-    byComp[k].Impostos += TAX_COLUMNS.reduce((s, c) => s + Number((m as unknown as Record<string, number>)[c] || 0), 0)
-      + Number(m.impostos_federais || 0) + Number(m.simples_nacional || 0);
+    byComp[k].Impostos += taxCols.reduce(
+      (s, c) => s + Number((m as unknown as Record<string, number>)[c] || 0), 0,
+    );
   });
   const trendData = Object.entries(byComp)
     .sort(([a], [b]) => a.localeCompare(b))
