@@ -1139,7 +1139,8 @@ function aggregateRows(rows: MovementRow[], cfg?: FiscalConfig) {
     }
   });
   if (totals.saida) totals.aliquota_simples_calc = (totals.simples_nacional || 0) / totals.saida;
-  const taxCols = getTaxColumns(cfg);
+  // Respeita colunas desligadas: colunas ocultas não entram no cálculo de impostos.
+  const taxCols = getTaxColumns(cfg).filter((c) => isColumnVisible(cfg, c));
   const totalImpostos = taxCols.reduce((s, c) => s + (totals[c] || 0), 0);
   const margem = (totals.saida || 0) - (totals.entrada || 0);
   const cargaTrib = totals.saida ? (totalImpostos / totals.saida) : 0;
