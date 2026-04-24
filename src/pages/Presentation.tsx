@@ -123,22 +123,40 @@ export default function Presentation() {
     return map;
   }, [configs]);
 
-  // Slides: one per company
-  const slides = finalCompanies;
-  const currentCompany = slides[currentSlide];
+  // Apply auto-calc Simples Nacional to all movements once
+  const adjustedMovements = useMemo(() => {
+    return movements.map((m) => {
+      const cfg = configByCompany[m.company_id];
+      if (cfg?.auto_calculate_simples_nacional) {
+        const a = Number(cfg.aliquota_simples_nacional || 0) / 100;
+        return { ...m, simples_nacional: Number((Number(m.saida || 0) * a).toFixed(2)) };
+      }
+      return m;
+    });
+  }, [movements, configByCompany]);
+
+  // Slide deck: overview + one per company + (comparison if 2+)
+  type SlideKind =
+    | { kind: "overview" }
+    | { kind: "company"; companyId: string }
+    | { kind: "comparison" };
+
+  const slides: SlideKind[] = useMemo(() => {
+    if (finalCompanies.length === 0) return [];
+    const out: SlideKind[] = [{ kind: "overview" }];
+    finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
+    if (finalCompanies.length >= 2) out.push({ kind: "comparison" });
+    return out;
+  }, [finalCompanies]);
+
+  const currentSlideDef = slides[currentSlide];
+  const currentCompany = currentSlideDef?.kind === "company"
+    ? finalCompanies.find((c) => c.id === currentSlideDef.companyId) ?? null
+    : null;
   const currentRows = useMemo(() => {
     if (!currentCompany) return [] as MovementRow[];
-    return movements
-      .filter((m) => m.company_id === currentCompany.id)
-      .map((m) => {
-        const cfg = configByCompany[m.company_id];
-        if (cfg?.auto_calculate_simples_nacional) {
-          const a = Number(cfg.aliquota_simples_nacional || 0) / 100;
-          return { ...m, simples_nacional: Number((Number(m.saida || 0) * a).toFixed(2)) };
-        }
-        return m;
-      });
-  }, [movements, currentCompany, configByCompany]);
+    return adjustedMovements.filter((m) => m.company_id === currentCompany.id);
+  }, [adjustedMovements, currentCompany]);
 
   // Reset slide when selection changes
   useEffect(() => { setCurrentSlide(0); }, [finalCompanyIds.join(",")]);
