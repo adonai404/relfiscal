@@ -14,6 +14,7 @@ import Companies from "./pages/Companies.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
+import Presentation from "./pages/Presentation.tsx";
 import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
+                <Route path="/apresentacao" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
