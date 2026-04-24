@@ -1075,16 +1075,13 @@ function CompanySlide({
   });
 
   // Tax composition (pie)
-  const taxParts = [
-    { key: "icms", label: getColumnLabel(cfg, "icms"), value: totals.icms || 0 },
-    { key: "impostos_federais", label: getColumnLabel(cfg, "impostos_federais"), value: totals.impostos_federais || 0 },
-    { key: "simples_nacional", label: getColumnLabel(cfg, "simples_nacional"), value: totals.simples_nacional || 0 },
-    { key: "pis", label: getColumnLabel(cfg, "pis"), value: totals.pis || 0 },
-    { key: "cofins", label: getColumnLabel(cfg, "cofins"), value: totals.cofins || 0 },
-    { key: "irpj", label: getColumnLabel(cfg, "irpj"), value: totals.irpj || 0 },
-    { key: "csll", label: getColumnLabel(cfg, "csll"), value: totals.csll || 0 },
-    { key: "difal", label: getColumnLabel(cfg, "difal"), value: totals.difal || 0 },
-  ].filter((p) => p.value > 0);
+  const taxParts = taxCols
+    .map((key) => ({
+      key,
+      label: getColumnLabel(cfg, key as ColumnKey),
+      value: Number((totals as Record<string, number>)[key] || 0),
+    }))
+    .filter((p) => p.value > 0);
 
   // Pico
   const picoSaida = sortedByComp.reduce((acc, r) => Number(r.saida || 0) > Number(acc?.saida || 0) ? r : acc, sortedByComp[0]);
