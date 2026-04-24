@@ -496,11 +496,13 @@ export default function Presentation() {
             <OverviewSlide
               companies={finalCompanies}
               movements={adjustedMovements}
+              configByCompany={configByCompany}
             />
           ) : currentSlideDef?.kind === "comparison" ? (
             <ComparisonSlide
               companies={finalCompanies}
               movements={adjustedMovements}
+              configByCompany={configByCompany}
             />
           ) : currentCompany ? (
             <CompanySlide
