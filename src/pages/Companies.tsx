@@ -268,6 +268,7 @@ export default function Companies() {
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
               const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+              const canEdit = canDelete;
               return (
                 <Card key={c.id} className="cursor-pointer transition hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5" onClick={() => select(c)}>
                   <CardHeader>
@@ -294,6 +295,17 @@ export default function Companies() {
                             </Button>
                           }
                         />
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                            aria-label="Editar empresa"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                         {canDelete && (
                           <Button
                             variant="ghost"
@@ -322,6 +334,7 @@ export default function Companies() {
             {filtered.map((c) => {
               const regime = (c as any).regime as string | undefined;
               const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+              const canEdit = canDelete;
               return (
                 <div
                   key={c.id}
@@ -350,6 +363,17 @@ export default function Companies() {
                         </Button>
                       }
                     />
+                    {canEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => openEdit(c)}
+                        aria-label="Editar empresa"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                     {canDelete && (
                       <Button
                         variant="ghost"
@@ -384,6 +408,7 @@ export default function Companies() {
                 {filtered.map((c) => {
                   const regime = (c as any).regime as string | undefined;
                   const canDelete = isSuperAdmin || (c as any).created_by === user.id;
+                  const canEdit = canDelete;
                   return (
                     <TableRow key={c.id} className="cursor-pointer" onClick={() => select(c)}>
                       <TableCell className="font-medium">{c.nome_fantasia}</TableCell>
@@ -404,6 +429,17 @@ export default function Companies() {
                               </Button>
                             }
                           />
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={() => openEdit(c)}
+                              aria-label="Editar empresa"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                           {canDelete && (
                             <Button
                               variant="ghost"
