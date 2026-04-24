@@ -1993,3 +1993,290 @@ function ComparisonSlide({
     </>
   );
 }
+
+// =================== Scenarios Slide (Atual × Projetado) ===================
+
+function ScenariosSlide({
+  allCompanies, scenarioACompanyIds, scenarioBCompanyIds,
+  scenarioALabel, scenarioBLabel, movements, configByCompany,
+}: {
+  allCompanies: Array<{ id: string; nome_fantasia: string; uf: string }>;
+  scenarioACompanyIds: string[];
+  scenarioBCompanyIds: string[];
+  scenarioALabel: string;
+  scenarioBLabel: string;
+  movements: MovementRow[];
+  configByCompany: Record<string, FiscalConfig>;
+}) {
+  // Soma o "gasto total" de um cenário = Total de Impostos + Saída de despesas (folha + honorários + encargos)
+  // Para focar em ECONOMIA, o gasto considerado é: Impostos + Folha + Honorários + Encargos.
+  const aggregateScenario = (companyIds: string[]) => {
+    const ids = new Set(companyIds);
+    const rows = movements.filter((m) => ids.has(m.company_id));
+    let entrada = 0, saida = 0, impostos = 0, folha = 0, honorarios = 0, encargos = 0;
+    rows.forEach((r) => {
+      const cfg = configByCompany[r.company_id];
+      const taxCols = getTaxColumns(cfg);
+      entrada += Number(r.entrada || 0);
+      saida += Number(r.saida || 0);
+      impostos += taxCols.reduce(
+        (s, c) => s + Number((r as unknown as Record<string, number>)[c] || 0), 0,
+      );
+      folha += Number(r.folha || 0);
+      honorarios += Number(r.honorarios || 0);
+      encargos += Number(r.encargos_patronal || 0);
+    });
+    const totalGasto = impostos + folha + honorarios + encargos;
+    return {
+      entrada, saida, impostos, folha, honorarios, encargos, totalGasto,
+      cargaTrib: saida ? impostos / saida : 0,
+      companies: allCompanies.filter((c) => ids.has(c.id)),
+      rows: rows.length,
+    };
+  };
+
+  const A = aggregateScenario(scenarioACompanyIds);
+  const B = aggregateScenario(scenarioBCompanyIds);
+
+  const empty = scenarioACompanyIds.length === 0 && scenarioBCompanyIds.length === 0;
+  if (empty) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <Scale className="h-10 w-10 text-muted-foreground/40" />
+        <h2 className="text-xl font-semibold">Configure os cenários</h2>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Volte ao setup e selecione as empresas que compõem o Cenário Atual e o Cenário Projetado.
+        </p>
+      </div>
+    );
+  }
+
+  // Diferença = Atual − Projetado. Positivo = economia no projetado.
+  const diff = A.totalGasto - B.totalGasto;
+  const economy = diff > 0; // projetado é mais barato
+  const sameCost = Math.abs(diff) < 0.01;
+  const economyPct = A.totalGasto > 0 ? (diff / A.totalGasto) : 0;
+  const winner: "A" | "B" | "tie" = sameCost ? "tie" : economy ? "B" : "A";
+
+  // Card visual de um cenário
+  const ScenarioCard = ({
+    label, data, accent, isWinner,
+  }: {
+    label: string;
+    data: ReturnType<typeof aggregateScenario>;
+    accent: "muted" | "emerald";
+    isWinner: boolean;
+  }) => {
+    const accentBorder = accent === "emerald" ? "border-emerald-500" : "border-muted-foreground/40";
+    const accentBg = accent === "emerald" ? "bg-emerald-500/5" : "bg-muted/30";
+    const accentText = accent === "emerald" ? "text-emerald-600" : "text-foreground";
+    return (
+      <Card className={`relative overflow-hidden border-t-4 ${accentBorder} ${accentBg}`}>
+        {isWinner && !sameCost && (
+          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+            <Trophy className="h-3 w-3" /> Mais Vantajoso
+          </div>
+        )}
+        <CardHeader className="pb-2">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Cenário</p>
+          <CardTitle className={`text-2xl ${accentText}`}>{label}</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {data.companies.length} empresa(s) · {data.rows} registro(s)
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* TOTAL GERAL — destaque */}
+          <div className="rounded-lg border bg-background p-4 text-center">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Total de Gastos</p>
+            <p className={`mt-1 text-4xl font-extrabold tabular-nums ${accentText}`}>
+              {brl(data.totalGasto)}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Impostos + Folha + Honorários + Encargos
+            </p>
+          </div>
+
+          {/* Breakdown simples */}
+          <div className="space-y-1.5 text-sm">
+            <div className="flex items-baseline justify-between border-b border-dashed py-1">
+              <span className="text-muted-foreground">Impostos</span>
+              <span className="font-semibold tabular-nums">{brl(data.impostos)}</span>
+            </div>
+            <div className="flex items-baseline justify-between border-b border-dashed py-1">
+              <span className="text-muted-foreground">Folha</span>
+              <span className="font-semibold tabular-nums">{brl(data.folha)}</span>
+            </div>
+            <div className="flex items-baseline justify-between border-b border-dashed py-1">
+              <span className="text-muted-foreground">Honorários</span>
+              <span className="font-semibold tabular-nums">{brl(data.honorarios)}</span>
+            </div>
+            <div className="flex items-baseline justify-between py-1">
+              <span className="text-muted-foreground">Encargos Patronais</span>
+              <span className="font-semibold tabular-nums">{brl(data.encargos)}</span>
+            </div>
+          </div>
+
+          {/* Empresas */}
+          {data.companies.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {data.companies.map((c) => (
+                <Badge key={c.id} variant="outline" className="text-[10px]">
+                  {c.nome_fantasia}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <>
+      <div className="text-center">
+        <p className="text-xs uppercase tracking-widest text-emerald-600 font-semibold">
+          Análise de Cenários
+        </p>
+        <h1 className="mt-1 text-3xl font-bold sm:text-4xl">Quanto você pode economizar?</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Comparativo entre o cenário atual e o cenário projetado.
+        </p>
+      </div>
+
+      {/* Lado a lado */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] items-stretch">
+        <ScenarioCard
+          label={scenarioALabel}
+          data={A}
+          accent="muted"
+          isWinner={winner === "A"}
+        />
+
+        {/* Conector visual */}
+        <div className="hidden lg:flex items-center justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed bg-background">
+            <ArrowRight className="h-6 w-6 text-muted-foreground" />
+          </div>
+        </div>
+
+        <ScenarioCard
+          label={scenarioBLabel}
+          data={B}
+          accent="emerald"
+          isWinner={winner === "B"}
+        />
+      </div>
+
+      {/* Faixa de resultado — Economia / Aumento / Empate */}
+      <Card
+        className={`border-2 ${
+          sameCost
+            ? "border-muted bg-muted/30"
+            : economy
+              ? "border-emerald-500 bg-emerald-500/10"
+              : "border-destructive bg-destructive/10"
+        }`}
+      >
+        <CardContent className="py-6">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-center">
+            <div>
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                {sameCost ? "Resultado" : economy ? "Economia Projetada" : "Aumento de Custo"}
+              </p>
+              <p
+                className={`text-5xl font-extrabold tabular-nums ${
+                  sameCost
+                    ? "text-foreground"
+                    : economy
+                      ? "text-emerald-600"
+                      : "text-destructive"
+                }`}
+              >
+                {sameCost ? "Mesmo custo" : brl(Math.abs(diff))}
+              </p>
+              {!sameCost && (
+                <p
+                  className={`mt-1 text-sm font-semibold ${
+                    economy ? "text-emerald-700" : "text-destructive"
+                  }`}
+                >
+                  {economy ? "▼" : "▲"} {(Math.abs(economyPct) * 100).toFixed(1)}% em relação ao{" "}
+                  {scenarioALabel}
+                </p>
+              )}
+            </div>
+
+            {!sameCost && (
+              <div className="hidden sm:block h-16 w-px bg-border" />
+            )}
+
+            {!sameCost && (
+              <div className="max-w-md text-left">
+                <p className="text-sm text-muted-foreground">
+                  {economy ? (
+                    <>
+                      O <strong className="text-emerald-700">{scenarioBLabel}</strong> apresenta um
+                      gasto total <strong>{(Math.abs(economyPct) * 100).toFixed(1)}%</strong>{" "}
+                      menor que o <strong>{scenarioALabel}</strong>, gerando uma economia de{" "}
+                      <strong className="text-emerald-700">{brl(Math.abs(diff))}</strong> no
+                      período analisado.
+                    </>
+                  ) : (
+                    <>
+                      O <strong className="text-destructive">{scenarioBLabel}</strong> tem um custo{" "}
+                      <strong>{(Math.abs(economyPct) * 100).toFixed(1)}%</strong> maior que o{" "}
+                      <strong>{scenarioALabel}</strong>, com um acréscimo de{" "}
+                      <strong className="text-destructive">{brl(Math.abs(diff))}</strong>.
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Gráfico de barras: comparativo de gastos */}
+      {(A.totalGasto > 0 || B.totalGasto > 0) && (
+        <ChartCard title="Comparativo Visual de Gastos" icon={Scale}>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  {
+                    cat: "Total de Gastos",
+                    [scenarioALabel]: A.totalGasto,
+                    [scenarioBLabel]: B.totalGasto,
+                  },
+                  {
+                    cat: "Impostos",
+                    [scenarioALabel]: A.impostos,
+                    [scenarioBLabel]: B.impostos,
+                  },
+                  {
+                    cat: "Folha + Encargos",
+                    [scenarioALabel]: A.folha + A.encargos,
+                    [scenarioBLabel]: B.folha + B.encargos,
+                  },
+                  {
+                    cat: "Honorários",
+                    [scenarioALabel]: A.honorarios,
+                    [scenarioBLabel]: B.honorarios,
+                  },
+                ]}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="cat" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtAxisBR} stroke="hsl(var(--muted-foreground))" />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => brl(v)} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey={scenarioALabel} fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey={scenarioBLabel} fill="hsl(160 84% 39%)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+      )}
+    </>
+  );
+}
