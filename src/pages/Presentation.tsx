@@ -199,6 +199,21 @@ export default function Presentation() {
     return adjustedMovements.filter((m) => m.company_id === currentCompany.id);
   }, [adjustedMovements, currentCompany]);
 
+  // Empresas que entram no comparativo lado-a-lado.
+  // Se nada explícito, usa todas as selecionadas.
+  const comparisonCompanies = useMemo(() => {
+    if (!comparisonCompanyIds || comparisonCompanyIds.length === 0) return finalCompanies;
+    const set = new Set(comparisonCompanyIds);
+    return finalCompanies.filter((c) => set.has(c.id));
+  }, [finalCompanies, comparisonCompanyIds]);
+
+  const toggleComparisonCompany = (id: string) => {
+    setComparisonCompanyIds((prev) => {
+      const base = prev ?? finalCompanies.map((c) => c.id);
+      return base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
+    });
+  };
+
   // Reset slide when selection changes
   useEffect(() => { setCurrentSlide(0); }, [finalCompanyIds.join(",")]);
 
