@@ -133,6 +133,23 @@ export default function Settings() {
     });
   };
 
+  const currentTaxCols = getTaxColumns(config ?? undefined);
+  const toggleTaxColumn = (col: ColumnKey, checked: boolean) => {
+    const next = checked
+      ? Array.from(new Set([...currentTaxCols, col]))
+      : currentTaxCols.filter((c) => c !== col);
+    update.mutate(
+      { tax_columns: next } as Partial<FiscalConfig>,
+      {
+        onSuccess: () =>
+          toast.success(
+            `${TOGGLE_LABELS[col]} ${checked ? "passou a contar" : "deixou de contar"} como imposto`,
+          ),
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
+
   return (
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
