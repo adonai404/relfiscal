@@ -1106,8 +1106,6 @@ function CompanySlide({
           icon={Wallet} trend={trendEntrada} sparkline={sparkEntrada} sub="Total no período" />
         <KPI label="Saída" value={brl(totals.saida || 0)} tone="saida"
           icon={TrendingUp} trend={trendSaida} sparkline={sparkSaida} sub="Faturamento" />
-        <KPI label="Margem Bruta" value={brl(margem)} tone={margem >= 0 ? "positive" : "negative"}
-          icon={Activity} sub={`${(margemPct * 100).toFixed(1)}% de margem`} />
         <KPI label="Total Impostos" value={brl(totalImpostos)} tone="tax"
           icon={Receipt} sub={`${rows.length} competência(s)`} />
         <KPI label="Carga Tributária" value={formatPercent(cargaTrib)} tone="aliquota"
@@ -1169,21 +1167,6 @@ function CompanySlide({
                   </PieChart>
                 </ResponsiveContainer>
               )}
-            </div>
-          </ChartCard>
-
-          <ChartCard title="Impostos por Competência" icon={Receipt} className="lg:col-span-3">
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="periodo" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtAxisBR} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => brl(v)} />
-                  <Bar dataKey="Impostos" fill="hsl(45 93% 47%)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="Margem" fill="hsl(160 84% 39%)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
           </ChartCard>
         </div>
