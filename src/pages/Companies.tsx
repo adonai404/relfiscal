@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon } from "lucide-react";
+import { Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet, Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,9 @@ export default function Companies() {
   const [search, setSearch] = useState("");
   const [toDelete, setToDelete] = useState<typeof companies[number] | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [toEdit, setToEdit] = useState<typeof companies[number] | null>(null);
+  const [editForm, setEditForm] = useState({ cnpj: "", razao_social: "", nome_fantasia: "", uf: "", regime: "simples_nacional" });
+  const [updating, setUpdating] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list" | "table">(
     () => (typeof window !== "undefined" && (localStorage.getItem("companies:view") as any)) || "grid"
   );
@@ -80,6 +83,33 @@ export default function Companies() {
     if (error) return toast.error(error.message);
     toast.success("Empresa excluída");
     setToDelete(null);
+    qc.invalidateQueries({ queryKey: ["companies"] });
+    refetch();
+  };
+
+  const openEdit = (c: typeof companies[number]) => {
+    setEditForm({
+      cnpj: c.cnpj ?? "",
+      razao_social: c.razao_social ?? "",
+      nome_fantasia: c.nome_fantasia ?? "",
+      uf: c.uf ?? "",
+      regime: ((c as any).regime as string) ?? "simples_nacional",
+    });
+    setToEdit(c);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!toEdit) return;
+    setUpdating(true);
+    const { error } = await supabase
+      .from("companies")
+      .update(editForm as never)
+      .eq("id", toEdit.id);
+    setUpdating(false);
+    if (error) return toast.error(error.message);
+    toast.success("Empresa atualizada");
+    setToEdit(null);
     qc.invalidateQueries({ queryKey: ["companies"] });
     refetch();
   };
