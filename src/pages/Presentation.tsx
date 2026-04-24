@@ -777,7 +777,9 @@ export default function Presentation() {
       ? "Comparativo entre Empresas"
       : currentSlideDef?.kind === "sidebyside"
         ? "Comparativo Lado a Lado"
-        : currentCompany?.nome_fantasia ?? "";
+        : currentSlideDef?.kind === "scenarios"
+          ? "Cenários — Atual × Projetado"
+          : currentCompany?.nome_fantasia ?? "";
 
   return (
     <div className="min-h-screen w-full bg-background">
