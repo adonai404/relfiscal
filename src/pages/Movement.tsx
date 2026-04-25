@@ -196,14 +196,27 @@ export default function Movement() {
     if (byCol.saida) {
       byCol.aliquota_simples_calc = (byCol.simples_nacional || 0) / byCol.saida;
     }
-    // Sum custom columns: per-row evaluation, then sum
+    // Custom columns:
+    // - manual: sum per-row values
+    // - formula: evaluate the formula against the aggregated totals row
+    //   (avoids incorrectly summing ratios/percentages like effective rate)
+    const totalsRow: Record<string, number> = { ...byCol };
+    const totalsValuesByCol: Record<string, number> = {};
     visibleCustom.forEach((cc) => {
-      let s = 0;
-      rows.forEach((r) => {
-        const resolver = buildRowResolver(r, customCols, valuesByMov[r.id] ?? {});
-        s += resolver(cc.key);
-      });
-      byCol[cc.key] = s;
+      if (cc.kind === "manual") {
+        let s = 0;
+        rows.forEach((r) => {
+          s += Number(valuesByMov[r.id]?.[cc.id] ?? 0);
+        });
+        byCol[cc.key] = s;
+        totalsValuesByCol[cc.id] = s;
+      }
+    });
+    visibleCustom.forEach((cc) => {
+      if (cc.kind !== "manual") {
+        const resolver = buildRowResolver(totalsRow, customCols, totalsValuesByCol);
+        byCol[cc.key] = resolver(cc.key);
+      }
     });
     const totalImpostos = taxCols.reduce((s, c) => s + (byCol[c] || 0), 0);
     const totalSimples = byCol.simples_nacional || 0;
