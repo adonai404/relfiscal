@@ -213,8 +213,7 @@ export default function Dashboard() {
       const e = compMap.get(m.competencia) ?? { competencia: m.competencia, entrada: 0, saida: 0, impostos: 0 };
       e.entrada += +m.entrada || 0;
       e.saida += +m.saida || 0;
-      e.impostos += (+m.icms || 0) + (+m.impostos_federais || 0) + (+m.simples_nacional || 0) +
-                    (+m.difal || 0) + (+m.pis || 0) + (+m.cofins || 0) + (+m.irpj || 0) + (+m.csll || 0);
+      const taxCols = companyTaxCols.get(m.company_id) || []; taxCols.forEach((col) => { e.impostos += Number((m as any)[col] || 0); });
       compMap.set(m.competencia, e);
     });
     const serie = Array.from(compMap.values()).sort((a, b) => a.competencia.localeCompare(b.competencia));
