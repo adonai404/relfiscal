@@ -22,6 +22,7 @@ import { brl, displayCompetencia } from "@/lib/format";
 import { useTags, useCompanyTags } from "@/hooks/useTags";
 import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
 import { X } from "lucide-react";
+import { getTaxColumns, type ColumnKey, type FiscalConfig } from "@/hooks/useFiscalConfig";
 
 interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
 interface MovementLite {
@@ -63,6 +64,22 @@ export default function Dashboard() {
       return (data ?? []) as CompanyLite[];
     },
   });
+  const { data: configs = [] } = useQuery({
+    queryKey: ["dashboard_configs"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("fiscal_config").select("*");
+      if (error) throw error;
+      return (data ?? []) as FiscalConfig[];
+    },
+  });
+
+  const configMap = useMemo(() => {
+    const m = new Map<string, FiscalConfig>();
+    configs.forEach((c) => m.set(c.company_id, c));
+    return m;
+  }, [configs]);
+
 
   const { data: allMovements = [], isLoading: loadingMov } = useQuery({
     queryKey: ["dashboard_movements"],
@@ -102,6 +119,11 @@ export default function Dashboard() {
   const movements = useMemo(() => filterByPeriod(rawMovements, period), [rawMovements, period]);
 
   const metrics = useMemo(() => {
+    const companyTaxCols = new Map<string, ColumnKey[]>();
+    filteredCompanies.forEach((c) => {
+      companyTaxCols.set(c.id, getTaxColumns(configMap.get(c.id)));
+    });
+
     const byCompany = new Map<string, MovementLite[]>();
     movements.forEach((m) => {
       const arr = byCompany.get(m.company_id) ?? [];
@@ -148,8 +170,7 @@ export default function Dashboard() {
         (a, m) => {
           a.entrada += +m.entrada || 0;
           a.saida += +m.saida || 0;
-          a.imp += (+m.icms || 0) + (+m.impostos_federais || 0) + (+m.simples_nacional || 0) +
-                  (+m.difal || 0) + (+m.pis || 0) + (+m.cofins || 0) + (+m.irpj || 0) + (+m.csll || 0);
+          const taxCols = companyTaxCols.get(m.company_id) || []; taxCols.forEach((col) => { a.imp += Number((m as any)[col] || 0); });
           a.simples += +m.simples_nacional || 0;
           return a;
         },
@@ -191,24 +212,36 @@ export default function Dashboard() {
       const e = compMap.get(m.competencia) ?? { competencia: m.competencia, entrada: 0, saida: 0, impostos: 0 };
       e.entrada += +m.entrada || 0;
       e.saida += +m.saida || 0;
-      e.impostos += (+m.icms || 0) + (+m.impostos_federais || 0) + (+m.simples_nacional || 0) +
-                    (+m.difal || 0) + (+m.pis || 0) + (+m.cofins || 0) + (+m.irpj || 0) + (+m.csll || 0);
+      const taxCols = companyTaxCols.get(m.company_id) || []; taxCols.forEach((col) => { e.impostos += Number((m as any)[col] || 0); });
       compMap.set(m.competencia, e);
     });
     const serie = Array.from(compMap.values()).sort((a, b) => a.competencia.localeCompare(b.competencia));
     const serieFmt = serie.map((s) => ({ ...s, label: displayCompetencia(s.competencia) }));
 
     // Composição de impostos
-    const composicao = [
-      { name: "ICMS", value: totals.icms },
-      { name: "Simples Nacional", value: totals.simples_nacional },
-      { name: "Impostos Federais", value: totals.impostos_federais },
-      { name: "PIS", value: totals.pis },
-      { name: "COFINS", value: totals.cofins },
-      { name: "IRPJ", value: totals.irpj },
-      { name: "CSLL", value: totals.csll },
-      { name: "DIFAL", value: totals.difal },
-    ].filter((x) => x.value > 0);
+    const taxKeys: { key: ColumnKey; name: string }[] = [
+      { key: "icms", name: "ICMS" },
+      { key: "simples_nacional", name: "Simples Nacional" },
+      { key: "impostos_federais", name: "Impostos Federais" },
+      { key: "pis", name: "PIS" },
+      { key: "cofins", name: "COFINS" },
+      { key: "irpj", name: "IRPJ" },
+      { key: "csll", name: "CSLL" },
+      { key: "difal", name: "DIFAL" },
+    ];
+    const composicaoMap = new Map<string, number>();
+    movements.forEach((m) => {
+      const taxCols = companyTaxCols.get(m.company_id) || [];
+      taxKeys.forEach(({ key, name }) => {
+        if (taxCols.includes(key)) {
+          const val = Number((m as any)[key] || 0);
+          composicaoMap.set(name, (composicaoMap.get(name) || 0) + val);
+        }
+      });
+    });
+    const composicao = Array.from(composicaoMap.entries())
+      .map(([name, value]) => ({ name, value }))
+      .filter((x) => x.value > 0);
 
     // Saúde financeira (heurística)
     const saudaveis = ativas.filter((c) => c.margem > 0 && c.carga < 0.15).length;
@@ -219,7 +252,7 @@ export default function Dashboard() {
       perCompany, ativas, inativas, topFaturamento, topCarga, menorCarga,
       porUf, serieFmt, composicao, saudaveis, alerta,
     };
-  }, [filteredCompanies, movements]);
+  }, [filteredCompanies, movements, configMap]);
 
   if (loading || loadingCompanies || loadingMov) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
