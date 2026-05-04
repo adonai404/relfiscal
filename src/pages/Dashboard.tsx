@@ -170,8 +170,7 @@ export default function Dashboard() {
         (a, m) => {
           a.entrada += +m.entrada || 0;
           a.saida += +m.saida || 0;
-          a.imp += (+m.icms || 0) + (+m.impostos_federais || 0) + (+m.simples_nacional || 0) +
-                  (+m.difal || 0) + (+m.pis || 0) + (+m.cofins || 0) + (+m.irpj || 0) + (+m.csll || 0);
+          const taxCols = companyTaxCols.get(m.company_id) || []; taxCols.forEach((col) => { a.imp += Number((m as any)[col] || 0); });
           a.simples += +m.simples_nacional || 0;
           return a;
         },
