@@ -220,16 +220,29 @@ export default function Dashboard() {
     const serieFmt = serie.map((s) => ({ ...s, label: displayCompetencia(s.competencia) }));
 
     // Composição de impostos
-    const composicao = [
-      { name: "ICMS", value: totals.icms },
-      { name: "Simples Nacional", value: totals.simples_nacional },
-      { name: "Impostos Federais", value: totals.impostos_federais },
-      { name: "PIS", value: totals.pis },
-      { name: "COFINS", value: totals.cofins },
-      { name: "IRPJ", value: totals.irpj },
-      { name: "CSLL", value: totals.csll },
-      { name: "DIFAL", value: totals.difal },
-    ].filter((x) => x.value > 0);
+    const taxKeys: { key: ColumnKey; name: string }[] = [
+      { key: "icms", name: "ICMS" },
+      { key: "simples_nacional", name: "Simples Nacional" },
+      { key: "impostos_federais", name: "Impostos Federais" },
+      { key: "pis", name: "PIS" },
+      { key: "cofins", name: "COFINS" },
+      { key: "irpj", name: "IRPJ" },
+      { key: "csll", name: "CSLL" },
+      { key: "difal", name: "DIFAL" },
+    ];
+    const composicaoMap = new Map<string, number>();
+    movements.forEach((m) => {
+      const taxCols = companyTaxCols.get(m.company_id) || [];
+      taxKeys.forEach(({ key, name }) => {
+        if (taxCols.includes(key)) {
+          const val = Number((m as any)[key] || 0);
+          composicaoMap.set(name, (composicaoMap.get(name) || 0) + val);
+        }
+      });
+    });
+    const composicao = Array.from(composicaoMap.entries())
+      .map(([name, value]) => ({ name, value }))
+      .filter((x) => x.value > 0);
 
     // Saúde financeira (heurística)
     const saudaveis = ativas.filter((c) => c.margem > 0 && c.carga < 0.15).length;
