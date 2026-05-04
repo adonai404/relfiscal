@@ -192,6 +192,7 @@ export default function Dashboard() {
     const inativas = perCompany.filter((c) => c.meses === 0);
 
     const topFaturamento = [...perCompany].sort((a, b) => b.saida - a.saida).slice(0, 5);
+    const topEntrada = [...perCompany].sort((a, b) => b.entrada - a.entrada).slice(0, 5);
     const topCarga = [...ativas].sort((a, b) => b.carga - a.carga).slice(0, 5);
     const menorCarga = [...ativas].sort((a, b) => a.carga - b.carga).slice(0, 5);
 
@@ -249,7 +250,7 @@ export default function Dashboard() {
 
     return {
       totals, totalImpostos, totalCustosOperacionais, margemBruta, resultadoLiquido, cargaTributaria,
-      perCompany, ativas, inativas, topFaturamento, topCarga, menorCarga,
+      perCompany, ativas, inativas, topFaturamento, topEntrada, topCarga, menorCarga,
       porUf, serieFmt, composicao, saudaveis, alerta,
     };
   }, [filteredCompanies, movements, configMap]);
@@ -426,8 +427,34 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Top faturamento + Top carga */}
-        <div className="grid gap-4 lg:grid-cols-2">
+        {/* Rankings: Top faturamento, Top entrada, Top carga */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-500" /> Top 5 Compras
+              </CardTitle>
+              <CardDescription>Empresas com maior volume de entrada</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              {metrics.topEntrada.length === 0 ? <EmptyChart /> : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={metrics.topEntrada} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11}
+                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                      formatter={(v: number) => brl(v)}
+                    />
+                    <Bar dataKey="entrada" fill={COLORS[2]} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
