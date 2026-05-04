@@ -22,6 +22,7 @@ import { brl, displayCompetencia } from "@/lib/format";
 import { useTags, useCompanyTags } from "@/hooks/useTags";
 import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
 import { X } from "lucide-react";
+import { getTaxColumns, type ColumnKey, type FiscalConfig } from "@/hooks/useFiscalConfig";
 
 interface CompanyLite { id: string; nome_fantasia: string; razao_social: string; uf: string; slug: string; }
 interface MovementLite {
