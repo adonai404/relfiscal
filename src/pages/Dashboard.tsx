@@ -119,6 +119,11 @@ export default function Dashboard() {
   const movements = useMemo(() => filterByPeriod(rawMovements, period), [rawMovements, period]);
 
   const metrics = useMemo(() => {
+    const companyTaxCols = new Map<string, ColumnKey[]>();
+    filteredCompanies.forEach((c) => {
+      companyTaxCols.set(c.id, getTaxColumns(configMap.get(c.id)));
+    });
+
     const byCompany = new Map<string, MovementLite[]>();
     movements.forEach((m) => {
       const arr = byCompany.get(m.company_id) ?? [];
@@ -236,7 +241,7 @@ export default function Dashboard() {
       perCompany, ativas, inativas, topFaturamento, topCarga, menorCarga,
       porUf, serieFmt, composicao, saudaveis, alerta,
     };
-  }, [filteredCompanies, movements]);
+  }, [filteredCompanies, movements, configMap]);
 
   if (loading || loadingCompanies || loadingMov) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
