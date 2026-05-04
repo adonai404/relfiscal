@@ -3,14 +3,21 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Building2, ChevronLeft, LogOut, TrendingUp, TrendingDown, Activity,
-  Trophy, AlertTriangle, Percent, Wallet, Layers, CalendarDays, Loader2,
+   Trophy, AlertTriangle, Percent, Wallet, Layers, CalendarDays, Loader2, Info,
 } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+ import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogHeader,
+   DialogTitle,
+ } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,7 +55,8 @@ export default function Dashboard() {
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
 
   const { data: tags = [] } = useTags();
   const { data: companyTagLinks = [] } = useCompanyTags();
@@ -246,12 +254,13 @@ export default function Dashboard() {
 
     // Saúde financeira (heurística)
     const saudaveis = ativas.filter((c) => c.margem > 0 && c.carga < 0.15).length;
-    const alerta = ativas.filter((c) => c.margem <= 0 || c.carga >= 0.25).length;
+     const alertCompanies = ativas.filter((c) => c.margem <= 0 || c.carga >= 0.25);
+     const alerta = alertCompanies.length;
 
     return {
       totals, totalImpostos, totalCustosOperacionais, margemBruta, resultadoLiquido, cargaTributaria,
       perCompany, ativas, inativas, topFaturamento, topEntrada, topCarga, menorCarga,
-      porUf, serieFmt, composicao, saudaveis, alerta,
+       porUf, serieFmt, composicao, saudaveis, alerta, alertCompanies,
     };
   }, [filteredCompanies, movements, configMap]);
 
@@ -350,13 +359,62 @@ export default function Dashboard() {
             value={metrics.saudaveis}
             sub="Margem positiva e carga < 15%"
           />
-          <MiniCard
-            tone="warning"
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Empresas em Alerta"
-            value={metrics.alerta}
-            sub="Margem ≤ 0 ou carga ≥ 25%"
-          />
+           <div onClick={() => setIsAlertModalOpen(true)} className="cursor-pointer">
+             <MiniCard
+               tone="warning"
+               icon={<AlertTriangle className="h-4 w-4" />}
+               label="Empresas em Alerta"
+               value={metrics.alerta}
+               sub="Margem ≤ 0 ou carga ≥ 25%"
+             />
+           </div>
+ 
+         <Dialog open={isAlertModalOpen} onOpenChange={setIsAlertModalOpen}>
+           <DialogContent className="max-w-2xl">
+             <DialogHeader>
+               <DialogTitle className="flex items-center gap-2">
+                 <AlertTriangle className="h-5 w-5 text-amber-500" /> Empresas em Alerta
+               </DialogTitle>
+               <DialogDescription>
+                 Listagem de empresas com margem negativa ou carga tributária elevada (≥ 25%).
+               </DialogDescription>
+             </DialogHeader>
+             <ScrollArea className="mt-4 max-h-[60vh] pr-4">
+               <div className="space-y-3">
+                 {metrics.alertCompanies.length === 0 ? (
+                   <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma empresa em estado de alerta.</p>
+                 ) : (
+                   metrics.alertCompanies.map((c) => (
+                     <div
+                       key={c.id}
+                       className="flex items-center justify-between rounded-lg border bg-card p-4 transition hover:bg-muted/50 cursor-pointer"
+                       onClick={() => {
+                         setIsAlertModalOpen(false);
+                         navigate(`/p/${c.slug}`);
+                       }}
+                     >
+                       <div className="space-y-1">
+                         <p className="font-semibold">{c.nome_fantasia}</p>
+                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                           <Badge variant="outline" className="h-5">{c.uf}</Badge>
+                           <span>{c.meses} meses analisados</span>
+                         </div>
+                       </div>
+                       <div className="text-right space-y-1">
+                         <p className={`text-sm font-bold ${c.margem <= 0 ? "text-destructive" : ""}`}>
+                           Margem: {brl(c.margem)}
+                         </p>
+                         <p className={`text-xs ${c.carga >= 0.25 ? "font-bold text-amber-600" : "text-muted-foreground"}`}>
+                           Carga: {(c.carga * 100).toFixed(1)}%
+                         </p>
+                       </div>
+                     </div>
+                   ))
+                 )}
+               </div>
+             </ScrollArea>
+           </DialogContent>
+         </Dialog>
           <MiniCard
             tone="info"
             icon={<CalendarDays className="h-4 w-4" />}
