@@ -64,6 +64,22 @@ export default function Dashboard() {
       return (data ?? []) as CompanyLite[];
     },
   });
+  const { data: configs = [] } = useQuery({
+    queryKey: ["dashboard_configs"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("fiscal_config").select("*");
+      if (error) throw error;
+      return (data ?? []) as FiscalConfig[];
+    },
+  });
+
+  const configMap = useMemo(() => {
+    const m = new Map<string, FiscalConfig>();
+    configs.forEach((c) => m.set(c.company_id, c));
+    return m;
+  }, [configs]);
+
 
   const { data: allMovements = [], isLoading: loadingMov } = useQuery({
     queryKey: ["dashboard_movements"],
