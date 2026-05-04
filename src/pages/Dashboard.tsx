@@ -252,9 +252,9 @@ export default function Dashboard() {
       .map(([name, value]) => ({ name, value }))
       .filter((x) => x.value > 0);
 
-    // Saúde financeira (heurística)
-    const saudaveis = ativas.filter((c) => c.margem > 0 && c.carga < 0.15).length;
-     const alertCompanies = ativas.filter((c) => c.margem <= 0 || c.carga >= 0.25);
+     // Saúde financeira
+     const saudaveis = ativas.filter((c) => c.carga < 0.15).length;
+      const alertCompanies = ativas.filter((c) => c.carga >= 0.25);
      const alerta = alertCompanies.length;
 
     return {
@@ -350,22 +350,22 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Saúde Financeira - mini cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <MiniCard
-            tone="success"
-            icon={<Trophy className="h-4 w-4" />}
-            label="Empresas Saudáveis"
-            value={metrics.saudaveis}
-            sub="Margem positiva e carga < 15%"
-          />
+         {/* Indicadores de Carga Tributária */}
+         <div className="grid gap-4 md:grid-cols-3">
+           <MiniCard
+             tone="success"
+             icon={<Trophy className="h-4 w-4" />}
+             label="Baixa Carga Tributária"
+             value={metrics.saudaveis}
+             sub="Carga tributária < 15%"
+           />
            <div onClick={() => setIsAlertModalOpen(true)} className="cursor-pointer">
              <MiniCard
                tone="warning"
                icon={<AlertTriangle className="h-4 w-4" />}
-               label="Empresas em Alerta"
+               label="Alta Carga Tributária"
                value={metrics.alerta}
-               sub="Margem ≤ 0 ou carga ≥ 25%"
+               sub="Carga tributária ≥ 25%"
              />
            </div>
  
@@ -373,10 +373,10 @@ export default function Dashboard() {
            <DialogContent className="max-w-2xl">
              <DialogHeader>
                <DialogTitle className="flex items-center gap-2">
-                 <AlertTriangle className="h-5 w-5 text-amber-500" /> Empresas em Alerta
+                 <AlertTriangle className="h-5 w-5 text-amber-500" /> Empresas com Alta Carga
                </DialogTitle>
                <DialogDescription>
-                 Listagem de empresas com margem negativa ou carga tributária elevada (≥ 25%).
+                 Listagem de empresas com carga tributária elevada (≥ 25%).
                </DialogDescription>
              </DialogHeader>
              <ScrollArea className="mt-4 max-h-[60vh] pr-4">
@@ -400,11 +400,8 @@ export default function Dashboard() {
                            <span>{c.meses} meses analisados</span>
                          </div>
                        </div>
-                       <div className="text-right space-y-1">
-                         <p className={`text-sm font-bold ${c.margem <= 0 ? "text-destructive" : ""}`}>
-                           Margem: {brl(c.margem)}
-                         </p>
-                         <p className={`text-xs ${c.carga >= 0.25 ? "font-bold text-amber-600" : "text-muted-foreground"}`}>
+                       <div className="text-right">
+                         <p className="text-sm font-bold text-amber-600">
                            Carga: {(c.carga * 100).toFixed(1)}%
                          </p>
                        </div>
