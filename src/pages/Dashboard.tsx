@@ -337,11 +337,17 @@ export default function Dashboard() {
             hint={`${metrics.ativas.length} ativas · ${metrics.inativas.length} sem dados`}
           />
           <KpiCard
-            icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
-            title="Faturamento Consolidado"
-            value={brl(metrics.totals.saida)}
-            hint={`Entradas ${brl(metrics.totals.entrada)}`}
-          />
+           icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+           title="Faturamento Consolidado"
+           value={brl(metrics.totals.saida)}
+           hint={`Entradas ${brl(metrics.totals.entrada)}`}
+         />
+         <KpiCard
+           icon={<Wallet className="h-5 w-5 text-primary" />}
+           title="Total de Impostos"
+           value={brl(metrics.totalImpostos)}
+           hint="Conforme configuração fiscal"
+         />
           <KpiCard
             icon={<Percent className="h-5 w-5 text-amber-500" />}
             title="Carga Tributária Global"
