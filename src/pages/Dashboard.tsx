@@ -338,14 +338,6 @@ export default function Dashboard() {
             value={`${(metrics.cargaTributaria * 100).toFixed(2)}%`}
             hint={`${brl(metrics.totalImpostos)} em tributos`}
           />
-          <KpiCard
-            icon={metrics.resultadoLiquido >= 0
-              ? <TrendingUp className="h-5 w-5 text-emerald-500" />
-              : <TrendingDown className="h-5 w-5 text-destructive" />}
-            title="Resultado Estimado"
-            value={brl(metrics.resultadoLiquido)}
-            hint={`Margem bruta ${brl(metrics.margemBruta)}`}
-          />
         </div>
 
         {/* Saúde Financeira - mini cards */}
