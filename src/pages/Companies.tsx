@@ -231,10 +231,19 @@ export default function Companies() {
  
        const promises: any[] = [];
  
-       if (fiscalConfigRes.data) {
-         const { id: _, company_id: __, created_at: ___, ...configData } = fiscalConfigRes.data;
-         promises.push(supabase.from("fiscal_config").insert({ ...configData, company_id: newId } as never).then(({ error }) => { if (error) throw error; }));
-       }
+        if (fiscalConfigRes.data) {
+          // O trigger create_default_fiscal_config já criou um fiscal_config em branco
+          // para a nova empresa. Precisamos ATUALIZAR essa linha em vez de inserir
+          // (insert seria ignorado pelo ON CONFLICT DO NOTHING do trigger).
+          const { id: _, company_id: __, created_at: ___, updated_at: ____, ...configData } = fiscalConfigRes.data;
+          promises.push(
+            supabase
+              .from("fiscal_config")
+              .update(configData as never)
+              .eq("company_id", newId)
+              .then(({ error }) => { if (error) throw error; })
+          );
+        }
  
        const customColIdMap: Record<string, string> = {};
        if (customColsRes.data?.length) {
