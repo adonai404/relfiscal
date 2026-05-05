@@ -233,7 +233,7 @@ export default function Companies() {
  
        if (fiscalConfigRes.data) {
          const { id: _, company_id: __, created_at: ___, ...configData } = fiscalConfigRes.data;
-         promises.push(supabase.from("fiscal_config").insert({ ...configData, company_id: newId } as never));
+         promises.push(supabase.from("fiscal_config").insert({ ...configData, company_id: newId } as never).then(({ error }) => { if (error) throw error; }));
        }
  
        const customColIdMap: Record<string, string> = {};
@@ -274,7 +274,7 @@ export default function Companies() {
                  .filter((v: any) => v.column_id);
  
                if (newValues.length) {
-                 promises.push((supabase as any).from("custom_column_values").insert(newValues));
+                 promises.push((supabase as any).from("custom_column_values").insert(newValues).then(({ error }: any) => { if (error) throw error; }));
                }
              }
            }
@@ -283,7 +283,7 @@ export default function Companies() {
  
        if (tagsRes.data?.length) {
          const newTags = tagsRes.data.map((t: any) => ({ company_id: newId, tag_id: t.tag_id }));
-         promises.push((supabase as any).from("company_tags").insert(newTags));
+         promises.push((supabase as any).from("company_tags").insert(newTags).then(({ error }: any) => { if (error) throw error; }));
        }
  
        await Promise.all(promises);
