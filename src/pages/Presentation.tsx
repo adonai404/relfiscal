@@ -2179,9 +2179,8 @@ function ScenariosSlide({
       {/* Faixa de resultado — Economia / Aumento / Empate */}
       <Card
         className={`border-2 ${
-          sameCost
-            ? "border-muted bg-muted/30"
-            ? "border-emerald-500 bg-emerald-500/10"
+          sameCost 
+            ? "border-muted bg-muted/30" 
             : "border-emerald-500 bg-emerald-500/10"
         }`}
       >
