@@ -195,29 +195,106 @@ export default function Companies() {
     refetch();
   };
 
-  const duplicateCompany = async (c: Company) => {
-    const baseName = c.nome_fantasia;
-    const newName = `${baseName} (cópia)`;
-    // Generate unique CNPJ by appending suffix to avoid collision; user pode editar depois
-    const cnpjBase = c.cnpj.replace(/\D/g, "");
-    const suffix = Math.floor(Math.random() * 9000 + 1000);
-    const newCnpj = `${cnpjBase.slice(0, 10)}${suffix}`;
-    const payload: any = {
-      cnpj: newCnpj,
-      razao_social: `${c.razao_social} (cópia)`,
-      nome_fantasia: newName,
-      uf: c.uf,
-      regime: c.regime ?? "simples_nacional",
-      status: c.status ?? "ativa",
-      folder_id: c.folder_id ?? null,
-      created_by: user.id,
-    };
-    const { error } = await supabase.from("companies").insert(payload as never);
-    if (error) return toast.error("Erro ao duplicar: " + error.message);
-    toast.success("Empresa duplicada");
-    qc.invalidateQueries({ queryKey: ["companies"] });
-    refetch();
-  };
+   const duplicateCompany = async (c: Company) => {
+     const loadingToast = toast.loading("Duplicando empresa e todos os seus dados...");
+     try {
+       const baseName = c.nome_fantasia;
+       const newName = `${baseName} (cópia)`;
+       const cnpjBase = c.cnpj.replace(/\D/g, "");
+       const suffix = Math.floor(Math.random() * 9000 + 1000);
+       const newCnpj = `${cnpjBase.slice(0, 10)}${suffix}`;
+ 
+       const { data: newCompany, error: companyError } = await supabase
+         .from("companies")
+         .insert({
+           cnpj: newCnpj,
+           razao_social: `${c.razao_social} (cópia)`,
+           nome_fantasia: newName,
+           uf: c.uf,
+           regime: c.regime ?? "simples_nacional",
+           status: c.status ?? "ativa",
+           folder_id: c.folder_id ?? null,
+           created_by: user.id,
+         } as never)
+         .select()
+         .single();
+ 
+       if (companyError) throw companyError;
+       const newId = newCompany.id;
+ 
+       const [fiscalConfigRes, customColsRes, movementsRes, tagsRes] = await Promise.all([
+         supabase.from("fiscal_config").select("*").eq("company_id", c.id).maybeSingle(),
+         (supabase as any).from("custom_columns").select("*").eq("company_id", c.id),
+         supabase.from("fiscal_movement").select("*").eq("company_id", c.id),
+         (supabase as any).from("company_tags").select("*").eq("company_id", c.id),
+       ]);
+ 
+       const promises: any[] = [];
+ 
+       if (fiscalConfigRes.data) {
+         const { id: _, company_id: __, created_at: ___, ...configData } = fiscalConfigRes.data;
+         promises.push(supabase.from("fiscal_config").insert({ ...configData, company_id: newId } as never).then(({ error }) => { if (error) throw error; }));
+       }
+ 
+       const customColIdMap: Record<string, string> = {};
+       if (customColsRes.data?.length) {
+         for (const col of customColsRes.data) {
+           const { id: oldId, company_id: _, created_at: __, ...colData } = col;
+           const { data: newCol, error: colErr } = await (supabase as any)
+             .from("custom_columns")
+             .insert({ ...colData, company_id: newId })
+             .select()
+             .single();
+           if (!colErr && newCol) customColIdMap[oldId] = newCol.id;
+         }
+       }
+ 
+       if (movementsRes.data?.length) {
+         for (const mov of movementsRes.data) {
+           const { id: oldMovId, company_id: _, created_at: __, ...movData } = mov;
+           const { data: newMov, error: movErr } = await supabase
+             .from("fiscal_movement")
+             .insert({ ...movData, company_id: newId } as never)
+             .select()
+             .single();
+ 
+           if (!movErr && newMov) {
+             const { data: customValues } = await (supabase as any)
+               .from("custom_column_values")
+               .select("*")
+               .eq("movement_id", oldMovId);
+ 
+             if (customValues?.length) {
+               const newValues = customValues
+                 .map((v: any) => ({
+                   movement_id: newMov.id,
+                   column_id: customColIdMap[v.column_id],
+                   value: v.value,
+                 }))
+                 .filter((v: any) => v.column_id);
+ 
+               if (newValues.length) {
+                 promises.push((supabase as any).from("custom_column_values").insert(newValues).then(({ error }: any) => { if (error) throw error; }));
+               }
+             }
+           }
+         }
+       }
+ 
+       if (tagsRes.data?.length) {
+         const newTags = tagsRes.data.map((t: any) => ({ company_id: newId, tag_id: t.tag_id }));
+         promises.push((supabase as any).from("company_tags").insert(newTags).then(({ error }: any) => { if (error) throw error; }));
+       }
+ 
+       await Promise.all(promises);
+       toast.success("Empresa e dados duplicados com sucesso", { id: loadingToast });
+       qc.invalidateQueries({ queryKey: ["companies"] });
+       refetch();
+     } catch (err: any) {
+       console.error("Duplication error:", err);
+       toast.error("Erro ao duplicar dados: " + err.message, { id: loadingToast });
+     }
+   };
 
   const createFolder = async (e: React.FormEvent) => {
     e.preventDefault();
