@@ -229,7 +229,7 @@ export default function Companies() {
          (supabase as any).from("company_tags").select("*").eq("company_id", c.id),
        ]);
  
-       const promises: Promise<any>[] = [];
+       const promises: any[] = [];
  
        if (fiscalConfigRes.data) {
          const { id: _, company_id: __, created_at: ___, ...configData } = fiscalConfigRes.data;
