@@ -2179,37 +2179,29 @@ function ScenariosSlide({
       {/* Faixa de resultado — Economia / Aumento / Empate */}
       <Card
         className={`border-2 ${
-          sameCost
-            ? "border-muted bg-muted/30"
-            : economy
-              ? "border-emerald-500 bg-emerald-500/10"
-              : "border-destructive bg-destructive/10"
+          sameCost 
+            ? "border-muted bg-muted/30" 
+            : "border-emerald-500 bg-emerald-500/10"
         }`}
       >
         <CardContent className="py-6">
           <div className="flex flex-wrap items-center justify-center gap-6 text-center">
             <div>
               <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                {sameCost ? "Resultado" : economy ? "Economia Projetada" : "Aumento de Custo"}
+                {sameCost ? "Resultado" : "Economia"}
               </p>
               <p
                 className={`text-5xl font-extrabold tabular-nums ${
-                  sameCost
-                    ? "text-foreground"
-                    : economy
-                      ? "text-emerald-600"
-                      : "text-destructive"
+                  sameCost ? "text-foreground" : "text-emerald-600"
                 }`}
               >
                 {sameCost ? "Mesmo custo" : brl(Math.abs(diff))}
               </p>
               {!sameCost && (
                 <p
-                  className={`mt-1 text-sm font-semibold ${
-                    economy ? "text-emerald-700" : "text-destructive"
-                  }`}
+                  className="mt-1 text-sm font-semibold text-emerald-700"
                 >
-                  {economy ? "▼" : "▲"} {(Math.abs(economyPct) * 100).toFixed(1)}% em relação ao{" "}
+                  {economy ? "▼" : "▲"} {(Math.abs(economyPct) * 100).toFixed(1)}% de variação em relação ao{" "}
                   {scenarioALabel}
                 </p>
               )}
@@ -2232,10 +2224,10 @@ function ScenariosSlide({
                     </>
                   ) : (
                     <>
-                      O <strong className="text-destructive">{scenarioBLabel}</strong> tem um custo{" "}
-                      <strong>{(Math.abs(economyPct) * 100).toFixed(1)}%</strong> maior que o{" "}
-                      <strong>{scenarioALabel}</strong>, com um acréscimo de{" "}
-                      <strong className="text-destructive">{brl(Math.abs(diff))}</strong>.
+                      O <strong className="text-emerald-700">{scenarioBLabel}</strong> apresenta uma 
+                      variação de <strong>{(Math.abs(economyPct) * 100).toFixed(1)}%</strong> em relação ao 
+                      {" "}<strong>{scenarioALabel}</strong>, com um potencial de economia de{" "}
+                      <strong className="text-emerald-700">{brl(Math.abs(diff))}</strong>.
                     </>
                   )}
                 </p>
