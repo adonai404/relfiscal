@@ -429,46 +429,49 @@ export default function Movement() {
                     <TableHead data-col-cat="competencia" className="sticky left-0 bg-card">
                       {config?.label_competencia ?? "Competência"}
                     </TableHead>
-                    {visibleCols.map((c) => {
-                      const f = colFilters[c];
-                      const active = !!f;
+                    {allVisibleColumns.map((col) => {
+                      if (col.kind === "standard") {
+                        const c = col.id as ColumnKey;
+                        const f = colFilters[c];
+                        const active = !!f;
+                        return (
+                          <TableHead key={c} data-col-cat={col.category} className="text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <span>{col.label}</span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-6 w-6 no-print ${active ? "text-primary" : "text-muted-foreground"}`}
+                                    aria-label={`Filtrar ${col.label}`}
+                                  >
+                                    <Filter className="h-3 w-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64" align="end">
+                                  <ColumnFilterEditor
+                                    current={f}
+                                    onApply={(next) => setColFilters((prev) => ({ ...prev, [c]: next }))}
+                                    onClear={() => setColFilters((prev) => {
+                                      const n = { ...prev }; delete n[c]; return n;
+                                    })}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </TableHead>
+                        );
+                      }
                       return (
-                        <TableHead key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
-                          <div className="inline-flex items-center justify-end gap-1">
-                            <span>{getColumnLabel(config ?? undefined, c)}</span>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={`h-6 w-6 no-print ${active ? "text-primary" : "text-muted-foreground"}`}
-                                  aria-label={`Filtrar ${getColumnLabel(config ?? undefined, c)}`}
-                                >
-                                  <Filter className="h-3 w-3" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-64" align="end">
-                                <ColumnFilterEditor
-                                  current={f}
-                                  onApply={(next) => setColFilters((prev) => ({ ...prev, [c]: next }))}
-                                  onClear={() => setColFilters((prev) => {
-                                    const n = { ...prev }; delete n[c]; return n;
-                                  })}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
+                        <TableHead key={col.id} data-col-cat="custom" className="text-right whitespace-nowrap">
+                          <span>{col.label}</span>
+                          {col.isFormula && (
+                            <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
+                          )}
                         </TableHead>
                       );
                     })}
-                    {visibleCustom.map((cc) => (
-                      <TableHead key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">
-                        <span>{cc.label}</span>
-                        {cc.kind === "formula" && (
-                          <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
-                        )}
-                      </TableHead>
-                    ))}
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
