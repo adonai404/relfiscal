@@ -1,10 +1,13 @@
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Lock, Unlock, Users } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Unlock, Users, Building2, Search, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +21,13 @@ type Row = {
   created_at: string;
   isSuperAdmin: boolean;
 };
+
+interface Company {
+  id: string;
+  nome_fantasia: string;
+  razao_social: string;
+  cnpj: string;
+}
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -43,6 +53,55 @@ export default function AdminUsers() {
       })) as Row[];
     },
   });
+
+  const [linkUser, setLinkUser] = useState<Row | null>(null);
+  const [linkSearch, setLinkSearch] = useState("");
+
+  const { data: allCompanies = [] } = useQuery({
+    queryKey: ["admin-all-companies"],
+    enabled: !!linkUser,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("companies").select("id, nome_fantasia, razao_social, cnpj");
+      if (error) throw error;
+      return data as Company[];
+    },
+  });
+
+  const { data: userLinks = [] } = useQuery({
+    queryKey: ["user-links", linkUser?.user_id],
+    enabled: !!linkUser,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("company_users").select("company_id").eq("user_id", linkUser!.user_id);
+      if (error) throw error;
+      return (data ?? []).map((d: any) => d.company_id);
+    },
+  });
+
+  const toggleLink = useMutation({
+    mutationFn: async ({ userId, companyId, linked }: { userId: string; companyId: string; linked: boolean }) => {
+      if (linked) {
+        const { error } = await supabase.from("company_users").delete().eq("user_id", userId).eq("company_id", companyId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("company_users").insert({ user_id: userId, company_id: companyId });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-links"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const filteredCompanies = useMemo(() => {
+    const q = linkSearch.toLowerCase().trim();
+    if (!q) return allCompanies;
+    return allCompanies.filter(c => 
+      c.nome_fantasia.toLowerCase().includes(q) || 
+      c.razao_social.toLowerCase().includes(q) || 
+      c.cnpj.includes(q)
+    );
+  }, [allCompanies, linkSearch]);
 
   const setStatus = useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: "ativo" | "bloqueado" }) => {
@@ -97,7 +156,16 @@ export default function AdminUsers() {
                     <Badge variant="destructive">bloqueado</Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-right space-x-2">
+                <TableCell className="text-right space-x-2 flex items-center justify-end">
+                  {!isSelf && !r.isSuperAdmin && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setLinkUser(r)}
+                    >
+                      <Building2 className="mr-1 h-4 w-4" /> Empresas
+                    </Button>
+                  )}
                   {isSelf || r.isSuperAdmin ? (
                     <span className="text-xs text-muted-foreground">{isSelf ? "(você)" : "—"}</span>
                   ) : r.status === "ativo" ? (
@@ -138,6 +206,75 @@ export default function AdminUsers() {
       </header>
 
       <main className="w-full px-4 py-8 sm:px-6 space-y-6">
+        <Dialog open={!!linkUser} onOpenChange={(open) => !open && setLinkUser(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Vincular Empresas</DialogTitle>
+              <DialogDescription>
+                Gerencie o acesso de <strong>{linkUser?.username || linkUser?.email}</strong> às empresas.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="relative my-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Pesquisar empresa..." 
+                value={linkSearch}
+                onChange={(e) => setLinkSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex-1 overflow-auto border rounded-md">
+              <Table>
+                <TableBody>
+                  {filteredCompanies.length === 0 ? (
+                    <TableRow>
+                      <TableCell className="text-center py-8 text-muted-foreground">
+                        Nenhuma empresa encontrada.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCompanies.map(c => {
+                      const isLinked = userLinks.includes(c.id);
+                      return (
+                        <TableRow key={c.id}>
+                          <TableCell>
+                            <div className="font-medium">{c.nome_fantasia}</div>
+                            <div className="text-xs text-muted-foreground">{c.razao_social} • {c.cnpj}</div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant={isLinked ? "outline" : "default"}
+                              disabled={toggleLink.isPending}
+                              onClick={() => toggleLink.mutate({ 
+                                userId: linkUser!.user_id, 
+                                companyId: c.id, 
+                                linked: isLinked 
+                              })}
+                            >
+                              {isLinked ? (
+                                <><X className="mr-1 h-3 w-3" /> Remover</>
+                              ) : (
+                                <><Check className="mr-1 h-3 w-3" /> Vincular</>
+                              )}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setLinkUser(null)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin" />
