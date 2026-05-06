@@ -49,10 +49,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .select("id, cnpj, razao_social, nome_fantasia, uf, slug, regime, created_by, status, folder_id")
         .order("nome_fantasia");
 
-      // Super admin vê todas; usuários comuns só veem as próprias
-      if (!isSuperAdmin) {
-        query = query.eq("created_by", user!.id);
-      }
+      // RLS now handles visibility based on user_has_company_access
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Company[];
