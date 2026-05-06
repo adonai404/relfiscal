@@ -393,6 +393,22 @@ export default function Movement() {
             </div>
             <div className="flex flex-wrap items-center gap-2 no-print">
               <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Reordenar Colunas</DialogTitle>
+                  </DialogHeader>
+                  <ColumnReorderDialog
+                    columns={allVisibleColumns}
+                    onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
+                  />
+                </DialogContent>
+              </Dialog>
               {filtersActive && (
                 <Button variant="ghost" size="sm" onClick={clearAllFilters}>
                   <FilterX className="mr-2 h-4 w-4" /> Limpar
