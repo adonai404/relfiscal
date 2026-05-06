@@ -1,3 +1,92 @@
+
+function ColumnReorderDialog({
+  columns,
+  onSave,
+}: {
+  columns: any[];
+  onSave: (newOrder: string[]) => void;
+}) {
+  const [items, setItems] = useState(columns);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setItems((prev) => {
+        const oldIndex = prev.findIndex((i) => i.id === active.id);
+        const newIndex = prev.findIndex((i) => i.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        Arraste as colunas para mudar a ordem de exibição na tabela.
+      </div>
+      <div className="max-h-[60vh] overflow-y-auto pr-2">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">
+              {items.map((col) => (
+                <SortableItem key={col.id} id={col.id} label={col.label} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
+      <DialogFooter>
+        <Button className="w-full" onClick={() => onSave(items.map((i) => i.id))}>
+          Salvar nova ordem
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function SortableItem({ id, label }: { id: string; label: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 bg-card border rounded-lg shadow-sm"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+        <GripVertical className="h-5 w-5" />
+      </div>
+      <span className="text-sm font-medium flex-1 truncate">{label}</span>
+    </div>
+  );
+}
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
