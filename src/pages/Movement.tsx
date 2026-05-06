@@ -478,7 +478,7 @@ export default function Movement() {
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={visibleCols.length + visibleCustom.length + 2} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={allVisibleColumns.length + 2} className="text-center text-muted-foreground py-8">
                         {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
@@ -488,49 +488,51 @@ export default function Movement() {
                       <TableCell data-col-cat="competencia" className="sticky left-0 font-medium">
                         {displayCompetencia(r.competencia)}
                       </TableCell>
-                      {visibleCols.map((c) => {
-                        const value = computeColumnValue(r, c);
-                        if (isComputedColumn(c)) {
+                      {allVisibleColumns.map((col) => {
+                        if (col.kind === "standard") {
+                          const c = col.id as ColumnKey;
+                          const value = computeColumnValue(r, c);
+                          if (isComputedColumn(c)) {
+                            return (
+                              <TableCell key={c} data-col-cat={col.category} className="p-1">
+                                <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
+                                  {formatPercent(value)}
+                                </div>
+                              </TableCell>
+                            );
+                          }
                           return (
-                            <TableCell key={c} data-col-cat={getColumnCategory(c)} className="p-1">
-                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
-                                {formatPercent(value)}
-                              </div>
+                            <TableCell key={c} data-col-cat={col.category} className="p-1">
+                              <CellEditor
+                                value={value}
+                                readonly={isCellReadonly(c)}
+                                onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
+                              />
+                            </TableCell>
+                          );
+                        } else {
+                          const valuesForRow = valuesByMov[r.id] ?? {};
+                          if (col.isFormula) {
+                            const resolver = buildRowResolver(r, customCols, valuesForRow);
+                            const v = resolver(col.key!);
+                            return (
+                              <TableCell key={col.id} data-col-cat="custom" className="p-1">
+                                <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
+                                  {formatCustomValue(v, col.format!, col.decimals!)}
+                                </div>
+                              </TableCell>
+                            );
+                          }
+                          const current = Number(valuesForRow[col.id] ?? 0);
+                          return (
+                            <TableCell key={col.id} data-col-cat="custom" className="p-1">
+                              <CellEditor
+                                value={current}
+                                onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: col.id, value: v })}
+                              />
                             </TableCell>
                           );
                         }
-                        return (
-                          <TableCell key={c} data-col-cat={getColumnCategory(c)} className="p-1">
-                            <CellEditor
-                              value={value}
-                              readonly={isCellReadonly(c)}
-                              onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
-                            />
-                          </TableCell>
-                        );
-                      })}
-                      {visibleCustom.map((cc) => {
-                        const valuesForRow = valuesByMov[r.id] ?? {};
-                        if (cc.kind === "formula") {
-                          const resolver = buildRowResolver(r, customCols, valuesForRow);
-                          const v = resolver(cc.key);
-                          return (
-                            <TableCell key={cc.id} data-col-cat="custom" className="p-1">
-                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
-                                {formatCustomValue(v, cc.format, cc.decimals)}
-                              </div>
-                            </TableCell>
-                          );
-                        }
-                        const current = Number(valuesForRow[cc.id] ?? 0);
-                        return (
-                          <TableCell key={cc.id} data-col-cat="custom" className="p-1">
-                            <CellEditor
-                              value={current}
-                              onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: cc.id, value: v })}
-                            />
-                          </TableCell>
-                        );
                       })}
                       <TableCell className="no-print">
                         <Button
