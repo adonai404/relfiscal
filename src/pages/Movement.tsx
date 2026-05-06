@@ -192,11 +192,62 @@ export default function Movement() {
 
 
 
-  // Visible columns based on config
+  // Visible standard columns
   const visibleCols: ColumnKey[] = useMemo(
     () => ALL_COLUMNS.filter((c) => isColumnVisible(config ?? undefined, c)),
     [config]
   );
+
+  // Combine all visible columns (standard + custom)
+  const allVisibleColumns = useMemo(() => {
+    const std = visibleCols.map((c) => ({
+      id: c,
+      label: getColumnLabel(config ?? undefined, c),
+      kind: "standard" as const,
+      category: getColumnCategory(c),
+    }));
+
+    const cust = visibleCustom.map((c) => ({
+      id: c.id,
+      label: c.label,
+      kind: "custom" as const,
+      key: c.key,
+      category: "custom" as const,
+      isFormula: c.kind === "formula",
+      format: c.format,
+      decimals: c.decimals,
+    }));
+
+    const combined = [...std, ...cust];
+
+    const order = config?.column_order as string[] | undefined;
+    if (order && Array.isArray(order) && order.length > 0) {
+      const orderMap = new Map(order.map((id, index) => [id, index]));
+      return combined.sort((a, b) => {
+        const idxA = orderMap.has(a.id) ? orderMap.get(a.id)! : 1000;
+        const idxB = orderMap.has(b.id) ? orderMap.get(b.id)! : 1000;
+        return idxA - idxB;
+      });
+    }
+
+    return combined;
+  }, [visibleCols, visibleCustom, config]);
+
+  const updateColumnOrder = useMutation({
+    mutationFn: async (newOrder: string[]) => {
+      if (!companyId) return;
+      const { error } = await supabase
+        .from("fiscal_config")
+        .update({ column_order: newOrder } as any)
+        .eq("company_id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fiscal_config", companyId] });
+      toast.success("Ordem das colunas salva");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const taxCols = useMemo(() => getTaxColumns(config ?? undefined), [config]);
 
