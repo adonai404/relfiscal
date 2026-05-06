@@ -36,7 +36,8 @@ export interface FiscalConfig {
    * gráficos). Permite excluir colunas que servem apenas para demonstração.
    * Default: todas as colunas tributárias do sistema.
    */
-  tax_columns?: ColumnKey[];
+   tax_columns?: ColumnKey[];
+   column_order?: string[];
 }
 
 export type ColumnKey =
