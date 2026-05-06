@@ -551,16 +551,22 @@ export default function Movement() {
                   {rows.length > 0 && (
                     <TableRow className="total-row font-semibold">
                       <TableCell data-col-cat="competencia" className="sticky left-0">TOTAL</TableCell>
-                      {visibleCols.map((c) => (
-                        <TableCell key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
-                          {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
-                        </TableCell>
-                      ))}
-                      {visibleCustom.map((cc) => (
-                        <TableCell key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">
-                          {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
-                        </TableCell>
-                      ))}
+                      {allVisibleColumns.map((col) => {
+                        if (col.kind === "standard") {
+                          const c = col.id as ColumnKey;
+                          return (
+                            <TableCell key={c} data-col-cat={col.category} className="text-right whitespace-nowrap">
+                              {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                            </TableCell>
+                          );
+                        } else {
+                          return (
+                            <TableCell key={col.id} data-col-cat="custom" className="text-right whitespace-nowrap">
+                              {formatCustomValue(totals.byCol[col.key!] || 0, col.format!, col.decimals!)}
+                            </TableCell>
+                          );
+                        }
+                      })}
                       <TableCell className="no-print" />
                     </TableRow>
                   )}
