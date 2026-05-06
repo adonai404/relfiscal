@@ -1,8 +1,114 @@
+
+function ColumnReorderDialog({
+  columns,
+  onSave,
+}: {
+  columns: any[];
+  onSave: (newOrder: string[]) => void;
+}) {
+  const [items, setItems] = useState(columns);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setItems((prev) => {
+        const oldIndex = prev.findIndex((i) => i.id === active.id);
+        const newIndex = prev.findIndex((i) => i.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        Arraste as colunas para mudar a ordem de exibição na tabela.
+      </div>
+      <div className="max-h-[60vh] overflow-y-auto pr-2">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">
+              {items.map((col) => (
+                <SortableItem key={col.id} id={col.id} label={col.label} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
+      <DialogFooter>
+        <Button className="w-full" onClick={() => onSave(items.map((i) => i.id))}>
+          Salvar nova ordem
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function SortableItem({ id, label }: { id: string; label: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 bg-card border rounded-lg shadow-sm"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+        <GripVertical className="h-5 w-5" />
+      </div>
+      <span className="text-sm font-medium flex-1 truncate">{label}</span>
+    </div>
+  );
+}
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChevronLeft, Filter, FilterX, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2 } from "lucide-react";
+import { Building2, ChevronLeft, Filter, FilterX, LogOut, Plus, Printer, Settings, Trash2, Loader2, Share2, ArrowLeftRight, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -175,11 +281,62 @@ export default function Movement() {
 
 
 
-  // Visible columns based on config
+  // Visible standard columns
   const visibleCols: ColumnKey[] = useMemo(
     () => ALL_COLUMNS.filter((c) => isColumnVisible(config ?? undefined, c)),
     [config]
   );
+
+  // Combine all visible columns (standard + custom)
+  const allVisibleColumns = useMemo(() => {
+    const std = visibleCols.map((c) => ({
+      id: c,
+      label: getColumnLabel(config ?? undefined, c),
+      kind: "standard" as const,
+      category: getColumnCategory(c),
+    }));
+
+    const cust = visibleCustom.map((c) => ({
+      id: c.id,
+      label: c.label,
+      kind: "custom" as const,
+      key: c.key,
+      category: "custom" as const,
+      isFormula: c.kind === "formula",
+      format: c.format,
+      decimals: c.decimals,
+    }));
+
+    const combined = [...std, ...cust];
+
+    const order = config?.column_order as string[] | undefined;
+    if (order && Array.isArray(order) && order.length > 0) {
+      const orderMap = new Map(order.map((id, index) => [id, index]));
+      return combined.sort((a, b) => {
+        const idxA = orderMap.has(a.id) ? orderMap.get(a.id)! : 1000;
+        const idxB = orderMap.has(b.id) ? orderMap.get(b.id)! : 1000;
+        return idxA - idxB;
+      });
+    }
+
+    return combined;
+  }, [visibleCols, visibleCustom, config]);
+
+  const updateColumnOrder = useMutation({
+    mutationFn: async (newOrder: string[]) => {
+      if (!companyId) return;
+      const { error } = await supabase
+        .from("fiscal_config")
+        .update({ column_order: newOrder } as any)
+        .eq("company_id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fiscal_config", companyId] });
+      toast.success("Ordem das colunas salva");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const taxCols = useMemo(() => getTaxColumns(config ?? undefined), [config]);
 
@@ -325,6 +482,22 @@ export default function Movement() {
             </div>
             <div className="flex flex-wrap items-center gap-2 no-print">
               <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Reordenar Colunas</DialogTitle>
+                  </DialogHeader>
+                  <ColumnReorderDialog
+                    columns={allVisibleColumns}
+                    onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
+                  />
+                </DialogContent>
+              </Dialog>
               {filtersActive && (
                 <Button variant="ghost" size="sm" onClick={clearAllFilters}>
                   <FilterX className="mr-2 h-4 w-4" /> Limpar
@@ -361,53 +534,56 @@ export default function Movement() {
                     <TableHead data-col-cat="competencia" className="sticky left-0 bg-card">
                       {config?.label_competencia ?? "Competência"}
                     </TableHead>
-                    {visibleCols.map((c) => {
-                      const f = colFilters[c];
-                      const active = !!f;
+                    {allVisibleColumns.map((col) => {
+                      if (col.kind === "standard") {
+                        const c = col.id as ColumnKey;
+                        const f = colFilters[c];
+                        const active = !!f;
+                        return (
+                          <TableHead key={c} data-col-cat={col.category} className="text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <span>{col.label}</span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`h-6 w-6 no-print ${active ? "text-primary" : "text-muted-foreground"}`}
+                                    aria-label={`Filtrar ${col.label}`}
+                                  >
+                                    <Filter className="h-3 w-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64" align="end">
+                                  <ColumnFilterEditor
+                                    current={f}
+                                    onApply={(next) => setColFilters((prev) => ({ ...prev, [c]: next }))}
+                                    onClear={() => setColFilters((prev) => {
+                                      const n = { ...prev }; delete n[c]; return n;
+                                    })}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </TableHead>
+                        );
+                      }
                       return (
-                        <TableHead key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
-                          <div className="inline-flex items-center justify-end gap-1">
-                            <span>{getColumnLabel(config ?? undefined, c)}</span>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={`h-6 w-6 no-print ${active ? "text-primary" : "text-muted-foreground"}`}
-                                  aria-label={`Filtrar ${getColumnLabel(config ?? undefined, c)}`}
-                                >
-                                  <Filter className="h-3 w-3" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-64" align="end">
-                                <ColumnFilterEditor
-                                  current={f}
-                                  onApply={(next) => setColFilters((prev) => ({ ...prev, [c]: next }))}
-                                  onClear={() => setColFilters((prev) => {
-                                    const n = { ...prev }; delete n[c]; return n;
-                                  })}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
+                        <TableHead key={col.id} data-col-cat="custom" className="text-right whitespace-nowrap">
+                          <span>{col.label}</span>
+                          {col.isFormula && (
+                            <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
+                          )}
                         </TableHead>
                       );
                     })}
-                    {visibleCustom.map((cc) => (
-                      <TableHead key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">
-                        <span>{cc.label}</span>
-                        {cc.kind === "formula" && (
-                          <Badge variant="secondary" className="ml-1 no-print h-4 px-1 text-[10px]">f(x)</Badge>
-                        )}
-                      </TableHead>
-                    ))}
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={visibleCols.length + visibleCustom.length + 2} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={allVisibleColumns.length + 2} className="text-center text-muted-foreground py-8">
                         {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
@@ -417,49 +593,51 @@ export default function Movement() {
                       <TableCell data-col-cat="competencia" className="sticky left-0 font-medium">
                         {displayCompetencia(r.competencia)}
                       </TableCell>
-                      {visibleCols.map((c) => {
-                        const value = computeColumnValue(r, c);
-                        if (isComputedColumn(c)) {
+                      {allVisibleColumns.map((col) => {
+                        if (col.kind === "standard") {
+                          const c = col.id as ColumnKey;
+                          const value = computeColumnValue(r, c);
+                          if (isComputedColumn(c)) {
+                            return (
+                              <TableCell key={c} data-col-cat={col.category} className="p-1">
+                                <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
+                                  {formatPercent(value)}
+                                </div>
+                              </TableCell>
+                            );
+                          }
                           return (
-                            <TableCell key={c} data-col-cat={getColumnCategory(c)} className="p-1">
-                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado: simples_nacional / saída">
-                                {formatPercent(value)}
-                              </div>
+                            <TableCell key={c} data-col-cat={col.category} className="p-1">
+                              <CellEditor
+                                value={value}
+                                readonly={isCellReadonly(c)}
+                                onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
+                              />
+                            </TableCell>
+                          );
+                        } else {
+                          const valuesForRow = valuesByMov[r.id] ?? {};
+                          if (col.isFormula) {
+                            const resolver = buildRowResolver(r, customCols, valuesForRow);
+                            const v = resolver(col.key!);
+                            return (
+                              <TableCell key={col.id} data-col-cat="custom" className="p-1">
+                                <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
+                                  {formatCustomValue(v, col.format!, col.decimals!)}
+                                </div>
+                              </TableCell>
+                            );
+                          }
+                          const current = Number(valuesForRow[col.id] ?? 0);
+                          return (
+                            <TableCell key={col.id} data-col-cat="custom" className="p-1">
+                              <CellEditor
+                                value={current}
+                                onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: col.id, value: v })}
+                              />
                             </TableCell>
                           );
                         }
-                        return (
-                          <TableCell key={c} data-col-cat={getColumnCategory(c)} className="p-1">
-                            <CellEditor
-                              value={value}
-                              readonly={isCellReadonly(c)}
-                              onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
-                            />
-                          </TableCell>
-                        );
-                      })}
-                      {visibleCustom.map((cc) => {
-                        const valuesForRow = valuesByMov[r.id] ?? {};
-                        if (cc.kind === "formula") {
-                          const resolver = buildRowResolver(r, customCols, valuesForRow);
-                          const v = resolver(cc.key);
-                          return (
-                            <TableCell key={cc.id} data-col-cat="custom" className="p-1">
-                              <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Coluna calculada">
-                                {formatCustomValue(v, cc.format, cc.decimals)}
-                              </div>
-                            </TableCell>
-                          );
-                        }
-                        const current = Number(valuesForRow[cc.id] ?? 0);
-                        return (
-                          <TableCell key={cc.id} data-col-cat="custom" className="p-1">
-                            <CellEditor
-                              value={current}
-                              onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: cc.id, value: v })}
-                            />
-                          </TableCell>
-                        );
                       })}
                       <TableCell className="no-print">
                         <Button
@@ -478,16 +656,22 @@ export default function Movement() {
                   {rows.length > 0 && (
                     <TableRow className="total-row font-semibold">
                       <TableCell data-col-cat="competencia" className="sticky left-0">TOTAL</TableCell>
-                      {visibleCols.map((c) => (
-                        <TableCell key={c} data-col-cat={getColumnCategory(c)} className="text-right whitespace-nowrap">
-                          {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
-                        </TableCell>
-                      ))}
-                      {visibleCustom.map((cc) => (
-                        <TableCell key={cc.id} data-col-cat="custom" className="text-right whitespace-nowrap">
-                          {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
-                        </TableCell>
-                      ))}
+                      {allVisibleColumns.map((col) => {
+                        if (col.kind === "standard") {
+                          const c = col.id as ColumnKey;
+                          return (
+                            <TableCell key={c} data-col-cat={col.category} className="text-right whitespace-nowrap">
+                              {isComputedColumn(c) ? formatPercent(totals.byCol[c] || 0) : brl(totals.byCol[c] || 0)}
+                            </TableCell>
+                          );
+                        } else {
+                          return (
+                            <TableCell key={col.id} data-col-cat="custom" className="text-right whitespace-nowrap">
+                              {formatCustomValue(totals.byCol[col.key!] || 0, col.format!, col.decimals!)}
+                            </TableCell>
+                          );
+                        }
+                      })}
                       <TableCell className="no-print" />
                     </TableRow>
                   )}

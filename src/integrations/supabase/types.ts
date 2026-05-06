@@ -258,6 +258,7 @@ export type Database = {
         Row: {
           aliquota_simples_nacional: number
           auto_calculate_simples_nacional: boolean
+          column_order: Json | null
           company_id: string
           created_at: string
           id: string
@@ -292,6 +293,7 @@ export type Database = {
         Insert: {
           aliquota_simples_nacional?: number
           auto_calculate_simples_nacional?: boolean
+          column_order?: Json | null
           company_id: string
           created_at?: string
           id?: string
@@ -326,6 +328,7 @@ export type Database = {
         Update: {
           aliquota_simples_nacional?: number
           auto_calculate_simples_nacional?: boolean
+          column_order?: Json | null
           company_id?: string
           created_at?: string
           id?: string
