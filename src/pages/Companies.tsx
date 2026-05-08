@@ -490,10 +490,13 @@ export default function Companies() {
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">Selecionar Empresa</h1>
-          </div>
+           <div className="flex items-center gap-2">
+             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
+               <ChevronLeft className="h-4 w-4" />
+             </Button>
+             <Building2 className="h-5 w-5 text-primary" />
+             <h1 className="text-lg font-semibold">Gerenciar Empresas</h1>
+           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             {isSuperAdmin && (
