@@ -12,33 +12,32 @@
    const { selectedCompany } = useCompany();
    const navigate = useNavigate();
  
-   const menuItems = [
-     {
-       title: "Movimento",
-       description: "Lançamentos fiscais e conciliação",
-       icon: ArrowLeftRight,
-       path: "/movimento",
-       color: "text-blue-500",
-       bg: "bg-blue-500/10",
-     },
-     {
-       title: "Dashboard",
-       description: "Visão geral e indicadores",
-       icon: LayoutDashboard,
-       path: "/dashboard",
-       color: "text-emerald-500",
-       bg: "bg-emerald-500/10",
-     },
-     {
-       title: "Apresentação",
-       description: "Cenários de economia tributária",
-       icon: Presentation,
-       path: "/apresentacao",
-       color: "text-purple-500",
-       bg: "bg-purple-500/10",
-     },
-     {
-   ];
+    const menuItems = [
+      {
+        title: "Movimento",
+        description: "Lançamentos fiscais e conciliação",
+        icon: ArrowLeftRight,
+        path: "/movimento",
+        color: "text-blue-500",
+        bg: "bg-blue-500/10",
+      },
+      {
+        title: "Dashboard",
+        description: "Visão geral e indicadores",
+        icon: LayoutDashboard,
+        path: "/dashboard",
+        color: "text-emerald-500",
+        bg: "bg-emerald-500/10",
+      },
+      {
+        title: "Apresentação",
+        description: "Cenários de economia tributária",
+        icon: Presentation,
+        path: "/apresentacao",
+        color: "text-purple-500",
+        bg: "bg-purple-500/10",
+      },
+    ];
  
    return (
      <div className="min-h-screen w-full flex flex-col" style={{ background: "var(--gradient-subtle)" }}>
