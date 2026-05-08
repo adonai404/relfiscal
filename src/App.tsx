@@ -1,3 +1,4 @@
+ import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -33,7 +34,7 @@ const App = () => (
             <CompanyProvider>
               <Routes>
                 <Route path="/" element={<Landing />} />
-                <Route path="/app" element={<Index />} />
+                 <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/empresas" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
