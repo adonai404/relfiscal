@@ -275,7 +275,7 @@ export default function Dashboard() {
       <header className="border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
+             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Activity className="h-5 w-5 text-primary" />

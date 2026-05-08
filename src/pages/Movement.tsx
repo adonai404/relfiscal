@@ -403,7 +403,7 @@ export default function Movement() {
       <header className="no-print border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/empresas")} aria-label="Voltar">
+             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Building2 className="h-5 w-5 text-primary" />
