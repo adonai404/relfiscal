@@ -1,5 +1,5 @@
  import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity } from "lucide-react";
+import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog } from "lucide-react";
  import { useAuth } from "@/hooks/useAuth";
  import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
@@ -45,6 +45,15 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         color: "text-purple-500",
         bg: "bg-purple-500/10",
       },
+      {
+        title: "Minha Conta",
+        description: "Perfil, senha e segurança",
+        icon: UserCog,
+        path: "/minha-conta",
+        color: "text-orange-500",
+        bg: "bg-orange-500/10",
+        forceEnabled: true,
+      },
     ];
  
    return (
@@ -79,13 +88,14 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {menuItems.map((item, idx) => {
              const Icon = item.icon;
-             const isDisabled = !selectedCompany;
+              // Allow "Minha Conta" to be clicked even if no company is selected
+              const isDisabled = !selectedCompany && !(item as any).forceEnabled;
              return (
                <Button
                  key={item.path}
                  variant="ghost"
                  disabled={isDisabled}
-                 className="h-auto p-0 hover:bg-transparent group animate-in fade-in slide-in-from-bottom-4 duration-500 disabled:opacity-50"
+                  className="h-auto p-0 hover:bg-transparent group animate-in fade-in slide-in-from-bottom-4 duration-500 disabled:opacity-40"
                  style={{ animationDelay: `${idx * 100}ms` }}
                  onClick={() => navigate(item.path)}
                >
