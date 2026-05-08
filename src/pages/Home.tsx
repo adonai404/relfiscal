@@ -1,17 +1,25 @@
  import { useNavigate } from "react-router-dom";
- import { Building2, ArrowLeftRight, LayoutDashboard, Presentation, Settings, LogOut, ChevronRight, Activity } from "lucide-react";
+import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity } from "lucide-react";
  import { useAuth } from "@/hooks/useAuth";
  import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
- import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { ThemeToggle } from "@/components/ThemeToggle";
- import { formatCNPJ } from "@/lib/format";
  
  export default function Home() {
-   const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
    const { selectedCompany } = useCompany();
    const navigate = useNavigate();
  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
+    
+    if (hour < 12) return `Bom dia, ${userName}`;
+    if (hour < 18) return `Boa tarde, ${userName}`;
+    return `Boa noite, ${userName}`;
+  };
+
     const menuItems = [
       {
         title: "Movimento",
@@ -64,50 +72,10 @@
  
        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 sm:px-6">
          <div className="mb-10 text-center sm:text-left">
-           <h2 className="text-3xl font-bold tracking-tight mb-2">Bem-vindo ao TaxFlow</h2>
-           <p className="text-muted-foreground text-lg">Selecione uma funcionalidade para começar a gerenciar sua empresa.</p>
+           <h2 className="text-3xl font-bold tracking-tight mb-2">{getGreeting()}</h2>
+           <p className="text-muted-foreground text-lg">Selecione uma funcionalidade para começar.</p>
          </div>
- 
-         {selectedCompany && (
-           <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-             <Card className="border-primary/20 bg-primary/[0.02] overflow-hidden">
-               <CardContent className="p-6">
-                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                   <div className="flex items-center gap-4">
-                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                       <Building2 className="h-6 w-6 text-primary" />
-                     </div>
-                     <div className="text-center sm:text-left">
-                       <h3 className="font-bold text-xl">{selectedCompany.nome_fantasia}</h3>
-                       <p className="text-sm text-muted-foreground">
-                         {formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}
-                       </p>
-                     </div>
-                   </div>
-                 </div>
-               </CardContent>
-             </Card>
-           </div>
-         )}
- 
-         {!selectedCompany && (
-           <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-             <Card className="border-amber-500/20 bg-amber-500/[0.02]">
-               <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                 <div className="flex items-center gap-4">
-                   <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center">
-                     <Building2 className="h-6 w-6 text-amber-500" />
-                   </div>
-                   <p className="text-sm font-medium">Você precisa selecionar uma empresa para acessar as funcionalidades.</p>
-                 </div>
-                 <Button variant="default" onClick={() => navigate("/empresas")}>
-                   Selecionar Empresa
-                 </Button>
-               </CardContent>
-             </Card>
-           </div>
-         )}
- 
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {menuItems.map((item, idx) => {
              const Icon = item.icon;
