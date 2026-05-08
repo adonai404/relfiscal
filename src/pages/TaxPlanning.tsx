@@ -11,19 +11,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/hooks/useCompany";
 import { toast } from "sonner";
-+
+
 export default function TaxPlanning() {
   const navigate = useNavigate();
   const { companies } = useCompany();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
-+
+
   // Form state
   const [title, setTitle] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [selectedRegime, setSelectedRegime] = useState("");
-+
+
   const { data: plannings = [], isLoading } = useQuery({
     queryKey: ["tax_planning"],
     queryFn: async () => {
@@ -35,7 +35,7 @@ export default function TaxPlanning() {
       return data;
     },
   });
-+
+
   const createMutation = useMutation({
     mutationFn: async (newPlanning: any) => {
       const { data, error } = await supabase
@@ -58,7 +58,7 @@ export default function TaxPlanning() {
       toast.error(error.message || "Erro ao criar planejamento");
     },
   });
-+
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !selectedCompanyId || !selectedRegime) {
@@ -70,12 +70,12 @@ export default function TaxPlanning() {
       tax_regime: selectedRegime,
     });
   };
-+
+
   const filteredPlannings = plannings.filter((p: any) => 
     p.title.toLowerCase().includes(search.toLowerCase()) ||
     p.companies?.nome_fantasia.toLowerCase().includes(search.toLowerCase())
   );
-+
+
   return (
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
@@ -87,7 +87,7 @@ export default function TaxPlanning() {
             <Calculator className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-bold">Planejamento Tributário</h1>
           </div>
-+
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
