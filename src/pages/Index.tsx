@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 const Index = () => {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
-  return <Navigate to={user ? "/empresas" : "/auth"} replace />;
+   return <Navigate to={user ? "/app" : "/auth"} replace />;
 };
 
 export default Index;
