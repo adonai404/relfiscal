@@ -17,7 +17,7 @@
         title: "Movimento",
         description: "Lançamentos fiscais e conciliação",
         icon: ArrowLeftRight,
-        path: "/movimento",
+        path: "/empresas",
         color: "text-blue-500",
         bg: "bg-blue-500/10",
       },
