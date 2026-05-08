@@ -38,13 +38,6 @@
        bg: "bg-purple-500/10",
      },
      {
-       title: "Configurações",
-       description: "Alíquotas e colunas personalizadas",
-       icon: Settings,
-       path: "/configuracoes",
-       color: "text-amber-500",
-       bg: "bg-amber-500/10",
-     },
    ];
  
    return (
@@ -92,11 +85,6 @@
                        </p>
                      </div>
                    </div>
-                   <div className="flex items-center gap-2">
-                     <Button variant="outline" size="sm" onClick={() => navigate("/empresas")}>
-                       Trocar Empresa
-                     </Button>
-                   </div>
                  </div>
                </CardContent>
              </Card>
@@ -121,7 +109,7 @@
            </div>
          )}
  
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {menuItems.map((item, idx) => {
              const Icon = item.icon;
              const isDisabled = !selectedCompany;
