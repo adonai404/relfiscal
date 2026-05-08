@@ -1,5 +1,5 @@
  import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog } from "lucide-react";
+import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator } from "lucide-react";
  import { useAuth } from "@/hooks/useAuth";
  import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
@@ -44,6 +44,15 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         path: "/apresentacao",
         color: "text-purple-500",
         bg: "bg-purple-500/10",
+      },
+      {
+        title: "Planejamento Tributário",
+        description: "Simulações de regimes fiscais",
+        icon: Calculator,
+        path: "/planejamento",
+        color: "text-amber-500",
+        bg: "bg-amber-500/10",
+        forceEnabled: true,
       },
       {
         title: "Minha Conta",
