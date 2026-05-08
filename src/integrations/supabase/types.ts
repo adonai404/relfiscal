@@ -504,6 +504,47 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_planning: {
+        Row: {
+          company_id: string
+          created_at: string
+          data: Json | null
+          id: string
+          status: string
+          tax_regime: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          status?: string
+          tax_regime: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          status?: string
+          tax_regime?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_planning_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
