@@ -19,6 +19,7 @@ import Presentation from "./pages/Presentation.tsx";
 import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
+import ProfileSettings from "./pages/ProfileSettings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/apresentacao" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
                 <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
