@@ -15,8 +15,8 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
     const hour = new Date().getHours();
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
     
-    if (hour < 12) return `Bom dia, ${userName}`;
-    if (hour < 18) return `Boa tarde, ${userName}`;
+    if (hour >= 5 && hour < 12) return `Bom dia, ${userName}`;
+    if (hour >= 12 && hour < 19) return `Boa tarde, ${userName}`;
     return `Boa noite, ${userName}`;
   };
 
