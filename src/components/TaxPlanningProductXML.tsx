@@ -9,9 +9,8 @@
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { supabase } from "@/integrations/supabase/client";
- import { useCompany } from "@/hooks/useCompany";
- import { toast } from "sonner";
+  import { supabase } from "@/integrations/supabase/client";
+  import { toast } from "sonner";
 import JSZip from "jszip";
  
  interface TaxPlanningProductXMLProps {
