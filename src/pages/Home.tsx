@@ -80,14 +80,14 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
          bg: "bg-orange-500/10",
          forceEnabled: true,
        },
-        {
-          title: "Conexão API",
-          description: "Configurar entrada e saída de dados via sistema",
-          icon: SettingsIcon,
-          path: "/configuracoes",
-          color: "text-slate-500",
-          bg: "bg-slate-500/10",
-        },
+       {
+         title: "Conexão API",
+         description: "Configurar entrada e saída de dados via sistema",
+         icon: SettingsIcon,
+         path: selectedCompany ? "/configuracoes" : "/empresas?redirect=/configuracoes",
+         color: "text-slate-500",
+         bg: "bg-slate-500/10",
+       },
        ...(isSuperAdmin ? [{
          title: "Administração",
          description: "Gerenciar usuários e permissões",

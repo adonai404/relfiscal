@@ -69,17 +69,17 @@ export default function Settings() {
   })();
 
   // Lightweight fetch of rows just for export
-  const { data: exportRows = [] } = useQuery({
-    queryKey: ["fiscal_movement_export", companyId],
-    enabled: !!companyId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fiscal_movement").select("*").eq("company_id", companyId!)
-        .order("competencia", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+   const { data: exportRows = [] } = useQuery({
+     queryKey: ["fiscal_movement_export", companyId],
+     enabled: !!companyId,
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("fiscal_movement").select("*").eq("company_id", companyId!)
+         .order("competencia", { ascending: true });
+       if (error) throw error;
+       return data ?? [];
+     },
+   });
 
   // Local label state for onBlur saves
   const [labels, setLabels] = useState<Record<string, string>>({});
