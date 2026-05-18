@@ -12,6 +12,7 @@
  import { supabase } from "@/integrations/supabase/client";
  import { useCompany } from "@/hooks/useCompany";
  import { toast } from "sonner";
+import JSZip from "jszip";
  
  export function TaxPlanningProductXML() {
    const { companies } = useCompany();
@@ -48,109 +49,122 @@
      const companyCnpj = company?.cnpj?.replace(/\D/g, "");
  
      try {
-       for (const file of Array.from(files)) {
-         const content = await file.text();
-         const parser = new DOMParser();
-         const xmlDoc = parser.parseFromString(content, "text/xml");
-         
-         // Check for parsing errors
-         if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
-           toast.error(`Arquivo ${file.name} é um XML inválido`);
-           continue;
-         }
- 
-         // Basic NFe/NFCe structure check (can be inside nfeProc or NFe)
-         let infNFe = xmlDoc.getElementsByTagName("infNFe")[0];
-         
-         if (!infNFe) {
-           // Try to find if it's inside NFe or nfeProc
-           const nfe = xmlDoc.getElementsByTagName("NFe")[0];
-           if (nfe) infNFe = nfe.getElementsByTagName("infNFe")[0];
-         }
+      const processSingleXml = async (content: string, fileName: string) => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(content, "text/xml");
+        
+        if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+          toast.error(`Arquivo ${fileName} é um XML inválido`);
+          return;
+        }
 
-         if (!infNFe) {
-           toast.error(`Arquivo ${file.name} não possui a tag <infNFe>. Verifique se é um XML de NF-e válido.`);
-           continue;
-         }
- 
-         // Determine XML type
-         let xmlType: "NF_EMITIDA" | "NF_RECEBIDA" | "NFC_EMITIDA" = "NF_EMITIDA";
-         const cnpjEmit = infNFe.getElementsByTagName("emit")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
-         const cnpjDest = infNFe.getElementsByTagName("dest")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
-         const mod = infNFe.getElementsByTagName("ide")[0]?.getElementsByTagName("mod")[0]?.textContent;
+        let infNFe = xmlDoc.getElementsByTagName("infNFe")[0];
+        
+        if (!infNFe) {
+          const nfe = xmlDoc.getElementsByTagName("NFe")[0];
+          if (nfe) infNFe = nfe.getElementsByTagName("infNFe")[0];
+        }
 
-         if (selectedXmlType !== "AUTO") {
-           xmlType = selectedXmlType;
-         } else {
-           if (mod === "65") {
-             xmlType = "NFC_EMITIDA";
-           } else if (cnpjEmit === companyCnpj) {
-             xmlType = "NF_EMITIDA";
-           } else if (cnpjDest === companyCnpj) {
-             xmlType = "NF_RECEBIDA";
-           } else {
-             toast.error(`O CNPJ do XML (${cnpjEmit || cnpjDest || 'não encontrado'}) não coincide com o da empresa selecionada (${companyCnpj}). Selecione o tipo de nota manualmente se necessário.`);
-             continue;
-           }
-         }
- 
-         // Extract products from infNFe
-         const detNodes = infNFe.getElementsByTagName("det");
-         if (detNodes.length === 0) {
-           toast.error(`Arquivo ${file.name} não contém itens de produto (tag <det>)`);
-           continue;
-         }
- 
-         // Log upload record
-         const { data: uploadData, error: uploadError } = await supabase
-           .from("tax_planning_xml_uploads")
-           .insert([{
-             company_id: selectedCompanyId,
-             file_name: file.name,
-             xml_type: xmlType
-           }])
-           .select()
-           .single();
- 
-         if (uploadError) throw uploadError;
- 
-         const extractedProducts = [];
-         const emissionDate = infNFe.getElementsByTagName("dhEmi")[0]?.textContent || 
-                         infNFe.getElementsByTagName("dEmi")[0]?.textContent || 
-                         new Date().toISOString();
- 
-         for (let i = 0; i < detNodes.length; i++) {
-           const prod = detNodes[i].getElementsByTagName("prod")[0];
-           const imposto = detNodes[i].getElementsByTagName("imposto")[0];
-           
-           if (!prod) continue;
- 
-           extractedProducts.push({
-             company_id: selectedCompanyId,
-             upload_id: uploadData.id,
-             xml_type: xmlType,
-             product_code: prod.getElementsByTagName("cProd")[0]?.textContent,
-             product_name: prod.getElementsByTagName("xProd")[0]?.textContent || "Produto sem nome",
-             ncm: prod.getElementsByTagName("NCM")[0]?.textContent,
-             cfop: prod.getElementsByTagName("CFOP")[0]?.textContent,
-             ucom: prod.getElementsByTagName("uCom")[0]?.textContent,
-             qcom: parseFloat(prod.getElementsByTagName("qCom")[0]?.textContent || "0"),
-             vuncom: parseFloat(prod.getElementsByTagName("vUnCom")[0]?.textContent || "0"),
-             vprod: parseFloat(prod.getElementsByTagName("vProd")[0]?.textContent || "0"),
-             vicms: parseFloat(imposto?.getElementsByTagName("vICMS")[0]?.textContent || "0"),
-             vpis: parseFloat(imposto?.getElementsByTagName("vPIS")[0]?.textContent || "0"),
-             vcofins: parseFloat(imposto?.getElementsByTagName("vCOFINS")[0]?.textContent || "0"),
-             emission_date: emissionDate
-           });
-         }
- 
-         if (extractedProducts.length > 0) {
-           const { error: productsError } = await supabase
-             .from("tax_planning_products")
-             .insert(extractedProducts);
-           if (productsError) throw productsError;
-         }
-       }
+        if (!infNFe) {
+          toast.error(`Arquivo ${fileName} não possui a tag <infNFe>. Verifique se é um XML de NF-e válido.`);
+          return;
+        }
+
+        let xmlType: "NF_EMITIDA" | "NF_RECEBIDA" | "NFC_EMITIDA" = "NF_EMITIDA";
+        const cnpjEmit = infNFe.getElementsByTagName("emit")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
+        const cnpjDest = infNFe.getElementsByTagName("dest")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
+        const mod = infNFe.getElementsByTagName("ide")[0]?.getElementsByTagName("mod")[0]?.textContent;
+
+        if (selectedXmlType !== "AUTO") {
+          xmlType = selectedXmlType;
+        } else {
+          if (mod === "65") {
+            xmlType = "NFC_EMITIDA";
+          } else if (cnpjEmit === companyCnpj) {
+            xmlType = "NF_EMITIDA";
+          } else if (cnpjDest === companyCnpj) {
+            xmlType = "NF_RECEBIDA";
+          } else {
+            toast.error(`O CNPJ do XML (${cnpjEmit || cnpjDest || 'não encontrado'}) em ${fileName} não coincide com o da empresa selecionada (${companyCnpj}).`);
+            return;
+          }
+        }
+
+        const detNodes = infNFe.getElementsByTagName("det");
+        if (detNodes.length === 0) {
+          toast.error(`Arquivo ${fileName} não contém itens de produto (tag <det>)`);
+          return;
+        }
+
+        const { data: uploadData, error: uploadError } = await supabase
+          .from("tax_planning_xml_uploads")
+          .insert([{
+            company_id: selectedCompanyId,
+            file_name: fileName,
+            xml_type: xmlType
+          }])
+          .select()
+          .single();
+
+        if (uploadError) throw uploadError;
+
+        const extractedProducts = [];
+        const emissionDate = infNFe.getElementsByTagName("dhEmi")[0]?.textContent || 
+                        infNFe.getElementsByTagName("dEmi")[0]?.textContent || 
+                        new Date().toISOString();
+
+        for (let i = 0; i < detNodes.length; i++) {
+          const prod = detNodes[i].getElementsByTagName("prod")[0];
+          const imposto = detNodes[i].getElementsByTagName("imposto")[0];
+          
+          if (!prod) continue;
+
+          extractedProducts.push({
+            company_id: selectedCompanyId,
+            upload_id: uploadData.id,
+            xml_type: xmlType,
+            product_code: prod.getElementsByTagName("cProd")[0]?.textContent,
+            product_name: prod.getElementsByTagName("xProd")[0]?.textContent || "Produto sem nome",
+            ncm: prod.getElementsByTagName("NCM")[0]?.textContent,
+            cfop: prod.getElementsByTagName("CFOP")[0]?.textContent,
+            ucom: prod.getElementsByTagName("uCom")[0]?.textContent,
+            qcom: parseFloat(prod.getElementsByTagName("qCom")[0]?.textContent || "0"),
+            vuncom: parseFloat(prod.getElementsByTagName("vUnCom")[0]?.textContent || "0"),
+            vprod: parseFloat(prod.getElementsByTagName("vProd")[0]?.textContent || "0"),
+            vicms: parseFloat(imposto?.getElementsByTagName("vICMS")[0]?.textContent || "0"),
+            vpis: parseFloat(imposto?.getElementsByTagName("vPIS")[0]?.textContent || "0"),
+            vcofins: parseFloat(imposto?.getElementsByTagName("vCOFINS")[0]?.textContent || "0"),
+            emission_date: emissionDate
+          });
+        }
+
+        if (extractedProducts.length > 0) {
+          const { error: productsError } = await supabase
+            .from("tax_planning_products")
+            .insert(extractedProducts);
+          if (productsError) throw productsError;
+        }
+      };
+
+      for (const file of Array.from(files)) {
+        if (file.name.toLowerCase().endsWith(".zip")) {
+          const zip = await JSZip.loadAsync(file);
+          const zipFiles = Object.keys(zip.files).filter(name => !zip.files[name].dir && name.toLowerCase().endsWith(".xml"));
+          
+          if (zipFiles.length === 0) {
+            toast.error(`O arquivo ZIP ${file.name} não contém arquivos XML válidos.`);
+            continue;
+          }
+
+          for (const name of zipFiles) {
+            const content = await zip.files[name].async("text");
+            await processSingleXml(content, name);
+          }
+        } else {
+          const content = await file.text();
+          await processSingleXml(content, file.name);
+        }
+      }
        
        toast.success("Arquivos válidos processados com sucesso!");
        queryClient.invalidateQueries({ queryKey: ["tax_planning_products", selectedCompanyId] });
@@ -237,14 +251,14 @@
              <div className="grid gap-2">
                <Label htmlFor="xml-upload">Arquivos XML</Label>
                <div className="flex items-center gap-2">
-                 <Input 
-                   id="xml-upload" 
-                   type="file" 
-                   multiple 
-                   accept=".xml" 
-                   onChange={handleFileUpload}
-                   disabled={!selectedCompanyId || isUploading}
-                 />
+                  <Input 
+                    id="xml-upload" 
+                    type="file" 
+                    multiple 
+                    accept=".xml,.zip" 
+                    onChange={handleFileUpload}
+                    disabled={!selectedCompanyId || isUploading}
+                  />
                  {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
                </div>
              </div>
