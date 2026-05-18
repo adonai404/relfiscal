@@ -43,22 +43,50 @@
      }
  
      setIsUploading(true);
+     const company = companies.find(c => c.id === selectedCompanyId);
+     const companyCnpj = company?.cnpj?.replace(/\D/g, "");
+ 
      try {
        for (const file of Array.from(files)) {
          const content = await file.text();
          const parser = new DOMParser();
          const xmlDoc = parser.parseFromString(content, "text/xml");
          
-         // Determine XML type (very basic check)
-         let xmlType = "NF_EMITIDA";
+         // Check for parsing errors
+         if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+           toast.error(`Arquivo ${file.name} é um XML inválido`);
+           continue;
+         }
+ 
+         // Basic NFe/NFCe structure check
+         const infNFe = xmlDoc.getElementsByTagName("infNFe")[0];
+         if (!infNFe) {
+           toast.error(`Arquivo ${file.name} não parece ser uma NF-e ou NFC-e válida (falta tag infNFe)`);
+           continue;
+         }
+ 
+         // Determine XML type
+         let xmlType: "NF_EMITIDA" | "NF_RECEBIDA" | "NFC_EMITIDA" = "NF_EMITIDA";
          const cnpjEmit = xmlDoc.getElementsByTagName("emit")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
-         const company = companies.find(c => c.id === selectedCompanyId);
-         const companyCnpj = company?.cnpj?.replace(/\D/g, "");
-         
-         if (xmlDoc.getElementsByTagName("NFCe").length > 0) {
+         const cnpjDest = xmlDoc.getElementsByTagName("dest")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
+         const mod = xmlDoc.getElementsByTagName("ide")[0]?.getElementsByTagName("mod")[0]?.textContent;
+ 
+         if (mod === "65") {
            xmlType = "NFC_EMITIDA";
-         } else if (cnpjEmit !== companyCnpj) {
+         } else if (cnpjEmit === companyCnpj) {
+           xmlType = "NF_EMITIDA";
+         } else if (cnpjDest === companyCnpj) {
            xmlType = "NF_RECEBIDA";
+         } else {
+           toast.error(`Arquivo ${file.name} não pertence à empresa selecionada (CNPJ não coincide)`);
+           continue;
+         }
+ 
+         // Extract products
+         const detNodes = xmlDoc.getElementsByTagName("det");
+         if (detNodes.length === 0) {
+           toast.error(`Arquivo ${file.name} não contém itens de produto (tag det)`);
+           continue;
          }
  
          // Log upload record
@@ -74,46 +102,49 @@
  
          if (uploadError) throw uploadError;
  
-         // Extract products
-         const detNodes = xmlDoc.getElementsByTagName("det");
          const extractedProducts = [];
-         const emissionDate = xmlDoc.getElementsByTagName("dhEmi")[0]?.textContent || new Date().toISOString();
+         const emissionDate = xmlDoc.getElementsByTagName("dhEmi")[0]?.textContent || 
+                         xmlDoc.getElementsByTagName("dEmi")[0]?.textContent || 
+                         new Date().toISOString();
  
          for (let i = 0; i < detNodes.length; i++) {
            const prod = detNodes[i].getElementsByTagName("prod")[0];
            const imposto = detNodes[i].getElementsByTagName("imposto")[0];
            
+           if (!prod) continue;
+ 
            extractedProducts.push({
              company_id: selectedCompanyId,
              upload_id: uploadData.id,
              xml_type: xmlType,
              product_code: prod.getElementsByTagName("cProd")[0]?.textContent,
-             product_name: prod.getElementsByTagName("xProd")[0]?.textContent,
+             product_name: prod.getElementsByTagName("xProd")[0]?.textContent || "Produto sem nome",
              ncm: prod.getElementsByTagName("NCM")[0]?.textContent,
              cfop: prod.getElementsByTagName("CFOP")[0]?.textContent,
              ucom: prod.getElementsByTagName("uCom")[0]?.textContent,
              qcom: parseFloat(prod.getElementsByTagName("qCom")[0]?.textContent || "0"),
              vuncom: parseFloat(prod.getElementsByTagName("vUnCom")[0]?.textContent || "0"),
              vprod: parseFloat(prod.getElementsByTagName("vProd")[0]?.textContent || "0"),
-             vicms: parseFloat(imposto.getElementsByTagName("vICMS")[0]?.textContent || "0"),
-             vpis: parseFloat(imposto.getElementsByTagName("vPIS")[0]?.textContent || "0"),
-             vcofins: parseFloat(imposto.getElementsByTagName("vCOFINS")[0]?.textContent || "0"),
+             vicms: parseFloat(imposto?.getElementsByTagName("vICMS")[0]?.textContent || "0"),
+             vpis: parseFloat(imposto?.getElementsByTagName("vPIS")[0]?.textContent || "0"),
+             vcofins: parseFloat(imposto?.getElementsByTagName("vCOFINS")[0]?.textContent || "0"),
              emission_date: emissionDate
            });
          }
  
-         const { error: productsError } = await supabase
-           .from("tax_planning_products")
-           .insert(extractedProducts);
- 
-         if (productsError) throw productsError;
+         if (extractedProducts.length > 0) {
+           const { error: productsError } = await supabase
+             .from("tax_planning_products")
+             .insert(extractedProducts);
+           if (productsError) throw productsError;
+         }
        }
        
-       toast.success("XMLs processados com sucesso!");
+       toast.success("Arquivos válidos processados com sucesso!");
        queryClient.invalidateQueries({ queryKey: ["tax_planning_products", selectedCompanyId] });
      } catch (error: any) {
        console.error(error);
-       toast.error("Erro ao processar XML: " + error.message);
+       toast.error("Erro crítico ao processar XML: " + error.message);
      } finally {
        setIsUploading(false);
        event.target.value = "";
