@@ -3,9 +3,10 @@
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
  import { supabase } from "@/integrations/supabase/client";
- import { formatCurrency, displayCompetencia } from "@/lib/format";
+ import { brl as formatCurrency, displayCompetencia } from "@/lib/format";
  import { useQuery } from "@tanstack/react-query";
  import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
+ import { Button } from "@/components/ui/button";
  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
  
  export const SimplesNacionalPlanningForm = ({ planning, onSave }: { planning: any, onSave: (data: any) => void }) => {
