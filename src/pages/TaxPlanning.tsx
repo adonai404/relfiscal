@@ -388,8 +388,8 @@ export default function TaxPlanning() {
                </Card>
              ) : (
                <div className="space-y-8">
-                 {groups.map((group: any) => {
-                   const groupPlannings = plannings.filter((p: any) => p.group_id === group.id);
+                  {groups.map((group: any) => {
+                    const groupPlannings = filteredPlannings.filter((p: any) => p.group_id === group.id);
                    return (
                      <div key={group.id} className="space-y-4">
                        <div className="flex items-center gap-2 pb-2 border-b">
