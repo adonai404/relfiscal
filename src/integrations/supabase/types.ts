@@ -509,6 +509,7 @@ export type Database = {
           company_id: string
           created_at: string
           data: Json | null
+          group_id: string | null
           id: string
           status: string
           tax_regime: string
@@ -519,6 +520,7 @@ export type Database = {
           company_id: string
           created_at?: string
           data?: Json | null
+          group_id?: string | null
           id?: string
           status?: string
           tax_regime: string
@@ -529,6 +531,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           data?: Json | null
+          group_id?: string | null
           id?: string
           status?: string
           tax_regime?: string
@@ -543,7 +546,38 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tax_planning_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "tax_planning_groups"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      tax_planning_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
