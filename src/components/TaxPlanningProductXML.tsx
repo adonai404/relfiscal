@@ -17,6 +17,7 @@
    const { companies } = useCompany();
    const queryClient = useQueryClient();
    const [selectedCompanyId, setSelectedCompanyId] = useState("");
+   const [selectedXmlType, setSelectedXmlType] = useState<"AUTO" | "NF_EMITIDA" | "NF_RECEBIDA" | "NFC_EMITIDA">("AUTO");
    const [isUploading, setIsUploading] = useState(false);
    const [search, setSearch] = useState("");
  
@@ -77,16 +78,20 @@
          const cnpjEmit = infNFe.getElementsByTagName("emit")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
          const cnpjDest = infNFe.getElementsByTagName("dest")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
          const mod = infNFe.getElementsByTagName("ide")[0]?.getElementsByTagName("mod")[0]?.textContent;
- 
-         if (mod === "65") {
-           xmlType = "NFC_EMITIDA";
-         } else if (cnpjEmit === companyCnpj) {
-           xmlType = "NF_EMITIDA";
-         } else if (cnpjDest === companyCnpj) {
-           xmlType = "NF_RECEBIDA";
+
+         if (selectedXmlType !== "AUTO") {
+           xmlType = selectedXmlType;
          } else {
-           toast.error(`O CNPJ do XML (${cnpjEmit || cnpjDest || 'não encontrado'}) não coincide com o da empresa selecionada (${companyCnpj})`);
-           continue;
+           if (mod === "65") {
+             xmlType = "NFC_EMITIDA";
+           } else if (cnpjEmit === companyCnpj) {
+             xmlType = "NF_EMITIDA";
+           } else if (cnpjDest === companyCnpj) {
+             xmlType = "NF_RECEBIDA";
+           } else {
+             toast.error(`O CNPJ do XML (${cnpjEmit || cnpjDest || 'não encontrado'}) não coincide com o da empresa selecionada (${companyCnpj}). Selecione o tipo de nota manualmente se necessário.`);
+             continue;
+           }
          }
  
          // Extract products from infNFe
@@ -196,7 +201,24 @@
            </CardDescription>
          </CardHeader>
          <CardContent className="space-y-4">
-           <div className="grid gap-4 md:grid-cols-2">
+           <div className="grid gap-4 md:grid-cols-3">
+             <div className="grid gap-2">
+               <Label>Tipo de XML</Label>
+               <Select 
+                 value={selectedXmlType} 
+                 onValueChange={(val: any) => setSelectedXmlType(val)}
+               >
+                 <SelectTrigger>
+                   <SelectValue placeholder="Tipo de Nota" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="AUTO">Automático (CNPJ)</SelectItem>
+                   <SelectItem value="NF_EMITIDA">NF-e Emitida</SelectItem>
+                   <SelectItem value="NF_RECEBIDA">NF-e Recebida</SelectItem>
+                   <SelectItem value="NFC_EMITIDA">NFC-e Emitida</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
              <div className="grid gap-2">
                <Label>Empresa</Label>
                <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
