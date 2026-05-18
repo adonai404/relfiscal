@@ -417,9 +417,6 @@ export default function Movement() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes")}>
-              <Settings className="mr-2 h-4 w-4" /> Configurações
-            </Button>
             <Button variant="outline" size="sm" onClick={sharePublic}>
               <Share2 className="mr-2 h-4 w-4" /> Página pública
             </Button>
