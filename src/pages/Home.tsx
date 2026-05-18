@@ -131,8 +131,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {menuItems.map((item, idx) => {
              const Icon = item.icon;
-              // Allow "Minha Conta" to be clicked even if no company is selected
-              const isDisabled = !selectedCompany && !(item as any).forceEnabled;
+               const isDisabled = false;
              return (
                <Button
                  key={item.path}
