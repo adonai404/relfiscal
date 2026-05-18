@@ -41,18 +41,21 @@ export interface FiscalConfig {
 }
 
 export type ColumnKey =
-  | "entrada" | "saida" | "icms" | "impostos_federais" | "simples_nacional"
+  | "entrada" | "saida" | "nfe_saida" | "nfe_entrada" | "cupom" | "servico"
+  | "icms" | "impostos_federais" | "simples_nacional"
   | "aliquota_simples_calc"
   | "honorarios" | "folha" | "encargos_patronal" | "difal" | "pis"
   | "cofins" | "irpj" | "csll";
 
 export const ALL_COLUMNS: ColumnKey[] = [
-  "entrada", "saida", "icms", "impostos_federais", "simples_nacional", "aliquota_simples_calc",
+  "entrada", "saida", "nfe_saida", "nfe_entrada", "cupom", "servico",
+  "icms", "impostos_federais", "simples_nacional", "aliquota_simples_calc",
   "honorarios", "folha", "encargos_patronal", "difal", "pis", "cofins", "irpj", "csll",
 ];
 
 // entrada and saida are always visible
 export const TOGGLEABLE_COLUMNS: ColumnKey[] = [
+  "nfe_saida", "nfe_entrada", "cupom", "servico",
   "icms", "impostos_federais", "simples_nacional", "aliquota_simples_calc", "honorarios", "folha",
   "encargos_patronal", "difal", "pis", "cofins", "irpj", "csll",
 ];
@@ -91,8 +94,8 @@ export type ColumnCategory =
   | "aliquota" | "payroll" | "custom";
 
 export const getColumnCategory = (col: ColumnKey): ColumnCategory => {
-  if (col === "entrada") return "entrada";
-  if (col === "saida") return "saida";
+  if (col === "entrada" || col === "nfe_entrada") return "entrada";
+  if (col === "saida" || col === "nfe_saida" || col === "cupom" || col === "servico") return "saida";
   if (col === "simples_nacional") return "simples";
   if (col === "aliquota_simples_calc") return "aliquota";
   if (col === "honorarios" || col === "folha" || col === "encargos_patronal") return "payroll";
@@ -117,7 +120,10 @@ export const isColumnVisible = (cfg: FiscalConfig | undefined, col: ColumnKey): 
 
 export const getColumnLabel = (cfg: FiscalConfig | undefined, col: ColumnKey): string => {
   const defaults: Record<ColumnKey, string> = {
-    entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
+    entrada: "Entrada", saida: "Saída", 
+    nfe_saida: "NF-e Saída", nfe_entrada: "NF-e Entrada",
+    cupom: "Cupom", servico: "Serviço",
+    icms: "ICMS", impostos_federais: "Impostos Federais",
     simples_nacional: "Simples Nacional", aliquota_simples_calc: "Alíquota Simples",
     honorarios: "Honorários", folha: "Folha",
     encargos_patronal: "Encargos Patronal", difal: "DIFAL", pis: "PIS",
