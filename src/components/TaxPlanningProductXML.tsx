@@ -238,14 +238,14 @@ import JSZip from "jszip";
              <div className="grid gap-2">
                <Label htmlFor="xml-upload">Arquivos XML</Label>
                <div className="flex items-center gap-2">
-                 <Input 
-                   id="xml-upload" 
-                   type="file" 
-                   multiple 
-                   accept=".xml" 
-                   onChange={handleFileUpload}
-                   disabled={!selectedCompanyId || isUploading}
-                 />
+                  <Input 
+                    id="xml-upload" 
+                    type="file" 
+                    multiple 
+                    accept=".xml,.zip" 
+                    onChange={handleFileUpload}
+                    disabled={!selectedCompanyId || isUploading}
+                  />
                  {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
                </div>
              </div>
