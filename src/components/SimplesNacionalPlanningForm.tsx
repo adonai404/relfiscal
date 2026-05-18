@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
  import { supabase } from "@/integrations/supabase/client";
 import { brl as formatCurrency, displayCompetencia, formatCustomValue } from "@/lib/format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RefreshCw, AlertCircle, TrendingUp } from "lucide-react";
+import { Loader2, AlertCircle, TrendingUp, Filter, FilterX } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
@@ -26,13 +26,18 @@ import {
   useCustomColumnValues, 
   buildRowResolver 
 } from "@/hooks/useCustomColumns";
+import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { parseBrNumber } from "@/lib/format";
  
  export const SimplesNacionalPlanningForm = ({ planning, onSave }: { planning: any, onSave: (data: any) => void }) => {
-   const companyId = planning?.company_id;
-  const qc = useQueryClient();
+  const companyId = planning?.company_id;
    const [year, setYear] = useState(planning?.data?.year || new Date().getFullYear().toString());
+  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  type Op = "gte" | "lte" | "eq" | "between";
+  const [colFilters, setColFilters] = useState<Record<string, { op: Op; a: string; b: string }>>({});
  
-  const { data: movements, isLoading: loadingMovs, isError, refetch } = useQuery({
+  const { data: rawMovements, isLoading: loadingMovs, isError } = useQuery({
      queryKey: ["fiscal_movement_planning", companyId],
      enabled: !!companyId,
      queryFn: async () => {
@@ -51,6 +56,44 @@ import {
   const { data: customValues = [], isLoading: loadingValues } = useCustomColumnValues(companyId);
  
   const isLoading = loadingMovs || loadingConfig || loadingCustomCols || loadingValues;
+
+  const availableComps = useMemo(
+    () => Array.from(new Set((rawMovements || []).map((r) => r.competencia))).sort(),
+    [rawMovements],
+  );
+
+  // Apply period + column filters
+  const movements = useMemo(() => {
+    if (!rawMovements) return [];
+    let r = filterByPeriod(rawMovements, period);
+    
+    const entries = Object.entries(colFilters);
+    if (entries.length > 0) {
+      r = r.filter((row) => {
+        const valuesForRow = (customValues || []).reduce((acc, v) => {
+          if (v.movement_id === row.id) acc[v.column_id] = Number(v.value || 0);
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const resolver = buildRowResolver(row, customCols, valuesForRow);
+        
+        for (const [col, f] of entries) {
+          const val = resolver(col);
+          const a = parseBrNumber(f.a);
+          const b = parseBrNumber(f.b);
+          if (f.op === "gte" && f.a !== "" && !(val >= a)) return false;
+          if (f.op === "lte" && f.a !== "" && !(val <= a)) return false;
+          if (f.op === "eq" && f.a !== "" && Math.abs(val - a) > 0.001) return false;
+          if (f.op === "between" && f.a !== "" && f.b !== "" && !(val >= a && val <= b)) return false;
+        }
+        return true;
+      });
+    }
+    return r;
+  }, [rawMovements, period, colFilters, customCols, customValues]);
+
+  const filtersActive = !!(period.from || period.to) || Object.keys(colFilters).length > 0;
+  const clearAllFilters = () => { setPeriod({ from: "", to: "" }); setColFilters({}); };
  
   // Map: movement_id -> column_id -> value
   const valuesByMov = useMemo(() => {
@@ -151,14 +194,6 @@ import {
     return { byCol, totalImpostos, totalSimples, economia };
   }, [movements, visibleCustom, customCols, valuesByMov, taxCols]);
 
-  const handleRefresh = () => {
-    qc.invalidateQueries({ queryKey: ["fiscal_movement_planning", companyId] });
-    qc.invalidateQueries({ queryKey: ["fiscal_config", companyId] });
-    qc.invalidateQueries({ queryKey: ["custom_columns", companyId] });
-    qc.invalidateQueries({ queryKey: ["custom_column_values", companyId] });
-    refetch();
-  };
-
   if (isLoading) {
      return (
        <div className="flex h-64 items-center justify-center">
@@ -220,8 +255,8 @@ import {
       </div>
  
       <Card className="shadow-lg border-border/60 overflow-hidden print:shadow-none print:border-none">
-        <CardHeader className="bg-muted/30 border-b py-5 flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="bg-muted/30 border-b py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
               Memória de Cálculo Sincronizada
             </CardTitle>
@@ -229,20 +264,80 @@ import {
               Refletindo exatamente a estrutura da aba de Movimento em tempo real
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={handleRefresh} className="h-9 px-4 gap-2 font-bold hover:bg-primary hover:text-primary-foreground transition-all shadow-sm">
-            <RefreshCw className="h-3.5 w-3.5" /> Sincronizar Agora
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+            {filtersActive && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 px-3 text-xs font-bold uppercase tracking-tight hover:text-destructive transition-colors">
+                <FilterX className="mr-2 h-3.5 w-3.5" /> Limpar Filtros
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto fiscal-table-wrap">
           <Table className="fiscal-table text-[11px]">
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50 uppercase tracking-tighter font-black">
                 <TableHead data-col-cat="competencia" className="p-4 border-r text-left sticky left-0 bg-muted/80 backdrop-blur-sm z-30 w-32 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Competência</TableHead>
-                {allVisibleColumns.map((col) => (
-                  <TableHead key={col.id} data-col-cat={col.category} className="p-4 border-r text-right min-w-[110px] whitespace-nowrap">
-                    {col.label}
-                  </TableHead>
-                ))}
+                {allVisibleColumns.map((col) => {
+                  const c = col.id as string;
+                  const f = colFilters[c];
+                  const active = !!f;
+                  return (
+                    <TableHead key={col.id} data-col-cat={col.category} className="p-4 border-r text-right min-w-[110px] whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-1">
+                        <span>{col.label}</span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-5 w-5 no-print p-0 ${active ? "text-primary" : "text-muted-foreground/50 hover:text-primary"}`}
+                            >
+                              <Filter className="h-2.5 w-2.5" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64" align="end">
+                            <div className="space-y-4 p-1">
+                              <div className="space-y-2">
+                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Filtrar {col.label}</p>
+                                <div className="grid gap-2">
+                                  <select 
+                                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    value={f?.op || "gte"}
+                                    onChange={(e) => setColFilters(prev => ({ ...prev, [c]: { ...prev[c], op: e.target.value as Op, a: prev[c]?.a || "", b: prev[c]?.b || "" } }))}
+                                  >
+                                    <option value="gte">Maior ou igual</option>
+                                    <option value="lte">Menor ou igual</option>
+                                    <option value="eq">Igual a</option>
+                                    <option value="between">Entre</option>
+                                  </select>
+                                  <Input 
+                                    className="h-8 text-xs font-bold" 
+                                    placeholder="Valor"
+                                    value={f?.a || ""}
+                                    onChange={(e) => setColFilters(prev => ({ ...prev, [c]: { ...prev[c], op: prev[c]?.op || "gte", a: e.target.value, b: prev[c]?.b || "" } }))}
+                                  />
+                                  {f?.op === "between" && (
+                                    <Input 
+                                      className="h-8 text-xs font-bold" 
+                                      placeholder="Até"
+                                      value={f?.b || ""}
+                                      onChange={(e) => setColFilters(prev => ({ ...prev, [c]: { ...prev[c], op: prev[c]?.op || "gte", a: prev[c]?.a || "", b: e.target.value } }))}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex justify-between gap-2 pt-2">
+                                <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px] font-bold uppercase" onClick={() => setColFilters(prev => { const n = { ...prev }; delete n[c]; return n; })}>Limpar</Button>
+                                <Button variant="default" size="sm" className="h-7 px-2 text-[10px] font-bold uppercase" onClick={() => {}}>Aplicar</Button>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             </TableHeader>
             <TableBody>
