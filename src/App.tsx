@@ -16,7 +16,6 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
 import Presentation from "./pages/Presentation.tsx";
-import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
  import TaxPlanning from "./pages/TaxPlanning.tsx";
@@ -45,7 +44,6 @@ const App = () => (
                 <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/apresentacao" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
-                <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                  <Route path="/planejamento" element={<ProtectedRoute><TaxPlanning /></ProtectedRoute>} />
                  <Route path="/planejamento/:id" element={<ProtectedRoute><TaxPlanningDetail /></ProtectedRoute>} />
                 <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
