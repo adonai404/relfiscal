@@ -28,7 +28,10 @@ import { CustomColumnsManager } from "@/components/CustomColumnsManager";
 import { useCustomColumns, useCustomColumnValues } from "@/hooks/useCustomColumns";
 
 const TOGGLE_LABELS: Record<ColumnKey, string> = {
-  entrada: "Entrada", saida: "Saída", icms: "ICMS", impostos_federais: "Impostos Federais",
+  entrada: "Entrada", saida: "Saída", 
+  nfe_saida: "NF-e Saída", nfe_entrada: "NF-e Entrada",
+  cupom: "Cupom", servico: "Serviço",
+  icms: "ICMS", impostos_federais: "Impostos Federais",
   simples_nacional: "Simples Nacional", aliquota_simples_calc: "Alíquota Simples (calc.)",
   honorarios: "Honorários", folha: "Folha",
   encargos_patronal: "Encargos Patronal", difal: "DIFAL", pis: "PIS",
@@ -39,6 +42,10 @@ const LABEL_FIELDS: { key: keyof FiscalConfig; default: string }[] = [
   { key: "label_competencia", default: "Competência" },
   { key: "label_entrada", default: "Entrada" },
   { key: "label_saida", default: "Saída" },
+  { key: "label_nfe_saida", default: "NF-e Saída" },
+  { key: "label_nfe_entrada", default: "NF-e Entrada" },
+  { key: "label_cupom", default: "Cupom" },
+  { key: "label_servico", default: "Serviço" },
   { key: "label_icms", default: "ICMS" },
   { key: "label_impostos_federais", default: "Impostos Federais" },
   { key: "label_simples_nacional", default: "Simples Nacional" },
@@ -255,10 +262,12 @@ export default function Settings() {
                        <p className="font-semibold">Exemplo de JSON:</p>
                        <pre className="bg-muted p-2 rounded overflow-x-auto text-[10px]">
  {`{
-   "competencia": "2024-05-01",
-   "entrada": 15000.50,
-   "saida": 12000.00
- }`}
+    "competencia": "2024-05-01",
+    "nfe_saida": 5000.00,
+    "cupom": 2000.00,
+    "servico": 3000.00,
+    "nfe_entrada": 1500.00
+  }`}
                        </pre>
                        <p className="text-muted-foreground mt-2 italic">
                          * Envie a <code>competencia</code> no formato YYYY-MM-DD.

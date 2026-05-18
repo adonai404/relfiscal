@@ -151,6 +151,10 @@ interface MovementRow {
   cofins: number;
   irpj: number;
   csll: number;
+  nfe_saida: number;
+  nfe_entrada: number;
+  cupom: number;
+  servico: number;
 }
 
 export default function Movement() {
