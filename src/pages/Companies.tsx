@@ -115,10 +115,16 @@ export default function Companies() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
-   const select = (c: Company) => {
-     setSelectedCompany(c);
-     navigate(`/movimento?company=${c.id}`);
-   };
+    const select = (c: Company) => {
+      setSelectedCompany(c);
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get("redirect");
+      if (redirectTo) {
+        navigate(redirectTo);
+      } else {
+        navigate(`/movimento?company=${c.id}`);
+      }
+    };
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
