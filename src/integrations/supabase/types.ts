@@ -626,6 +626,7 @@ export type Database = {
           emission_date: string | null
           id: string
           ncm: string | null
+          planning_id: string | null
           product_code: string | null
           product_name: string
           qcom: number | null
@@ -646,6 +647,7 @@ export type Database = {
           emission_date?: string | null
           id?: string
           ncm?: string | null
+          planning_id?: string | null
           product_code?: string | null
           product_name: string
           qcom?: number | null
@@ -666,6 +668,7 @@ export type Database = {
           emission_date?: string | null
           id?: string
           ncm?: string | null
+          planning_id?: string | null
           product_code?: string | null
           product_name?: string
           qcom?: number | null
@@ -688,6 +691,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tax_planning_products_planning_id_fkey"
+            columns: ["planning_id"]
+            isOneToOne: false
+            referencedRelation: "tax_planning"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tax_planning_products_upload_id_fkey"
             columns: ["upload_id"]
             isOneToOne: false
@@ -702,6 +712,7 @@ export type Database = {
           created_at: string
           file_name: string
           id: string
+          planning_id: string | null
           uploaded_by: string
           xml_type: string
         }
@@ -710,6 +721,7 @@ export type Database = {
           created_at?: string
           file_name: string
           id?: string
+          planning_id?: string | null
           uploaded_by?: string
           xml_type: string
         }
@@ -718,6 +730,7 @@ export type Database = {
           created_at?: string
           file_name?: string
           id?: string
+          planning_id?: string | null
           uploaded_by?: string
           xml_type?: string
         }
@@ -727,6 +740,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_planning_xml_uploads_planning_id_fkey"
+            columns: ["planning_id"]
+            isOneToOne: false
+            referencedRelation: "tax_planning"
             referencedColumns: ["id"]
           },
         ]

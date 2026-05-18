@@ -231,10 +231,11 @@ export default function TaxPlanning() {
                          <SelectValue placeholder="Selecione o regime" />
                        </SelectTrigger>
                        <SelectContent>
-                         <SelectItem value="SIMPLES NACIONAL">SIMPLES NACIONAL</SelectItem>
-                         <SelectItem value="LUCRO REAL">LUCRO REAL</SelectItem>
-                         <SelectItem value="LUCRO PRESUMIDO">LUCRO PRESUMIDO</SelectItem>
-                       </SelectContent>
+                          <SelectItem value="SIMPLES NACIONAL">SIMPLES NACIONAL</SelectItem>
+                          <SelectItem value="LUCRO REAL">LUCRO REAL</SelectItem>
+                          <SelectItem value="LUCRO PRESUMIDO">LUCRO PRESUMIDO</SelectItem>
+                          <SelectItem value="POR PRODUTO (XML)">POR PRODUTO (XML)</SelectItem>
+                        </SelectContent>
                      </Select>
                    </div>
                    <div className="grid gap-2">
@@ -278,16 +279,11 @@ export default function TaxPlanning() {
           />
         </div>
 +
-         <Tabs defaultValue="all" className="w-full">
-           <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
-             <TabsTrigger value="all">Todos</TabsTrigger>
-             <TabsTrigger value="groups">Grupos</TabsTrigger>
-             <TabsTrigger value="products">Por Produto (XML)</TabsTrigger>
-           </TabsList>
-
-           <TabsContent value="products" className="mt-6">
-             <TaxPlanningProductXML />
-           </TabsContent>
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="groups">Grupos</TabsTrigger>
+            </TabsList>
 
            <TabsContent value="all" className="mt-6">
              {isLoading ? (

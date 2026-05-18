@@ -9,44 +9,57 @@
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Badge } from "@/components/ui/badge";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { supabase } from "@/integrations/supabase/client";
- import { useCompany } from "@/hooks/useCompany";
- import { toast } from "sonner";
+  import { supabase } from "@/integrations/supabase/client";
+  import { toast } from "sonner";
 import JSZip from "jszip";
  
- export function TaxPlanningProductXML() {
-   const { companies } = useCompany();
+ interface TaxPlanningProductXMLProps {
+   planningId?: string;
+   companyId?: string;
+   companyCnpj?: string;
+ }
+ 
+ export function TaxPlanningProductXML({ planningId, companyId, companyCnpj }: TaxPlanningProductXMLProps) {
    const queryClient = useQueryClient();
-   const [selectedCompanyId, setSelectedCompanyId] = useState("");
    const [selectedXmlType, setSelectedXmlType] = useState<"AUTO" | "NF_EMITIDA" | "NF_RECEBIDA" | "NFC_EMITIDA">("AUTO");
    const [isUploading, setIsUploading] = useState(false);
    const [search, setSearch] = useState("");
  
    const { data: products = [], isLoading: isLoadingProducts } = useQuery({
-     queryKey: ["tax_planning_products", selectedCompanyId],
+     queryKey: ["tax_planning_products", planningId || companyId],
      queryFn: async () => {
-       if (!selectedCompanyId) return [];
-       const { data, error } = await supabase
+       const query = supabase
          .from("tax_planning_products")
          .select("*")
-         .eq("company_id", selectedCompanyId)
          .order("emission_date", { ascending: false });
+       
+       if (planningId) {
+         query.eq("planning_id", planningId);
+       } else if (companyId) {
+         query.eq("company_id", companyId);
+       } else {
+         return [];
+       }
+ 
+       const { data, error } = await query;
        if (error) throw error;
        return data;
      },
-     enabled: !!selectedCompanyId,
+     enabled: !!(planningId || companyId),
    });
  
    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
      const files = event.target.files;
-     if (!files || files.length === 0 || !selectedCompanyId) {
-       if (!selectedCompanyId) toast.error("Selecione uma empresa primeiro");
+     const targetCompanyId = companyId;
+     const targetPlanningId = planningId;
+ 
+     if (!files || files.length === 0 || !targetCompanyId) {
+       if (!targetCompanyId) toast.error("Empresa não identificada");
        return;
      }
  
      setIsUploading(true);
-     const company = companies.find(c => c.id === selectedCompanyId);
-     const companyCnpj = company?.cnpj?.replace(/\D/g, "");
+     const formattedCnpj = companyCnpj?.replace(/\D/g, "");
  
      try {
       const processSingleXml = async (content: string, fileName: string) => {
@@ -96,15 +109,16 @@ import JSZip from "jszip";
           return;
         }
 
-        const { data: uploadData, error: uploadError } = await supabase
-          .from("tax_planning_xml_uploads")
-          .insert([{
-            company_id: selectedCompanyId,
-            file_name: fileName,
-            xml_type: xmlType
-          }])
-          .select()
-          .single();
+         const { data: uploadData, error: uploadError } = await supabase
+           .from("tax_planning_xml_uploads")
+           .insert([{
+             company_id: targetCompanyId,
+             planning_id: targetPlanningId,
+             file_name: fileName,
+             xml_type: xmlType
+           }])
+           .select()
+           .single();
 
         if (uploadError) throw uploadError;
 
@@ -119,11 +133,12 @@ import JSZip from "jszip";
           
           if (!prod) continue;
 
-          extractedProducts.push({
-            company_id: selectedCompanyId,
-            upload_id: uploadData.id,
-            xml_type: xmlType,
-            product_code: prod.getElementsByTagName("cProd")[0]?.textContent,
+           extractedProducts.push({
+             company_id: targetCompanyId,
+             planning_id: targetPlanningId,
+             upload_id: uploadData.id,
+             xml_type: xmlType,
+             product_code: prod.getElementsByTagName("cProd")[0]?.textContent,
             product_name: prod.getElementsByTagName("xProd")[0]?.textContent || "Produto sem nome",
             ncm: prod.getElementsByTagName("NCM")[0]?.textContent,
             cfop: prod.getElementsByTagName("CFOP")[0]?.textContent,
@@ -166,8 +181,8 @@ import JSZip from "jszip";
         }
       }
        
-       toast.success("Arquivos válidos processados com sucesso!");
-       queryClient.invalidateQueries({ queryKey: ["tax_planning_products", selectedCompanyId] });
+        toast.success("Arquivos válidos processados com sucesso!");
+        queryClient.invalidateQueries({ queryKey: ["tax_planning_products", planningId || companyId] });
      } catch (error: any) {
        console.error(error);
        toast.error("Erro crítico ao processar XML: " + error.message);
@@ -215,58 +230,43 @@ import JSZip from "jszip";
            </CardDescription>
          </CardHeader>
          <CardContent className="space-y-4">
-           <div className="grid gap-4 md:grid-cols-3">
-             <div className="grid gap-2">
-               <Label>Tipo de XML</Label>
-               <Select 
-                 value={selectedXmlType} 
-                 onValueChange={(val: any) => setSelectedXmlType(val)}
-               >
-                 <SelectTrigger>
-                   <SelectValue placeholder="Tipo de Nota" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="AUTO">Automático (CNPJ)</SelectItem>
-                   <SelectItem value="NF_EMITIDA">NF-e Emitida</SelectItem>
-                   <SelectItem value="NF_RECEBIDA">NF-e Recebida</SelectItem>
-                   <SelectItem value="NFC_EMITIDA">NFC-e Emitida</SelectItem>
-                 </SelectContent>
-               </Select>
-             </div>
-             <div className="grid gap-2">
-               <Label>Empresa</Label>
-               <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
-                 <SelectTrigger>
-                   <SelectValue placeholder="Selecione a empresa" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   {companies.map((c) => (
-                     <SelectItem key={c.id} value={c.id}>
-                       {c.nome_fantasia}
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-             <div className="grid gap-2">
-               <Label htmlFor="xml-upload">Arquivos XML</Label>
-               <div className="flex items-center gap-2">
-                  <Input 
-                    id="xml-upload" 
-                    type="file" 
-                    multiple 
-                    accept=".xml,.zip" 
-                    onChange={handleFileUpload}
-                    disabled={!selectedCompanyId || isUploading}
-                  />
-                 {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+             <div className="grid gap-4 md:grid-cols-2">
+               <div className="grid gap-2">
+                 <Label>Tipo de XML</Label>
+                 <Select 
+                   value={selectedXmlType} 
+                   onValueChange={(val: any) => setSelectedXmlType(val)}
+                 >
+                   <SelectTrigger>
+                     <SelectValue placeholder="Tipo de Nota" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="AUTO">Automático (CNPJ)</SelectItem>
+                     <SelectItem value="NF_EMITIDA">NF-e Emitida</SelectItem>
+                     <SelectItem value="NF_RECEBIDA">NF-e Recebida</SelectItem>
+                     <SelectItem value="NFC_EMITIDA">NFC-e Emitida</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div className="grid gap-2">
+                 <Label htmlFor="xml-upload">Arquivos XML</Label>
+                 <div className="flex items-center gap-2">
+                   <Input 
+                     id="xml-upload" 
+                     type="file" 
+                     multiple 
+                     accept=".xml,.zip" 
+                     onChange={handleFileUpload}
+                     disabled={!(planningId || companyId) || isUploading}
+                   />
+                   {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                 </div>
                </div>
              </div>
-           </div>
          </CardContent>
        </Card>
  
-       {selectedCompanyId && (
+        {(planningId || companyId) && (
          <>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <Card>
