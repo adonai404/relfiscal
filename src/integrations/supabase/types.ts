@@ -268,6 +268,7 @@ export type Database = {
           label_cofins: string
           label_competencia: string
           label_csll: string
+          label_cupom: string | null
           label_difal: string
           label_encargos_patronal: string
           label_entrada: string
@@ -276,11 +277,15 @@ export type Database = {
           label_icms: string
           label_impostos_federais: string
           label_irpj: string
+          label_nfe_entrada: string | null
+          label_nfe_saida: string | null
           label_pis: string
           label_saida: string
+          label_servico: string | null
           label_simples_nacional: string
           show_cofins_column: boolean
           show_csll_column: boolean
+          show_cupom_column: boolean | null
           show_difal_column: boolean
           show_encargos_patronal_column: boolean
           show_folha_column: boolean
@@ -288,7 +293,10 @@ export type Database = {
           show_icms_column: boolean
           show_impostos_federais_column: boolean
           show_irpj_column: boolean
+          show_nfe_entrada_column: boolean | null
+          show_nfe_saida_column: boolean | null
           show_pis_column: boolean
+          show_servico_column: boolean | null
           show_simples_nacional_column: boolean
           tax_columns: Json
           updated_at: string
@@ -303,6 +311,7 @@ export type Database = {
           label_cofins?: string
           label_competencia?: string
           label_csll?: string
+          label_cupom?: string | null
           label_difal?: string
           label_encargos_patronal?: string
           label_entrada?: string
@@ -311,11 +320,15 @@ export type Database = {
           label_icms?: string
           label_impostos_federais?: string
           label_irpj?: string
+          label_nfe_entrada?: string | null
+          label_nfe_saida?: string | null
           label_pis?: string
           label_saida?: string
+          label_servico?: string | null
           label_simples_nacional?: string
           show_cofins_column?: boolean
           show_csll_column?: boolean
+          show_cupom_column?: boolean | null
           show_difal_column?: boolean
           show_encargos_patronal_column?: boolean
           show_folha_column?: boolean
@@ -323,7 +336,10 @@ export type Database = {
           show_icms_column?: boolean
           show_impostos_federais_column?: boolean
           show_irpj_column?: boolean
+          show_nfe_entrada_column?: boolean | null
+          show_nfe_saida_column?: boolean | null
           show_pis_column?: boolean
+          show_servico_column?: boolean | null
           show_simples_nacional_column?: boolean
           tax_columns?: Json
           updated_at?: string
@@ -338,6 +354,7 @@ export type Database = {
           label_cofins?: string
           label_competencia?: string
           label_csll?: string
+          label_cupom?: string | null
           label_difal?: string
           label_encargos_patronal?: string
           label_entrada?: string
@@ -346,11 +363,15 @@ export type Database = {
           label_icms?: string
           label_impostos_federais?: string
           label_irpj?: string
+          label_nfe_entrada?: string | null
+          label_nfe_saida?: string | null
           label_pis?: string
           label_saida?: string
+          label_servico?: string | null
           label_simples_nacional?: string
           show_cofins_column?: boolean
           show_csll_column?: boolean
+          show_cupom_column?: boolean | null
           show_difal_column?: boolean
           show_encargos_patronal_column?: boolean
           show_folha_column?: boolean
@@ -358,7 +379,10 @@ export type Database = {
           show_icms_column?: boolean
           show_impostos_federais_column?: boolean
           show_irpj_column?: boolean
+          show_nfe_entrada_column?: boolean | null
+          show_nfe_saida_column?: boolean | null
           show_pis_column?: boolean
+          show_servico_column?: boolean | null
           show_simples_nacional_column?: boolean
           tax_columns?: Json
           updated_at?: string
@@ -380,6 +404,7 @@ export type Database = {
           competencia: string
           created_at: string
           csll: number
+          cupom: number | null
           difal: number
           encargos_patronal: number
           entrada: number
@@ -389,8 +414,11 @@ export type Database = {
           id: string
           impostos_federais: number
           irpj: number
+          nfe_entrada: number | null
+          nfe_saida: number | null
           pis: number
           saida: number
+          servico: number | null
           simples_nacional: number
           updated_at: string
         }
@@ -400,6 +428,7 @@ export type Database = {
           competencia: string
           created_at?: string
           csll?: number
+          cupom?: number | null
           difal?: number
           encargos_patronal?: number
           entrada?: number
@@ -409,8 +438,11 @@ export type Database = {
           id?: string
           impostos_federais?: number
           irpj?: number
+          nfe_entrada?: number | null
+          nfe_saida?: number | null
           pis?: number
           saida?: number
+          servico?: number | null
           simples_nacional?: number
           updated_at?: string
         }
@@ -420,6 +452,7 @@ export type Database = {
           competencia?: string
           created_at?: string
           csll?: number
+          cupom?: number | null
           difal?: number
           encargos_patronal?: number
           entrada?: number
@@ -429,8 +462,11 @@ export type Database = {
           id?: string
           impostos_federais?: number
           irpj?: number
+          nfe_entrada?: number | null
+          nfe_saida?: number | null
           pis?: number
           saida?: number
+          servico?: number | null
           simples_nacional?: number
           updated_at?: string
         }
