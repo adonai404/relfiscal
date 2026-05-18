@@ -1,3 +1,4 @@
+ import { SimplesNacionalPlanningForm } from "@/components/SimplesNacionalPlanningForm";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -81,15 +82,24 @@ export default function TaxPlanningDetail() {
           />
         )}
  
-        {planning?.tax_regime === 'POR PRODUTO (XML)' && (
-          <TaxPlanningProductXML 
-            planningId={id} 
-            companyId={planning?.company_id} 
-            companyCnpj={planning?.companies?.cnpj} 
-          />
-        )}
+         {planning?.tax_regime === 'POR PRODUTO (XML)' && (
+           <TaxPlanningProductXML 
+             planningId={id} 
+             companyId={planning?.company_id} 
+             companyCnpj={planning?.companies?.cnpj} 
+           />
+         )}
  
-        {planning?.tax_regime !== 'LUCRO PRESUMIDO' && planning?.tax_regime !== 'POR PRODUTO (XML)' && (
+         {planning?.tax_regime === 'SIMPLES NACIONAL' && (
+           <SimplesNacionalPlanningForm 
+             planning={planning} 
+             onSave={(data) => updateMutation.mutate(data)} 
+           />
+         )}
+ 
+         {planning?.tax_regime !== 'LUCRO PRESUMIDO' && 
+          planning?.tax_regime !== 'POR PRODUTO (XML)' && 
+          planning?.tax_regime !== 'SIMPLES NACIONAL' && (
           <div className="text-center py-20 bg-muted/20 rounded-xl border border-dashed">
             <h2 className="text-xl font-semibold mb-2">Regime em desenvolvimento</h2>
             <p className="text-muted-foreground">O formulário para {planning?.tax_regime} ainda está sendo preparado.</p>
