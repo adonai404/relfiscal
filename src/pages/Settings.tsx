@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, ChevronLeft, Download, FileSpreadsheet, Loader2, Settings as SettingsIcon, Upload } from "lucide-react";
+ import { Building2, ChevronLeft, Download, FileSpreadsheet, Loader2, Settings as SettingsIcon, Upload, Database, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -155,7 +155,7 @@ export default function Settings() {
       <header className="border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Building2 className="h-5 w-5 text-primary" />
@@ -168,199 +168,100 @@ export default function Settings() {
         </div>
       </header>
 
-      <main className="w-full px-4 py-8 sm:px-6 space-y-6">
+      <main className="max-w-4xl mx-auto w-full px-4 py-8 sm:px-6 space-y-8">
         <div className="flex items-center gap-3">
-          <SettingsIcon className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Configurações</h1>
+          <Database className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Conexão API</h1>
         </div>
 
         {isLoading || !config ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : (
-          <>
-            {/* Card 1 — Column visibility */}
+          <div className="grid gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Visibilidade de Colunas</CardTitle>
-                <CardDescription>Escolha quais colunas aparecem na tabela do Movimento Fiscal, na página pública e na impressão.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {TOGGLEABLE_COLUMNS.map((col) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const checked = (config as any)[`show_${col}_column`] as boolean;
-                    return (
-                      <div key={col} className="flex items-center justify-between rounded-lg border p-3">
-                        <Label htmlFor={`sw-${col}`} className="cursor-pointer">{TOGGLE_LABELS[col]}</Label>
-                        <Switch
-                          id={`sw-${col}`}
-                          checked={checked}
-                          onCheckedChange={(v) => toggleColumn(col, v)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card 2 — Rename headers */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Renomear Cabeçalhos</CardTitle>
-                <CardDescription>Personalize os rótulos das colunas. Salvo automaticamente ao sair do campo.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {LABEL_FIELDS.map((f) => (
-                    <div key={f.key as string} className="space-y-1.5">
-                      <Label htmlFor={`lbl-${f.key as string}`} className="text-xs text-muted-foreground">
-                        {f.default}
-                      </Label>
-                      <Input
-                        id={`lbl-${f.key as string}`}
-                        value={labels[f.key as string] ?? ""}
-                        onChange={(e) => setLabels({ ...labels, [f.key as string]: e.target.value })}
-                        onBlur={() => saveLabel(f.key as string, f.default)}
-                        placeholder={f.default}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card 3 — Simples Nacional */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Cálculo Simples Nacional</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5 text-primary" />
+                  Credenciais de Acesso
+                </CardTitle>
                 <CardDescription>
-                  Quando o cálculo automático está ativo, a coluna Simples Nacional é preenchida com <strong>Saída × Alíquota</strong> em cada competência.
+                  Utilize estas credenciais para integrar seus sistemas externos e enviar dados de entrada e saída.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
-                    <Label htmlFor="auto-sw" className="cursor-pointer font-medium">Cálculo Automático</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Sobrescreve o valor manual da coluna Simples Nacional.
+                <div className="space-y-2">
+                  <Label>ID da Empresa (company_id)</Label>
+                  <div className="flex gap-2">
+                    <Input value={selectedCompany.id} readOnly className="font-mono bg-muted" />
+                    <Button variant="outline" onClick={() => {
+                      navigator.clipboard.writeText(selectedCompany.id);
+                      toast.success("ID copiado!");
+                    }}>Copiar</Button>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">Endpoint de Integração</h4>
+                  <code className="text-xs break-all block p-2 bg-card border rounded mb-2">
+                    POST https://{window.location.host}/api/v1/movement
+                  </code>
+                  <p className="text-xs text-muted-foreground">
+                    O endpoint aceita requisições JSON contendo os valores de entrada, saída e competência.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurações de Recebimento</CardTitle>
+                <CardDescription>
+                  Configure como o sistema deve processar os dados recebidos via API.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Processamento Automático</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Calcular impostos e métricas imediatamente após o recebimento.
                     </p>
                   </div>
-                  <Switch
-                    id="auto-sw"
-                    checked={config.auto_calculate_simples_nacional}
-                    onCheckedChange={toggleAuto}
+                  <Switch 
+                    checked={config.auto_calculate_simples_nacional} 
+                    onCheckedChange={toggleAuto} 
                   />
                 </div>
-                <div className="space-y-1.5 max-w-xs">
-                  <Label htmlFor="aliquota">Alíquota (%)</Label>
-                  <Input
-                    id="aliquota"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={aliquota}
-                    onChange={(e) => setAliquota(e.target.value)}
-                    onBlur={saveAliquota}
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Rótulo para Entrada via API</Label>
+                    <Input 
+                      value={labels.label_entrada || "Entrada"} 
+                      onChange={(e) => setLabels({ ...labels, label_entrada: e.target.value })}
+                      onBlur={() => saveLabel("label_entrada", "Entrada")}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rótulo para Saída via API</Label>
+                    <Input 
+                      value={labels.label_saida || "Saída"} 
+                      onChange={(e) => setLabels({ ...labels, label_saida: e.target.value })}
+                      onBlur={() => saveLabel("label_saida", "Saída")}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Card — Colunas que contam como imposto */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Colunas Consideradas Impostos</CardTitle>
-                <CardDescription>
-                  Selecione quais colunas entram nos cálculos de <strong>total de impostos</strong>,
-                  <strong> carga tributária</strong> e <strong>economia</strong>.
-                  Desmarque colunas que servem apenas para demonstração — elas continuam visíveis na
-                  tabela, mas não somam nas métricas.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {TAX_ELIGIBLE_COLUMNS.map((col) => {
-                    const checked = currentTaxCols.includes(col);
-                    return (
-                      <label
-                        key={col}
-                        htmlFor={`tax-${col}`}
-                        className="flex items-center justify-between gap-3 rounded-lg border p-3 cursor-pointer hover:bg-accent/40 transition-colors"
-                      >
-                        <span className="text-sm font-medium">{TOGGLE_LABELS[col]}</span>
-                        <Checkbox
-                          id={`tax-${col}`}
-                          checked={checked}
-                          onCheckedChange={(v) => toggleTaxColumn(col, v === true)}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Por padrão, todas as colunas tributárias contam como imposto.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Card — Custom columns */}
-            {companyId && <CustomColumnsManager companyId={companyId} config={config} />}
-
-            {/* Card 4 — Import / Export XLSX */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Importação e Exportação</CardTitle>
-                <CardDescription>
-                  Baixe um template em XLSX (com seus rótulos e colunas visíveis), importe planilhas (atualiza o mês existente) ou exporte os dados atuais.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <input
-                  ref={xlsx.fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                  className="hidden"
-                  onChange={xlsx.onFileChange}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`, customCols)}
-                  >
-                    <Download className="mr-2 h-4 w-4" /> Baixar Template
-                  </Button>
-                  <Button variant="outline" onClick={xlsx.triggerPicker} disabled={xlsx.isImporting}>
-                    {xlsx.isImporting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="mr-2 h-4 w-4" />
-                    )}
-                    Importar XLSX
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      exportMovementToXlsx(
-                        exportRows as Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
-                        config ?? undefined,
-                        `movimento-${selectedCompany.slug}.xlsx`,
-                        customCols,
-                        valuesByMov,
-                      )
-                    }
-                    disabled={exportRows.length === 0}
-                  >
-                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
-                  </Button>
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  A importação faz upsert por <strong>mês de referência</strong>: linhas existentes são atualizadas; novas são criadas.
-                </p>
-              </CardContent>
-            </Card>
-          </>
+            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-lg flex gap-3">
+              <SettingsIcon className="h-5 w-5 text-amber-500 shrink-0" />
+              <div className="text-sm">
+                <p className="font-semibold text-amber-700">Modo de Somente API</p>
+                <p className="text-amber-600">Esta tela foi simplificada para focar na integração de dados. As configurações de interface foram movidas para a administração global.</p>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
