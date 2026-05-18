@@ -18,7 +18,7 @@ export default function TaxPlanningDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tax_planning")
-        .select("*, companies(nome_fantasia, razao_social)")
+         .select("*, companies(nome_fantasia, razao_social, cnpj)")
         .eq("id", id)
         .single();
       if (error) throw error;
