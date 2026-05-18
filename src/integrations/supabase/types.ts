@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       companies: {
         Row: {
+          api_key: string | null
           cnpj: string
           created_at: string
           created_by: string | null
@@ -30,6 +31,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_key?: string | null
           cnpj: string
           created_at?: string
           created_by?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_key?: string | null
           cnpj?: string
           created_at?: string
           created_by?: string | null
