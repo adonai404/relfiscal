@@ -579,6 +579,119 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_planning_products: {
+        Row: {
+          cfop: string | null
+          company_id: string
+          created_at: string
+          emission_date: string | null
+          id: string
+          ncm: string | null
+          product_code: string | null
+          product_name: string
+          qcom: number | null
+          ucom: string | null
+          upload_id: string | null
+          vcofins: number | null
+          vicms: number | null
+          vipi: number | null
+          vpis: number | null
+          vprod: number | null
+          vuncom: number | null
+          xml_type: string
+        }
+        Insert: {
+          cfop?: string | null
+          company_id: string
+          created_at?: string
+          emission_date?: string | null
+          id?: string
+          ncm?: string | null
+          product_code?: string | null
+          product_name: string
+          qcom?: number | null
+          ucom?: string | null
+          upload_id?: string | null
+          vcofins?: number | null
+          vicms?: number | null
+          vipi?: number | null
+          vpis?: number | null
+          vprod?: number | null
+          vuncom?: number | null
+          xml_type: string
+        }
+        Update: {
+          cfop?: string | null
+          company_id?: string
+          created_at?: string
+          emission_date?: string | null
+          id?: string
+          ncm?: string | null
+          product_code?: string | null
+          product_name?: string
+          qcom?: number | null
+          ucom?: string | null
+          upload_id?: string | null
+          vcofins?: number | null
+          vicms?: number | null
+          vipi?: number | null
+          vpis?: number | null
+          vprod?: number | null
+          vuncom?: number | null
+          xml_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_planning_products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_planning_products_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "tax_planning_xml_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_planning_xml_uploads: {
+        Row: {
+          company_id: string
+          created_at: string
+          file_name: string
+          id: string
+          uploaded_by: string
+          xml_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          file_name: string
+          id?: string
+          uploaded_by?: string
+          xml_type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          uploaded_by?: string
+          xml_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_planning_xml_uploads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

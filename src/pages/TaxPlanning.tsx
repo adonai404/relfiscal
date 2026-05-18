@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
- import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, Trash2 } from "lucide-react";
+ import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, FileUp, Package, Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
  import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -280,7 +281,11 @@ export default function TaxPlanning() {
          <Tabs defaultValue="all" className="w-full">
            <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
              <TabsTrigger value="all">Todos</TabsTrigger>
-             <TabsTrigger value="groups">Grupos</TabsTrigger>
+            <TabsTrigger value="groups">Grupos</TabsTrigger>
+            <TabsTrigger value="products">Por Produto (XML)</TabsTrigger>
+           <TabsContent value="products" className="mt-6">
+             <TaxPlanningProductXML />
+           </TabsContent>
            </TabsList>
 
            <TabsContent value="all" className="mt-6">
