@@ -30,35 +30,88 @@ export default function TaxPlanning() {
    const [selectedGroupId, setSelectedGroupId] = useState("none");
    const [newGroupName, setNewGroupName] = useState("");
 
-  const { data: plannings = [], isLoading } = useQuery({
-    queryKey: ["tax_planning"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tax_planning")
-        .select("*, companies(nome_fantasia)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+   const { data: groups = [] } = useQuery({
+     queryKey: ["tax_planning_groups"],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("tax_planning_groups")
+         .select("*")
+         .order("created_at", { ascending: false });
+       if (error) throw error;
+       return data;
+     },
+   });
 
-  const createMutation = useMutation({
-    mutationFn: async (newPlanning: any) => {
-      const { data, error } = await supabase
-        .from("tax_planning")
-        .insert([newPlanning])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+   const { data: plannings = [], isLoading } = useQuery({
+     queryKey: ["tax_planning"],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("tax_planning")
+         .select("*, companies(nome_fantasia), tax_planning_groups(name)")
+         .order("created_at", { ascending: false });
+       if (error) throw error;
+       return data;
+     },
+   });
+
+   const createGroupMutation = useMutation({
+     mutationFn: async (name: string) => {
+       const { data, error } = await supabase
+         .from("tax_planning_groups")
+         .insert([{ name }])
+         .select()
+         .single();
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ["tax_planning_groups"] });
+       toast.success("Grupo criado com sucesso!");
+       setIsGroupDialogOpen(false);
+       setNewGroupName("");
+     },
+     onError: (error: any) => {
+       toast.error(error.message || "Erro ao criar grupo");
+     },
+   });
+
+   const updatePlanningGroupMutation = useMutation({
+     mutationFn: async ({ planningId, groupId }: { planningId: string, groupId: string | null }) => {
+       const { error } = await supabase
+         .from("tax_planning")
+         .update({ group_id: groupId })
+         .eq("id", planningId);
+       if (error) throw error;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ["tax_planning"] });
+       toast.success("Grupo atualizado com sucesso!");
+     },
+   });
+
+   const createMutation = useMutation({
+     mutationFn: async (planningData: any) => {
+       const { groupId, ...rest } = planningData;
+       const newPlanning = {
+         ...rest,
+         group_id: groupId === "none" ? null : groupId
+       };
+       const { data, error } = await supabase
+         .from("tax_planning")
+         .insert([newPlanning])
+         .select()
+         .single();
+       if (error) throw error;
+       return data;
+     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tax_planning"] });
       toast.success("Planejamento criado com sucesso!");
       setIsDialogOpen(false);
       setTitle("");
       setSelectedCompanyId("");
-      setSelectedRegime("");
+       setSelectedRegime("");
+       setSelectedGroupId("none");
     },
     onError: (error: any) => {
       toast.error(error.message || "Erro ao criar planejamento");
@@ -70,11 +123,12 @@ export default function TaxPlanning() {
     if (!title || !selectedCompanyId || !selectedRegime) {
       return toast.error("Preencha todos os campos");
     }
-    createMutation.mutate({
-      title,
-      company_id: selectedCompanyId,
-      tax_regime: selectedRegime,
-    });
+     createMutation.mutate({
+       title,
+       company_id: selectedCompanyId,
+       tax_regime: selectedRegime,
+       groupId: selectedGroupId,
+     });
   };
 
   const filteredPlannings = plannings.filter((p: any) => 
