@@ -1,3 +1,4 @@
+ import ApiConnection from "./pages/ApiConnection.tsx";
  import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -46,7 +47,8 @@ const App = () => (
                 <Route path="/apresentacao" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
                  <Route path="/planejamento" element={<ProtectedRoute><TaxPlanning /></ProtectedRoute>} />
                  <Route path="/planejamento/:id" element={<ProtectedRoute><TaxPlanningDetail /></ProtectedRoute>} />
-                <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+                 <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+                 <Route path="/conexao-api" element={<ProtectedRoute><ApiConnection /></ProtectedRoute>} />
                 <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
