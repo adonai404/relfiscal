@@ -150,20 +150,24 @@ export default function Settings() {
      fetchApiKey();
    }, [companyId]);
  
-   const regenerateApiKey = async () => {
+   const updateApiKey = async (newKey: string) => {
      if (!companyId) return;
-     const newKey = crypto.randomUUID();
      const { error } = await supabase
        .from("companies")
        .update({ api_key: newKey } as any)
        .eq("id", companyId);
      
      if (error) {
-       toast.error("Erro ao gerar nova chave: " + error.message);
+       toast.error("Erro ao atualizar chave: " + error.message);
      } else {
        setApiKey(newKey);
-       toast.success("Nova chave gerada com sucesso!");
+       toast.success("Chave atualizada com sucesso!");
      }
+   };
+ 
+   const regenerateApiKey = () => {
+     const newKey = crypto.randomUUID().replace(/-/g, "");
+     updateApiKey(newKey);
    };
  
    const currentTaxCols = getTaxColumns(config ?? undefined);
@@ -226,12 +230,18 @@ export default function Settings() {
                    <div className="space-y-2">
                      <Label>Chave da API (x-api-key)</Label>
                      <div className="flex gap-2">
-                       <Input value={apiKey} readOnly className="font-mono bg-muted" type="password" />
+                       <Input 
+                         value={apiKey} 
+                         onChange={(e) => setApiKey(e.target.value)}
+                         onBlur={(e) => updateApiKey(e.target.value)}
+                         className="font-mono" 
+                         placeholder="Insira sua chave personalizada..."
+                       />
                        <Button variant="outline" onClick={() => {
                          navigator.clipboard.writeText(apiKey);
                          toast.success("Chave copiada!");
                        }}>Copiar</Button>
-                       <Button variant="ghost" size="sm" onClick={regenerateApiKey} className="text-xs">Regerar</Button>
+                       <Button variant="ghost" size="sm" onClick={regenerateApiKey} className="text-xs">Gerar Aleatória</Button>
                      </div>
                      <p className="text-xs text-muted-foreground">Esta chave é secreta e deve ser usada no cabeçalho <code>x-api-key</code>.</p>
                    </div>
