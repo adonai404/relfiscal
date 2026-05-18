@@ -277,59 +277,196 @@ export default function TaxPlanning() {
           />
         </div>
 +
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : filteredPlannings.length === 0 ? (
-          <Card className="border-dashed border-2">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="bg-primary/10 p-4 rounded-full mb-4">
-                <Calculator className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold">Nenhum planejamento encontrado</h3>
-              <p className="text-muted-foreground max-w-sm mb-6">
-                Comece criando um novo planejamento tributário para simular cenários de economia.
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Criar Primeiro
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPlannings.map((p: any) => (
-               <Card 
-                 key={p.id} 
-                 className="hover:shadow-md transition-shadow cursor-pointer border-border/50 group"
-                 onClick={() => navigate(`/planejamento/${p.id}`)}
-               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
-                      <Briefcase className="h-5 w-5 text-primary" />
-                    </div>
-                    <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
-                      {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
-                    </Badge>
-                  </div>
-                  <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    <Building2 className="h-3 w-3" />
-                    {p.companies?.nome_fantasia}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-4">
-                  <div className="text-sm font-medium text-muted-foreground">Regime Alvo:</div>
-                  <div className="font-bold text-primary">{p.tax_regime}</div>
-                </CardContent>
-                <CardContent className="pt-0 text-xs text-muted-foreground border-t bg-muted/20 py-2">
-                  Criado em: {new Date(p.created_at).toLocaleDateString()}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+         <Tabs defaultValue="all" className="w-full">
+           <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+             <TabsTrigger value="all">Todos</TabsTrigger>
+             <TabsTrigger value="groups">Grupos</TabsTrigger>
+           </TabsList>
+
+           <TabsContent value="all" className="mt-6">
+             {isLoading ? (
+               <div className="flex justify-center py-12">
+                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+               </div>
+             ) : filteredPlannings.length === 0 ? (
+               <Card className="border-dashed border-2">
+                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                   <div className="bg-primary/10 p-4 rounded-full mb-4">
+                     <Calculator className="h-8 w-8 text-primary" />
+                   </div>
+                   <h3 className="text-lg font-semibold">Nenhum planejamento encontrado</h3>
+                   <p className="text-muted-foreground max-w-sm mb-6">
+                     Comece criando um novo planejamento tributário para simular cenários de economia.
+                   </p>
+                   <Button onClick={() => setIsDialogOpen(true)}>
+                     <Plus className="mr-2 h-4 w-4" /> Criar Primeiro
+                   </Button>
+                 </CardContent>
+               </Card>
+             ) : (
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {filteredPlannings.map((p: any) => (
+                    <Card 
+                      key={p.id} 
+                      className="hover:shadow-md transition-shadow cursor-pointer border-border/50 group relative"
+                      onClick={() => navigate(`/planejamento/${p.id}`)}
+                    >
+                     <CardHeader className="pb-3">
+                       <div className="flex items-start justify-between">
+                         <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
+                           <Briefcase className="h-5 w-5 text-primary" />
+                         </div>
+                         <div className="flex items-center gap-2">
+                           <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
+                             {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
+                           </Badge>
+                           <DropdownMenu>
+                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                               <Button variant="ghost" size="icon" className="h-8 w-8">
+                                 <MoreVertical className="h-4 w-4" />
+                               </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end">
+                               <DropdownMenuItem disabled className="text-xs font-semibold">
+                                 Mover para Grupo
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
+                                 Nenhum
+                               </DropdownMenuItem>
+                               {groups.map((g: any) => (
+                                 <DropdownMenuItem 
+                                   key={g.id} 
+                                   onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                 >
+                                   {g.name}
+                                 </DropdownMenuItem>
+                               ))}
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                         </div>
+                       </div>
+                       <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>
+                       <CardDescription className="flex items-center gap-1">
+                         <Building2 className="h-3 w-3" />
+                         {p.companies?.nome_fantasia}
+                       </CardDescription>
+                       {p.tax_planning_groups && (
+                         <CardDescription className="flex items-center gap-1 mt-1 text-primary">
+                           <Folder className="h-3 w-3" />
+                           {p.tax_planning_groups.name}
+                         </CardDescription>
+                       )}
+                     </CardHeader>
+                     <CardContent className="pb-4">
+                       <div className="text-sm font-medium text-muted-foreground">Regime Alvo:</div>
+                       <div className="font-bold text-primary">{p.tax_regime}</div>
+                     </CardContent>
+                     <CardContent className="pt-0 text-xs text-muted-foreground border-t bg-muted/20 py-2">
+                       Criado em: {new Date(p.created_at).toLocaleDateString()}
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+             )}
+           </TabsContent>
+
+           <TabsContent value="groups" className="mt-6">
+             {groups.length === 0 ? (
+               <Card className="border-dashed border-2">
+                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                   <div className="bg-primary/10 p-4 rounded-full mb-4">
+                     <Layers className="h-8 w-8 text-primary" />
+                   </div>
+                   <h3 className="text-lg font-semibold">Nenhum grupo encontrado</h3>
+                   <p className="text-muted-foreground max-w-sm mb-6">
+                     Crie grupos para organizar seus planejamentos tributários por projeto ou ano.
+                   </p>
+                   <Button onClick={() => setIsGroupDialogOpen(true)}>
+                     <FolderPlus className="mr-2 h-4 w-4" /> Criar Primeiro Grupo
+                   </Button>
+                 </CardContent>
+               </Card>
+             ) : (
+               <div className="space-y-8">
+                 {groups.map((group: any) => {
+                   const groupPlannings = plannings.filter((p: any) => p.group_id === group.id);
+                   return (
+                     <div key={group.id} className="space-y-4">
+                       <div className="flex items-center gap-2 pb-2 border-b">
+                         <Folder className="h-5 w-5 text-primary" />
+                         <h2 className="text-xl font-bold">{group.name}</h2>
+                         <Badge variant="secondary" className="ml-2">
+                           {groupPlannings.length} planejamentos
+                         </Badge>
+                       </div>
+                       
+                       {groupPlannings.length === 0 ? (
+                         <p className="text-sm text-muted-foreground italic py-4">
+                           Nenhum planejamento neste grupo.
+                         </p>
+                       ) : (
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                           {groupPlannings.map((p: any) => (
+                             <Card 
+                               key={p.id} 
+                               className="hover:shadow-md transition-shadow cursor-pointer border-border/50 group relative"
+                               onClick={() => navigate(`/planejamento/${p.id}`)}
+                             >
+                               <CardHeader className="pb-3">
+                                 <div className="flex items-start justify-between">
+                                   <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
+                                     <Briefcase className="h-5 w-5 text-primary" />
+                                   </div>
+                                   <div className="flex items-center gap-2">
+                                     <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
+                                       {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
+                                     </Badge>
+                                     <DropdownMenu>
+                                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                         <Button variant="ghost" size="icon" className="h-8 w-8">
+                                           <MoreVertical className="h-4 w-4" />
+                                         </Button>
+                                       </DropdownMenuTrigger>
+                                       <DropdownMenuContent align="end">
+                                         <DropdownMenuItem disabled className="text-xs font-semibold">
+                                           Mover para Grupo
+                                         </DropdownMenuItem>
+                                         <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
+                                           Nenhum
+                                         </DropdownMenuItem>
+                                         {groups.map((g: any) => (
+                                           <DropdownMenuItem 
+                                             key={g.id} 
+                                             onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                           >
+                                             {g.name}
+                                           </DropdownMenuItem>
+                                         ))}
+                                       </DropdownMenuContent>
+                                     </DropdownMenu>
+                                   </div>
+                                 </div>
+                                 <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>
+                                 <CardDescription className="flex items-center gap-1">
+                                   <Building2 className="h-3 w-3" />
+                                   {p.companies?.nome_fantasia}
+                                 </CardDescription>
+                               </CardHeader>
+                               <CardContent className="pb-4">
+                                 <div className="text-sm font-medium text-muted-foreground">Regime Alvo:</div>
+                                 <div className="font-bold text-primary">{p.tax_regime}</div>
+                               </CardContent>
+                             </Card>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                   );
+                 })}
+               </div>
+             )}
+           </TabsContent>
+         </Tabs>
       </main>
     </div>
   );
