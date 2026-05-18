@@ -148,7 +148,43 @@ export default function TaxPlanning() {
             <h1 className="text-lg font-bold">Planejamento Tributário</h1>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+           <div className="flex gap-2">
+             <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
+               <DialogTrigger asChild>
+                 <Button variant="outline">
+                   <FolderPlus className="mr-2 h-4 w-4" /> Novo Grupo
+                 </Button>
+               </DialogTrigger>
+               <DialogContent className="sm:max-w-[425px]">
+                 <form onSubmit={(e) => { e.preventDefault(); createGroupMutation.mutate(newGroupName); }}>
+                   <DialogHeader>
+                     <DialogTitle>Novo Grupo</DialogTitle>
+                     <DialogDescription>
+                       Crie um grupo para organizar seus planejamentos.
+                     </DialogDescription>
+                   </DialogHeader>
+                   <div className="grid gap-4 py-4">
+                     <div className="grid gap-2">
+                       <Label htmlFor="group_name">Nome do Grupo</Label>
+                       <Input 
+                         id="group_name" 
+                         placeholder="Ex: Projetos 2026" 
+                         value={newGroupName}
+                         onChange={(e) => setNewGroupName(e.target.value)}
+                       />
+                     </div>
+                   </div>
+                   <DialogFooter>
+                     <Button type="submit" disabled={createGroupMutation.isPending}>
+                       {createGroupMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                       Criar Grupo
+                     </Button>
+                   </DialogFooter>
+                 </form>
+               </DialogContent>
+             </Dialog>
+
+             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Novo Planejamento
@@ -187,19 +223,35 @@ export default function TaxPlanning() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label>Regime Alvo</Label>
-                    <Select value={selectedRegime} onValueChange={setSelectedRegime}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o regime" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SIMPLES NACIONAL">SIMPLES NACIONAL</SelectItem>
-                        <SelectItem value="LUCRO REAL">LUCRO REAL</SelectItem>
-                        <SelectItem value="LUCRO PRESUMIDO">LUCRO PRESUMIDO</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                   <div className="grid gap-2">
+                     <Label>Regime Alvo</Label>
+                     <Select value={selectedRegime} onValueChange={setSelectedRegime}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Selecione o regime" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="SIMPLES NACIONAL">SIMPLES NACIONAL</SelectItem>
+                         <SelectItem value="LUCRO REAL">LUCRO REAL</SelectItem>
+                         <SelectItem value="LUCRO PRESUMIDO">LUCRO PRESUMIDO</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   <div className="grid gap-2">
+                     <Label>Grupo (Opcional)</Label>
+                     <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Selecione um grupo" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="none">Nenhum</SelectItem>
+                         {groups.map((g: any) => (
+                           <SelectItem key={g.id} value={g.id}>
+                             {g.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={createMutation.isPending}>
@@ -209,7 +261,8 @@ export default function TaxPlanning() {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+             </Dialog>
+           </div>
         </div>
       </header>
 +
