@@ -12,6 +12,7 @@
  import { supabase } from "@/integrations/supabase/client";
  import { useCompany } from "@/hooks/useCompany";
  import { toast } from "sonner";
+import JSZip from "jszip";
  
  export function TaxPlanningProductXML() {
    const { companies } = useCompany();
