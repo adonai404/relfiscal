@@ -15,6 +15,10 @@ export interface FiscalConfig {
   show_cofins_column: boolean;
   show_irpj_column: boolean;
   show_csll_column: boolean;
+  show_nfe_saida_column: boolean;
+  show_nfe_entrada_column: boolean;
+  show_cupom_column: boolean;
+  show_servico_column: boolean;
   label_competencia: string;
   label_entrada: string;
   label_saida: string;
@@ -29,6 +33,10 @@ export interface FiscalConfig {
   label_cofins: string;
   label_irpj: string;
   label_csll: string;
+  label_nfe_saida: string;
+  label_nfe_entrada: string;
+  label_cupom: string;
+  label_servico: string;
   aliquota_simples_nacional: number;
   auto_calculate_simples_nacional: boolean;
   /**
