@@ -89,7 +89,24 @@ export default function TaxPlanning() {
        toast.success("Grupo atualizado com sucesso!");
      },
    });
-
+ 
+   const deletePlanningMutation = useMutation({
+     mutationFn: async (id: string) => {
+       const { error } = await supabase
+         .from("tax_planning")
+         .delete()
+         .eq("id", id);
+       if (error) throw error;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ["tax_planning"] });
+       toast.success("Planejamento excluído com sucesso!");
+     },
+     onError: (error: any) => {
+       toast.error(error.message || "Erro ao excluir planejamento");
+     },
+   });
+ 
    const createMutation = useMutation({
      mutationFn: async (planningData: any) => {
        const { groupId, ...rest } = planningData;
@@ -335,15 +352,28 @@ export default function TaxPlanning() {
                                <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
                                  Nenhum
                                </DropdownMenuItem>
-                               {groups.map((g: any) => (
-                                 <DropdownMenuItem 
-                                   key={g.id} 
-                                   onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
-                                 >
-                                   {g.name}
-                                 </DropdownMenuItem>
-                               ))}
-                             </DropdownMenuContent>
+                                {groups.map((g: any) => (
+                                  <DropdownMenuItem 
+                                    key={g.id} 
+                                    onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                  >
+                                    {g.name}
+                                  </DropdownMenuItem>
+                                ))}
+                                <div className="h-px bg-muted my-1" />
+                                <DropdownMenuItem 
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm("Tem certeza que deseja excluir este planejamento?")) {
+                                      deletePlanningMutation.mutate(p.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
                            </DropdownMenu>
                          </div>
                        </div>
