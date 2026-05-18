@@ -231,38 +231,39 @@ import JSZip from "jszip";
            </CardDescription>
          </CardHeader>
          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-             <div className="grid gap-2">
-               <Label>Tipo de XML</Label>
-               <Select 
-                 value={selectedXmlType} 
-                 onValueChange={(val: any) => setSelectedXmlType(val)}
-               >
-                 <SelectTrigger>
-                   <SelectValue placeholder="Tipo de Nota" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="AUTO">Automático (CNPJ)</SelectItem>
-                   <SelectItem value="NF_EMITIDA">NF-e Emitida</SelectItem>
-                   <SelectItem value="NF_RECEBIDA">NF-e Recebida</SelectItem>
-                   <SelectItem value="NFC_EMITIDA">NFC-e Emitida</SelectItem>
-                 </SelectContent>
-               </Select>
-             </div>
-               <Label htmlFor="xml-upload">Arquivos XML</Label>
-               <div className="flex items-center gap-2">
-                  <Input 
-                    id="xml-upload" 
-                    type="file" 
-                    multiple 
-                    accept=".xml,.zip" 
+             <div className="grid gap-4 md:grid-cols-2">
+               <div className="grid gap-2">
+                 <Label>Tipo de XML</Label>
+                 <Select 
+                   value={selectedXmlType} 
+                   onValueChange={(val: any) => setSelectedXmlType(val)}
+                 >
+                   <SelectTrigger>
+                     <SelectValue placeholder="Tipo de Nota" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="AUTO">Automático (CNPJ)</SelectItem>
+                     <SelectItem value="NF_EMITIDA">NF-e Emitida</SelectItem>
+                     <SelectItem value="NF_RECEBIDA">NF-e Recebida</SelectItem>
+                     <SelectItem value="NFC_EMITIDA">NFC-e Emitida</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div className="grid gap-2">
+                 <Label htmlFor="xml-upload">Arquivos XML</Label>
+                 <div className="flex items-center gap-2">
+                   <Input 
+                     id="xml-upload" 
+                     type="file" 
+                     multiple 
+                     accept=".xml,.zip" 
                      onChange={handleFileUpload}
                      disabled={!(planningId || companyId) || isUploading}
                    />
-                 {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                   {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                 </div>
                </div>
              </div>
-           </div>
          </CardContent>
        </Card>
  
