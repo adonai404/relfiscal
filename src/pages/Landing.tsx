@@ -28,7 +28,7 @@ const Landing = () => {
         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
-  if (user) return <Navigate to="/empresas" replace />;
+   if (user) return <Navigate to="/app" replace />;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
