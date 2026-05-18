@@ -1,5 +1,5 @@
  import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator } from "lucide-react";
+ import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator, Settings as SettingsIcon } from "lucide-react";
  import { useAuth } from "@/hooks/useAuth";
  import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
@@ -60,9 +60,17 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         icon: UserCog,
         path: "/minha-conta",
         color: "text-orange-500",
-        bg: "bg-orange-500/10",
-        forceEnabled: true,
-      },
+         bg: "bg-orange-500/10",
+         forceEnabled: true,
+       },
+       {
+         title: "Configurações",
+         description: "Ajustes da empresa e visibilidade",
+         icon: SettingsIcon,
+         path: "/configuracoes",
+         color: "text-slate-500",
+         bg: "bg-slate-500/10",
+       },
     ];
  
    return (
