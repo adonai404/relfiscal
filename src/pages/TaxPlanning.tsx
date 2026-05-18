@@ -279,14 +279,15 @@ export default function TaxPlanning() {
         </div>
 +
          <Tabs defaultValue="all" className="w-full">
-           <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+           <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
              <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="groups">Grupos</TabsTrigger>
-            <TabsTrigger value="products">Por Produto (XML)</TabsTrigger>
+             <TabsTrigger value="groups">Grupos</TabsTrigger>
+             <TabsTrigger value="products">Por Produto (XML)</TabsTrigger>
+           </TabsList>
+
            <TabsContent value="products" className="mt-6">
              <TaxPlanningProductXML />
            </TabsContent>
-           </TabsList>
 
            <TabsContent value="all" className="mt-6">
              {isLoading ? (
