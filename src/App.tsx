@@ -36,7 +36,8 @@ const App = () => (
           <AuthProvider>
             <CompanyProvider>
               <Routes>
-                <Route path="/" element={<Landing />} />
+                 <Route path="/" element={<Index />} />
+                 <Route path="/landing" element={<Landing />} />
                  <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/empresas" element={<ProtectedRoute><Companies /></ProtectedRoute>} />

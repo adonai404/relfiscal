@@ -41,7 +41,7 @@ export default function Auth() {
      );
    }
  
-  if (user) return <Navigate to="/empresas" replace />;
+   if (user) return <Navigate to="/app" replace />;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,9 +49,9 @@ export default function Auth() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success("Bem-vindo!");
-    navigate("/empresas");
-  };
+     toast.success("Bem-vindo!");
+     navigate("/app");
+   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +59,7 @@ export default function Auth() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/empresas` },
+       options: { emailRedirectTo: `${window.location.origin}/app` },
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
