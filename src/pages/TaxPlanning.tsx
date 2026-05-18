@@ -267,7 +267,7 @@ export default function TaxPlanning() {
         </div>
       </header>
 +
-      <main className="max-w-7xl mx-auto w-full px-4 py-8 sm:px-6 space-y-6">
+       <main className="max-w-7xl mx-auto w-full px-4 py-8 sm:px-6 space-y-6 overflow-x-hidden">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
