@@ -56,7 +56,7 @@ export default function Settings() {
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const companyId = selectedCompany?.id;
-  const { data: config, isLoading } = useFiscalConfig(companyId);
+   const { data: config, isLoading, refetch: refetchConfig } = useFiscalConfig(companyId);
   const update = useUpdateFiscalConfig(companyId);
   const { data: customCols = [] } = useCustomColumns(companyId);
   const { data: customValues = [] } = useCustomColumnValues(companyId);
@@ -133,7 +133,40 @@ export default function Settings() {
     });
   };
 
-  const currentTaxCols = getTaxColumns(config ?? undefined);
+   const [apiKey, setApiKey] = useState<string>("");
+ 
+   useEffect(() => {
+     const fetchApiKey = async () => {
+       if (!companyId) return;
+       const { data, error } = await supabase
+         .from("companies")
+         .select("api_key")
+         .eq("id", companyId)
+         .single();
+       if (!error && data) {
+         setApiKey(data.api_key);
+       }
+     };
+     fetchApiKey();
+   }, [companyId]);
+ 
+   const regenerateApiKey = async () => {
+     if (!companyId) return;
+     const newKey = crypto.randomUUID();
+     const { error } = await supabase
+       .from("companies")
+       .update({ api_key: newKey } as any)
+       .eq("id", companyId);
+     
+     if (error) {
+       toast.error("Erro ao gerar nova chave: " + error.message);
+     } else {
+       setApiKey(newKey);
+       toast.success("Nova chave gerada com sucesso!");
+     }
+   };
+ 
+   const currentTaxCols = getTaxColumns(config ?? undefined);
   const toggleTaxColumn = (col: ColumnKey, checked: boolean) => {
     const next = checked
       ? Array.from(new Set([...currentTaxCols, col]))
@@ -189,26 +222,40 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>ID da Empresa (company_id)</Label>
-                  <div className="flex gap-2">
-                    <Input value={selectedCompany.id} readOnly className="font-mono bg-muted" />
-                    <Button variant="outline" onClick={() => {
-                      navigator.clipboard.writeText(selectedCompany.id);
-                      toast.success("ID copiado!");
-                    }}>Copiar</Button>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg">
-                  <h4 className="font-semibold text-sm mb-2">Endpoint de Integração</h4>
-                  <code className="text-xs break-all block p-2 bg-card border rounded mb-2">
-                    POST https://{window.location.host}/api/v1/movement
-                  </code>
-                  <p className="text-xs text-muted-foreground">
-                    O endpoint aceita requisições JSON contendo os valores de entrada, saída e competência.
-                  </p>
-                </div>
+                 <div className="space-y-4">
+                   <div className="space-y-2">
+                     <Label>Chave da API (x-api-key)</Label>
+                     <div className="flex gap-2">
+                       <Input value={apiKey} readOnly className="font-mono bg-muted" type="password" />
+                       <Button variant="outline" onClick={() => {
+                         navigator.clipboard.writeText(apiKey);
+                         toast.success("Chave copiada!");
+                       }}>Copiar</Button>
+                       <Button variant="ghost" size="sm" onClick={regenerateApiKey} className="text-xs">Regerar</Button>
+                     </div>
+                     <p className="text-xs text-muted-foreground">Esta chave é secreta e deve ser usada no cabeçalho <code>x-api-key</code>.</p>
+                   </div>
+ 
+                   <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg">
+                     <h4 className="font-semibold text-sm mb-2">Endpoint de Integração</h4>
+                     <code className="text-xs break-all block p-2 bg-card border rounded mb-2 font-mono">
+                       POST https://oimxpuevlxfbpvryxkzy.supabase.co/functions/v1/api-movement
+                     </code>
+                     <div className="text-xs space-y-2">
+                       <p className="font-semibold">Exemplo de JSON:</p>
+                       <pre className="bg-muted p-2 rounded overflow-x-auto text-[10px]">
+ {`{
+   "competencia": "2024-05-01",
+   "entrada": 15000.50,
+   "saida": 12000.00
+ }`}
+                       </pre>
+                       <p className="text-muted-foreground mt-2 italic">
+                         * Envie a <code>competencia</code> no formato YYYY-MM-DD.
+                       </p>
+                     </div>
+                   </div>
+                 </div>
               </CardContent>
             </Card>
 
