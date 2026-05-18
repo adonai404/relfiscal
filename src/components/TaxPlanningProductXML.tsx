@@ -325,8 +325,8 @@
                                </Badge>
                              )}
                            </TableCell>
-                           <TableCell className="max-w-[200px] truncate">
-                             <div className="font-medium">{p.product_name}</div>
+                           <TableCell className="max-w-[300px]">
+                             <div className="font-medium truncate" title={p.product_name}>{p.product_name}</div>
                              <div className="text-xs text-muted-foreground">Cód: {p.product_code}</div>
                            </TableCell>
                            <TableCell className="text-xs">{p.ncm}</TableCell>
@@ -334,7 +334,7 @@
                            <TableCell className="text-right font-mono text-xs">
                              {new Intl.NumberFormat('pt-BR').format(p.vuncom)}
                            </TableCell>
-                           <TableCell className="text-right font-bold">
+                           <TableCell className="text-right font-bold whitespace-nowrap">
                              {new Intl.NumberFormat('pt-BR').format(p.vprod)}
                            </TableCell>
                          </TableRow>
