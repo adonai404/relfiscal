@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
- import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
  import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ import {
   computeColumnValue, 
   getColumnCategory,
   getTaxColumns,
+  formatPercent,
   type ColumnKey
 } from "@/hooks/useFiscalConfig";
 import { 
@@ -177,17 +179,6 @@ import {
      );
    }
  
-  const getCellColor = (category: string) => {
-    switch (category) {
-      case "entrada": return "bg-green-50/10";
-      case "saida": return "bg-blue-50/10";
-      case "simples": return "bg-green-50/20 font-bold text-green-700";
-      case "tax": return "bg-orange-50/10";
-      case "payroll": return "bg-purple-50/10";
-      default: return "";
-    }
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col lg:flex-row gap-6">
@@ -228,7 +219,7 @@ import {
         </Card>
       </div>
  
-      <Card className="shadow-lg border-border/60 overflow-hidden">
+      <Card className="shadow-lg border-border/60 overflow-hidden print:shadow-none print:border-none">
         <CardHeader className="bg-muted/30 border-b py-5 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
@@ -242,71 +233,71 @@ import {
             <RefreshCw className="h-3.5 w-3.5" /> Sincronizar Agora
           </Button>
         </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full border-collapse text-[11px]">
-            <thead>
-              <tr className="bg-muted/50 border-b uppercase tracking-tighter font-black">
-                <th className="p-4 border-r text-left sticky left-0 bg-muted/80 backdrop-blur-sm z-10 w-32 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Competência</th>
+        <CardContent className="p-0 overflow-x-auto fiscal-table-wrap">
+          <Table className="fiscal-table text-[11px]">
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50 uppercase tracking-tighter font-black">
+                <TableHead data-col-cat="competencia" className="p-4 border-r text-left sticky left-0 bg-muted/80 backdrop-blur-sm z-30 w-32 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Competência</TableHead>
                 {allVisibleColumns.map((col) => (
-                  <th key={col.id} className={`p-4 border-r text-right min-w-[110px] ${getCellColor(col.category)}`}>
+                  <TableHead key={col.id} data-col-cat={col.category} className="p-4 border-r text-right min-w-[110px] whitespace-nowrap">
                     {col.label}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {movements?.map((row) => {
                 const resolver = buildRowResolver(row, customCols, valuesByMov[row.id] ?? {});
                 return (
-                  <tr key={row.id} className="border-b hover:bg-primary/5 transition-colors group">
-                    <td className="p-4 font-bold border-r sticky left-0 bg-background group-hover:bg-primary/5 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)] transition-colors">
+                  <TableRow key={row.id} className="border-b hover:bg-primary/5 transition-colors group">
+                    <TableCell data-col-cat="competencia" className="p-4 font-bold border-r sticky left-0 bg-background group-hover:bg-primary/5 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)] transition-colors">
                       {displayCompetencia(row.competencia)}
-                    </td>
+                    </TableCell>
                     {allVisibleColumns.map((col) => {
                       const val = resolver(col.key as string);
                       return (
-                        <td key={col.id} className={`p-4 border-r text-right font-medium ${getCellColor(col.category)}`}>
+                        <TableCell key={col.id} data-col-cat={col.category} className="p-4 border-r text-right font-medium">
                           {col.kind === 'custom' 
                             ? formatCustomValue(val, col.format, col.decimals)
                             : col.id === 'aliquota_simples_calc' 
-                              ? (val * 100).toFixed(2) + '%'
+                              ? formatPercent(val)
                               : formatCurrency(val)
                           }
-                        </td>
+                        </TableCell>
                       );
                     })}
-                 </tr>
+                  </TableRow>
                 );
               })}
               {(!movements || movements.length === 0) && (
-                <tr>
-                  <td colSpan={allVisibleColumns.length + 1} className="p-12 text-center text-muted-foreground font-medium italic">
+                <TableRow>
+                  <TableCell colSpan={allVisibleColumns.length + 1} className="p-12 text-center text-muted-foreground font-medium italic">
                     Nenhum registro de movimento encontrado para esta empresa no período.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
+            </TableBody>
             {movements && movements.length > 0 && (
-              <tfoot className="bg-muted/40 font-black border-t-2 border-primary/20 sticky bottom-0 z-20 shadow-[0_-4px_6px_rgba(0,0,0,0.02)] uppercase tracking-tighter">
-                <tr>
-                  <td className="p-4 border-r sticky left-0 bg-muted/80 backdrop-blur-sm z-10 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">TOTAL ACUMULADO</td>
+              <tfoot className="bg-muted/40 font-black border-t-2 border-primary/20 sticky bottom-0 z-40 shadow-[0_-4px_6px_rgba(0,0,0,0.02)] uppercase tracking-tighter">
+                <TableRow className="hover:bg-muted/40">
+                  <TableCell data-col-cat="competencia" className="p-4 border-r sticky left-0 bg-muted/80 backdrop-blur-sm z-10 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">TOTAL ACUMULADO</TableCell>
                   {allVisibleColumns.map((col) => {
                     const val = totals.byCol[col.key as string] || 0;
                     return (
-                      <td key={col.id} className={`p-4 border-r text-right ${getCellColor(col.category)}`}>
+                      <TableCell key={col.id} data-col-cat={col.category} className="p-4 border-r text-right">
                         {col.kind === 'custom' 
                           ? formatCustomValue(val, col.format, col.decimals)
                           : col.id === 'aliquota_simples_calc' 
-                            ? (val * 100).toFixed(2) + '%'
+                            ? formatPercent(val)
                             : formatCurrency(val)
                         }
-                      </td>
+                      </TableCell>
                     );
                   })}
-                </tr>
+                </TableRow>
               </tfoot>
             )}
-          </table>
+          </Table>
         </CardContent>
       </Card>
  
