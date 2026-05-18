@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, Trash2 } from "lucide-react";
+ import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,13 +19,16 @@ export default function TaxPlanning() {
   const navigate = useNavigate();
   const { companies } = useCompany();
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [search, setSearch] = useState("");
-
-  // Form state
-  const [title, setTitle] = useState("");
-  const [selectedCompanyId, setSelectedCompanyId] = useState("");
-  const [selectedRegime, setSelectedRegime] = useState("");
+   const [isDialogOpen, setIsDialogOpen] = useState(false);
+   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+   const [search, setSearch] = useState("");
+ 
+   // Form state
+   const [title, setTitle] = useState("");
+   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+   const [selectedRegime, setSelectedRegime] = useState("");
+   const [selectedGroupId, setSelectedGroupId] = useState("none");
+   const [newGroupName, setNewGroupName] = useState("");
 
   const { data: plannings = [], isLoading } = useQuery({
     queryKey: ["tax_planning"],
