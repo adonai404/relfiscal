@@ -187,7 +187,11 @@ export default function TaxPlanning() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPlannings.map((p: any) => (
-              <Card key={p.id} className="hover:shadow-md transition-shadow cursor-pointer border-border/50 group">
+               <Card 
+                 key={p.id} 
+                 className="hover:shadow-md transition-shadow cursor-pointer border-border/50 group"
+                 onClick={() => navigate(`/planejamento/${p.id}`)}
+               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
