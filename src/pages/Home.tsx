@@ -1,5 +1,7 @@
  import { useNavigate } from "react-router-dom";
-import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator } from "lucide-react";
+ import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
+ import { useQuery } from "@tanstack/react-query";
+ import { supabase } from "@/integrations/supabase/client";
  import { useAuth } from "@/hooks/useAuth";
  import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
@@ -7,7 +9,22 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
  import { ThemeToggle } from "@/components/ThemeToggle";
  
  export default function Home() {
-  const { user, signOut } = useAuth();
+   const { user, signOut } = useAuth();
+   const { data: userRole } = useQuery({
+     queryKey: ["user-role", user?.id],
+     enabled: !!user?.id,
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from("user_roles")
+         .select("role")
+         .eq("user_id", user!.id)
+         .maybeSingle();
+       if (error) throw error;
+       return data?.role;
+     },
+   });
+ 
+   const isSuperAdmin = userRole === "super_admin";
    const { selectedCompany } = useCompany();
    const navigate = useNavigate();
  
@@ -60,9 +77,26 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         icon: UserCog,
         path: "/minha-conta",
         color: "text-orange-500",
-        bg: "bg-orange-500/10",
-        forceEnabled: true,
-      },
+         bg: "bg-orange-500/10",
+         forceEnabled: true,
+       },
+       {
+         title: "Configurações",
+         description: "Ajustes da empresa e visibilidade",
+         icon: SettingsIcon,
+         path: "/configuracoes",
+         color: "text-slate-500",
+         bg: "bg-slate-500/10",
+       },
+       ...(isSuperAdmin ? [{
+         title: "Administração",
+         description: "Gerenciar usuários e permissões",
+         icon: ShieldCheck,
+         path: "/admin/usuarios",
+         color: "text-rose-500",
+         bg: "bg-rose-500/10",
+         forceEnabled: true,
+       }] : []),
     ];
  
    return (
