@@ -58,18 +58,25 @@
            continue;
          }
  
-         // Basic NFe/NFCe structure check
-         const infNFe = xmlDoc.getElementsByTagName("infNFe")[0];
+         // Basic NFe/NFCe structure check (can be inside nfeProc or NFe)
+         let infNFe = xmlDoc.getElementsByTagName("infNFe")[0];
+         
          if (!infNFe) {
-           toast.error(`Arquivo ${file.name} não parece ser uma NF-e ou NFC-e válida (falta tag infNFe)`);
+           // Try to find if it's inside NFe or nfeProc
+           const nfe = xmlDoc.getElementsByTagName("NFe")[0];
+           if (nfe) infNFe = nfe.getElementsByTagName("infNFe")[0];
+         }
+
+         if (!infNFe) {
+           toast.error(`Arquivo ${file.name} não possui a tag <infNFe>. Verifique se é um XML de NF-e válido.`);
            continue;
          }
  
          // Determine XML type
          let xmlType: "NF_EMITIDA" | "NF_RECEBIDA" | "NFC_EMITIDA" = "NF_EMITIDA";
-         const cnpjEmit = xmlDoc.getElementsByTagName("emit")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
-         const cnpjDest = xmlDoc.getElementsByTagName("dest")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
-         const mod = xmlDoc.getElementsByTagName("ide")[0]?.getElementsByTagName("mod")[0]?.textContent;
+         const cnpjEmit = infNFe.getElementsByTagName("emit")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
+         const cnpjDest = infNFe.getElementsByTagName("dest")[0]?.getElementsByTagName("CNPJ")[0]?.textContent;
+         const mod = infNFe.getElementsByTagName("ide")[0]?.getElementsByTagName("mod")[0]?.textContent;
  
          if (mod === "65") {
            xmlType = "NFC_EMITIDA";
@@ -78,14 +85,14 @@
          } else if (cnpjDest === companyCnpj) {
            xmlType = "NF_RECEBIDA";
          } else {
-           toast.error(`Arquivo ${file.name} não pertence à empresa selecionada (CNPJ não coincide)`);
+           toast.error(`O CNPJ do XML (${cnpjEmit || cnpjDest || 'não encontrado'}) não coincide com o da empresa selecionada (${companyCnpj})`);
            continue;
          }
  
-         // Extract products
-         const detNodes = xmlDoc.getElementsByTagName("det");
+         // Extract products from infNFe
+         const detNodes = infNFe.getElementsByTagName("det");
          if (detNodes.length === 0) {
-           toast.error(`Arquivo ${file.name} não contém itens de produto (tag det)`);
+           toast.error(`Arquivo ${file.name} não contém itens de produto (tag <det>)`);
            continue;
          }
  
@@ -103,8 +110,8 @@
          if (uploadError) throw uploadError;
  
          const extractedProducts = [];
-         const emissionDate = xmlDoc.getElementsByTagName("dhEmi")[0]?.textContent || 
-                         xmlDoc.getElementsByTagName("dEmi")[0]?.textContent || 
+         const emissionDate = infNFe.getElementsByTagName("dhEmi")[0]?.textContent || 
+                         infNFe.getElementsByTagName("dEmi")[0]?.textContent || 
                          new Date().toISOString();
  
          for (let i = 0; i < detNodes.length; i++) {
