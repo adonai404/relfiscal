@@ -407,7 +407,7 @@ export default function Movement() {
       <header className="no-print border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
+             <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Building2 className="h-5 w-5 text-primary" />
@@ -417,11 +417,11 @@ export default function Movement() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={sharePublic}>
-              <Share2 className="mr-2 h-4 w-4" /> Página pública
+            <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
+              <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir
+            <Button variant="outline" size="xs" onClick={() => window.print()} className="hidden sm:flex">
+              <Printer className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Imprimir
             </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
@@ -450,9 +450,9 @@ export default function Movement() {
         />
       </div>
 
-      <main className="w-full px-4 py-6 sm:px-6 print-main">
+      <main className="w-full px-2 py-3 sm:px-6 sm:py-6 print-main">
         {/* Summary cards */}
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
+        <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Entrada" value={totals.byCol.entrada || 0} accent="success" />
           <SummaryCard label="Saída" value={totals.byCol.saida || 0} />
           {anyTaxVisible && (
@@ -471,9 +471,9 @@ export default function Movement() {
         </div>
 
         <Card className="print-container">
-          <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+          <CardHeader className="flex flex-col gap-2 p-3 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <CardTitle>Movimento Fiscal</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Movimento Fiscal</CardTitle>
               {filtersActive && (
                 <Badge variant="secondary" className="gap-1">
                   <Filter className="h-3 w-3" />
@@ -481,7 +481,7 @@ export default function Movement() {
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 no-print">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
               <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
               <Dialog>
                 <DialogTrigger asChild>
@@ -500,8 +500,8 @@ export default function Movement() {
                 </DialogContent>
               </Dialog>
               {filtersActive && (
-                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                  <FilterX className="mr-2 h-4 w-4" /> Limpar
+                <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
+                  <FilterX className="mr-1 h-3 w-3" /> Limpar
                 </Button>
               )}
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
