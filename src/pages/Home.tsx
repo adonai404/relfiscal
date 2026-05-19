@@ -79,8 +79,6 @@ export default function Home() {
         bg: "bg-amber-500/10",
         forceEnabled: true,
       },
-    ] : []),
-    ...(!isCustomer ? [
       {
         title: "Apresentação",
         description: "Cenários de economia tributária",
