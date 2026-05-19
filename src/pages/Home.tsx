@@ -69,6 +69,15 @@ export default function Home() {
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",
     },
+    {
+      title: "Planejamento Tributário",
+      description: "Simulações de regimes fiscais",
+      icon: Calculator,
+      path: "/planejamento",
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+      forceEnabled: true,
+    },
     ...(!isCustomer ? [
       {
         title: "Apresentação",
@@ -77,15 +86,6 @@ export default function Home() {
         path: "/apresentacao",
         color: "text-purple-500",
         bg: "bg-purple-500/10",
-      },
-      {
-        title: "Planejamento Tributário",
-        description: "Simulações de regimes fiscais",
-        icon: Calculator,
-        path: "/planejamento",
-        color: "text-amber-500",
-        bg: "bg-amber-500/10",
-        forceEnabled: true,
       },
       {
         title: "Conexão API",
