@@ -276,29 +276,30 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
+        <div className="flex w-full flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-2">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
+             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Activity className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">{isCustomer ? "Meus Indicadores" : "Dashboard Administrativo"}</h1>
-            <Badge variant="secondary" className="ml-2">{isCustomer ? "Cliente" : "Admin"}</Badge>
+            <h1 className="text-base font-semibold sm:text-lg">{isCustomer ? "Meus Indicadores" : "Dashboard Administrativo"}</h1>
+            <Badge variant="secondary" className="ml-1 text-[10px] sm:ml-2 sm:text-xs">{isCustomer ? "Cliente" : "Admin"}</Badge>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
             <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
-            <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <ThemeToggle />
+              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" className="h-8 w-8">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="w-full space-y-6 px-4 py-6 sm:px-6">
         {/* Tag filter */}
-        {tags.length > 0 && (
+        {!isCustomer && tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
             <span className="text-xs font-medium text-muted-foreground">Filtrar por tag:</span>
             {tags.map((t) => {
@@ -332,7 +333,7 @@ export default function Dashboard() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             icon={<Building2 className="h-5 w-5" />}
             title="Empresas Monitoradas"
@@ -360,7 +361,7 @@ export default function Dashboard() {
         </div>
 
          {/* Indicadores de Carga Tributária */}
-         <div className="grid gap-4 md:grid-cols-3">
+         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
            <MiniCard
              tone="success"
              icon={<Trophy className="h-4 w-4" />}
