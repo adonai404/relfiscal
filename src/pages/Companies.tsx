@@ -591,7 +591,7 @@ export default function Companies() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <div className={cn("grid gap-6", !isCustomer ? "lg:grid-cols-[260px_1fr]" : "grid-cols-1")}>
           {/* Sidebar de pastas */}
           {!isCustomer && (
             <aside className="space-y-2">
