@@ -671,10 +671,11 @@ export default function Companies() {
                 </Button>
               )}
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-              💡 Arraste uma empresa para uma pasta para movê-la.
-            </div>
           </aside>
+          )}
+
+          {/* Conteúdo */}
+          <div className="min-w-0">
 
           {/* Conteúdo */}
           <div className="min-w-0">
