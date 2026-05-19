@@ -52,7 +52,9 @@ const COLORS = [
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isSuperAdmin } = useUserRole();
+  const { profile } = useProfile();
+  const isCustomer = !!profile?.customer_id;
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
