@@ -159,6 +159,8 @@ interface MovementRow {
 
 export default function Movement() {
   const { signOut } = useAuth();
+  const { profile } = useProfile();
+  const isCustomer = !!profile?.customer_id;
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -539,6 +541,17 @@ export default function Movement() {
                 </DialogContent>
               </Dialog>
             </div>
+            )}
+            {isCustomer && (
+              <div className="flex flex-wrap items-center gap-2 no-print">
+                <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+                {filtersActive && (
+                  <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
+                    <FilterX className="mr-1 h-3 w-3" /> Limpar
+                  </Button>
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0 sm:p-6 overflow-x-auto fiscal-table-wrap">
             {isLoading ? (
@@ -594,7 +607,7 @@ export default function Movement() {
                         </TableHead>
                       );
                     })}
-                    <TableHead className="no-print"></TableHead>
+                    {!isCustomer && <TableHead className="no-print"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
