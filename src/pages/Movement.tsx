@@ -679,6 +679,58 @@ export default function Movement() {
                   )}
                 </TableBody>
               </Table>
+
+              <div className="sm:hidden space-y-2 p-2">
+                {rows.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground py-8">
+                    {filtersActive ? "Nenhum registro encontrado." : "Nenhuma competência adicionada."}
+                  </p>
+                )}
+                {rows.map((r) => {
+                  const valuesForRow = valuesByMov[r.id] ?? {};
+                  const resolver = buildRowResolver(r, customCols, valuesForRow);
+                  return (
+                    <Card key={r.id} className="overflow-hidden border-border/50 shadow-none bg-card">
+                      <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
+                        <span className="font-bold text-xs">{displayCompetencia(r.competencia)}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => {
+                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                          }}
+                          className="h-6 w-6"
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                      <div className="p-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                        {allVisibleColumns.map((col) => {
+                          let displayVal = "";
+                          let val = 0;
+                          if (col.kind === "standard") {
+                            const c = col.id as ColumnKey;
+                            val = computeColumnValue(r, c);
+                            displayVal = isComputedColumn(c) ? formatPercent(val) : brl(val);
+                          } else {
+                            val = resolver(col.key!);
+                            displayVal = formatCustomValue(val, col.format!, col.decimals!);
+                          }
+                          return (
+                            <div key={col.id} className="flex flex-col gap-0.5 min-w-0">
+                              <span className="text-[9px] text-muted-foreground uppercase font-medium truncate">{col.label}</span>
+                              <span className="text-[11px] font-semibold tabular-nums truncate">
+                                {displayVal}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+              </>
             )}
           </CardContent>
         </Card>
