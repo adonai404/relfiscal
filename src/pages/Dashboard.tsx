@@ -282,8 +282,8 @@ export default function Dashboard() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Activity className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">Dashboard Administrativo</h1>
-            <Badge variant="secondary" className="ml-2">Admin</Badge>
+            <h1 className="text-lg font-semibold">{isCustomer ? "Meus Indicadores" : "Dashboard Administrativo"}</h1>
+            <Badge variant="secondary" className="ml-2">{isCustomer ? "Cliente" : "Admin"}</Badge>
           </div>
           <div className="flex items-center gap-2">
             <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
