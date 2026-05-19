@@ -704,6 +704,7 @@ export default function Companies() {
                   variant="outline"
                   size="sm"
                   aria-label="Modo de visualização"
+                  className="hidden sm:inline-flex"
                 >
                   <ToggleGroupItem value="grid" aria-label="Cartões"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
                   <ToggleGroupItem value="list" aria-label="Lista"><Rows3 className="h-4 w-4" /></ToggleGroupItem>
@@ -813,7 +814,7 @@ export default function Companies() {
                 })}
               </div>
             ) : (
-              <div className="rounded-lg border bg-card overflow-x-auto">
+              <div className="rounded-lg border bg-card overflow-x-auto hidden sm:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
