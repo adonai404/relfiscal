@@ -59,8 +59,9 @@ export default function Companies() {
   const { user, loading, signOut } = useAuth();
   const { companies, loadingCompanies, setSelectedCompany, refetch } = useCompany();
   const { isSuperAdmin } = useUserRole();
-  const { isActive } = useProfile();
-  const canCreate = isActive || isSuperAdmin;
+  const { profile, isActive } = useProfile();
+  const isCustomer = !!profile?.customer_id;
+  const canCreate = (isActive || isSuperAdmin) && !isCustomer;
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -417,6 +418,7 @@ export default function Companies() {
   };
 
   const renderCompanyActions = (c: Company) => {
+    if (isCustomer) return null;
     const canEdit = isSuperAdmin || c.created_by === user.id;
     const status = (c.status ?? "ativa") as CompanyStatus;
     return (
@@ -589,9 +591,10 @@ export default function Companies() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <div className={cn("grid gap-6", !isCustomer ? "lg:grid-cols-[260px_1fr]" : "grid-cols-1")}>
           {/* Sidebar de pastas */}
-          <aside className="space-y-2">
+          {!isCustomer && (
+            <aside className="space-y-2">
             <div className="rounded-lg border bg-card p-2">
               <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Pastas
@@ -668,10 +671,8 @@ export default function Companies() {
                 </Button>
               )}
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-              💡 Arraste uma empresa para uma pasta para movê-la.
-            </div>
           </aside>
+          )}
 
           {/* Conteúdo */}
           <div className="min-w-0">
@@ -762,13 +763,13 @@ export default function Companies() {
                           <span>UF: {c.uf}</span>
                           {regime && <Badge variant="secondary" className="text-[10px]">{regimeLabels[regime] ?? regime}</Badge>}
                         </div>
-                        {c.folder_id && (
+                        {!isCustomer && c.folder_id && (
                           <div className="flex items-center gap-1.5 text-xs">
                             <Folder className="h-3 w-3" style={{ color: folders.find((f) => f.id === c.folder_id)?.color }} />
                             {folders.find((f) => f.id === c.folder_id)?.name ?? "Pasta"}
                           </div>
                         )}
-                        <div className="pt-1"><CompanyTagsChips companyId={c.id} /></div>
+                        {!isCustomer && <div className="pt-1"><CompanyTagsChips companyId={c.id} /></div>}
                       </CardContent>
                     </Card>
                   );

@@ -8,26 +8,41 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { ThemeToggle } from "@/components/ThemeToggle";
  
- export default function Home() {
-   const { user, signOut } = useAuth();
-   const { data: userRole } = useQuery({
-     queryKey: ["user-role", user?.id],
-     enabled: !!user?.id,
-     queryFn: async () => {
-       const { data, error } = await supabase
-         .from("user_roles")
-         .select("role")
-         .eq("user_id", user!.id)
-         .maybeSingle();
-       if (error) throw error;
-       return data?.role;
-     },
-   });
- 
-   const isSuperAdmin = userRole === "super_admin";
-   const { selectedCompany } = useCompany();
-   const navigate = useNavigate();
- 
+export default function Home() {
+  const { user, signOut } = useAuth();
+  const { data: profileData } = useQuery({
+    queryKey: ["profile-details", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("status, customer_id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.role;
+    },
+  });
+
+  const isSuperAdmin = userRole === "super_admin";
+  const isCustomer = !!profileData?.customer_id;
+  const { selectedCompany } = useCompany();
+  const navigate = useNavigate();
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
@@ -37,23 +52,24 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
     return `Boa noite, ${userName}`;
   };
 
-    const menuItems = [
-      {
-        title: "Movimento",
-        description: "Lançamentos fiscais e conciliação",
-        icon: ArrowLeftRight,
-        path: "/empresas",
-        color: "text-blue-500",
-        bg: "bg-blue-500/10",
-      },
-      {
-        title: "Dashboard",
-        description: "Visão geral e indicadores",
-        icon: LayoutDashboard,
-        path: "/dashboard",
-        color: "text-emerald-500",
-        bg: "bg-emerald-500/10",
-      },
+  const menuItems = [
+    {
+      title: "Movimento",
+      description: "Lançamentos fiscais e conciliação",
+      icon: ArrowLeftRight,
+      path: "/empresas",
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+    },
+    {
+      title: "Dashboard",
+      description: "Visão geral e indicadores",
+      icon: LayoutDashboard,
+      path: "/dashboard",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
+    ...(!isCustomer ? [
       {
         title: "Apresentação",
         description: "Cenários de economia tributária",
@@ -71,44 +87,46 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         bg: "bg-amber-500/10",
         forceEnabled: true,
       },
-       {
-         title: "Conexão API",
-         description: "Integração externa de dados",
-         icon: Link2,
-         path: "/conexao-api",
-         color: "text-indigo-500",
-         bg: "bg-indigo-500/10",
-         forceEnabled: true,
-       },
-       {
-         title: "Minha Conta",
-         description: "Perfil, senha e segurança",
-         icon: UserCog,
-         path: "/minha-conta",
-         color: "text-orange-500",
-          bg: "bg-orange-500/10",
-          forceEnabled: true,
-        },
-        ...(isSuperAdmin ? [
-        {
-          title: "Clientes",
-          description: "Gerenciar grupos de empresas por cliente",
-          icon: Users,
-          path: "/admin/clientes",
-          color: "text-blue-600",
-          bg: "bg-blue-600/10",
-          forceEnabled: true,
-        },
-        {
-         title: "Administração",
-         description: "Gerenciar usuários e permissões",
-         icon: ShieldCheck,
-         path: "/admin/usuarios",
-         color: "text-rose-500",
-         bg: "bg-rose-500/10",
-         forceEnabled: true,
-       }] : []),
-    ];
+      {
+        title: "Conexão API",
+        description: "Integração externa de dados",
+        icon: Link2,
+        path: "/conexao-api",
+        color: "text-indigo-500",
+        bg: "bg-indigo-500/10",
+        forceEnabled: true,
+      },
+    ] : []),
+    {
+      title: "Minha Conta",
+      description: "Perfil, senha e segurança",
+      icon: UserCog,
+      path: "/minha-conta",
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
+      forceEnabled: true,
+    },
+    ...(isSuperAdmin ? [
+      {
+        title: "Clientes",
+        description: "Gerenciar grupos de empresas por cliente",
+        icon: Users,
+        path: "/admin/clientes",
+        color: "text-blue-600",
+        bg: "bg-blue-600/10",
+        forceEnabled: true,
+      },
+      {
+        title: "Administração",
+        description: "Gerenciar usuários e permissões",
+        icon: ShieldCheck,
+        path: "/admin/usuarios",
+        color: "text-rose-500",
+        bg: "bg-rose-500/10",
+        forceEnabled: true,
+      }
+    ] : []),
+  ];
  
    return (
      <div className="min-h-screen w-full flex flex-col" style={{ background: "var(--gradient-subtle)" }}>
