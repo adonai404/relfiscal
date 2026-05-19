@@ -14,11 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/hooks/useCompany";
+import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 
 export default function TaxPlanning() {
   const navigate = useNavigate();
   const { companies } = useCompany();
+  const { profile } = useProfile();
+  const isCustomer = !!profile?.customer_id;
   const queryClient = useQueryClient();
    const [isDialogOpen, setIsDialogOpen] = useState(false);
    const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
@@ -166,7 +169,8 @@ export default function TaxPlanning() {
             <h1 className="text-lg font-bold">Planejamento Tributário</h1>
           </div>
 
-           <div className="flex gap-2">
+           {!isCustomer && (
+             <div className="flex gap-2">
              <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
                <DialogTrigger asChild>
                  <Button variant="outline">
@@ -282,6 +286,7 @@ export default function TaxPlanning() {
             </DialogContent>
              </Dialog>
            </div>
+           )}
         </div>
       </header>
 +
@@ -339,7 +344,8 @@ export default function TaxPlanning() {
                            <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
                              {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
                            </Badge>
-                           <DropdownMenu>
+                            {!isCustomer && (
+                            <DropdownMenu>
                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                <Button variant="ghost" size="icon" className="h-8 w-8">
                                  <MoreVertical className="h-4 w-4" />
@@ -374,7 +380,8 @@ export default function TaxPlanning() {
                                   Excluir
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
-                           </DropdownMenu>
+                            </DropdownMenu>
+                            )}
                          </div>
                        </div>
                        <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>
@@ -453,29 +460,31 @@ export default function TaxPlanning() {
                                      <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
                                        {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
                                      </Badge>
-                                     <DropdownMenu>
-                                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                         <Button variant="ghost" size="icon" className="h-8 w-8">
-                                           <MoreVertical className="h-4 w-4" />
-                                         </Button>
-                                       </DropdownMenuTrigger>
-                                       <DropdownMenuContent align="end">
-                                         <DropdownMenuItem disabled className="text-xs font-semibold">
-                                           Mover para Grupo
-                                         </DropdownMenuItem>
-                                         <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
-                                           Nenhum
-                                         </DropdownMenuItem>
-                                         {groups.map((g: any) => (
-                                           <DropdownMenuItem 
-                                             key={g.id} 
-                                             onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
-                                           >
-                                             {g.name}
-                                           </DropdownMenuItem>
-                                         ))}
-                                       </DropdownMenuContent>
-                                     </DropdownMenu>
+                                       {!isCustomer && (
+                                         <DropdownMenu>
+                                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                             <Button variant="ghost" size="icon" className="h-8 w-8">
+                                               <MoreVertical className="h-4 w-4" />
+                                             </Button>
+                                           </DropdownMenuTrigger>
+                                           <DropdownMenuContent align="end">
+                                             <DropdownMenuItem disabled className="text-xs font-semibold">
+                                               Mover para Grupo
+                                             </DropdownMenuItem>
+                                             <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
+                                               Nenhum
+                                             </DropdownMenuItem>
+                                             {groups.map((g: any) => (
+                                               <DropdownMenuItem 
+                                                 key={g.id} 
+                                                 onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                               >
+                                                 {g.name}
+                                               </DropdownMenuItem>
+                                             ))}
+                                           </DropdownMenuContent>
+                                         </DropdownMenu>
+                                       )}
                                    </div>
                                  </div>
                                  <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>

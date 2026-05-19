@@ -120,6 +120,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
@@ -159,6 +160,8 @@ interface MovementRow {
 
 export default function Movement() {
   const { signOut } = useAuth();
+  const { profile } = useProfile();
+  const isCustomer = !!profile?.customer_id;
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -406,16 +409,31 @@ export default function Movement() {
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="no-print border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Building2 className="h-5 w-5 text-primary" />
-            <div>
-              <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
-              <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
-            </div>
-          </div>
+            {/* View-only mode for customers: hide all input/edit actions */}
+            {!isCustomer && (
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Building2 className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
+                  <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
+                </div>
+              </div>
+            )}
+            {isCustomer && (
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Building2 className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
+                  <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)}</div>
+                </div>
+              </div>
+            )}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
               <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
@@ -461,13 +479,13 @@ export default function Movement() {
           {showSimplesCard && (
             <SummaryCard label="Simples" value={totals.totalSimples} accent="primary" />
           )}
-          {showEconomiaCard && (
-            <SummaryCard
-              label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
-              value={Math.abs(totals.economia)}
-              accent={totals.economia >= 0 ? "success" : "destructive"}
-            />
-          )}
+            {showEconomiaCard && !isCustomer && (
+              <SummaryCard
+                label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
+                value={Math.abs(totals.economia)}
+                accent={totals.economia >= 0 ? "success" : "destructive"}
+              />
+            )}
         </div>
 
         <Card className="print-container">
@@ -481,49 +499,60 @@ export default function Movement() {
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
-              <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Reordenar Colunas</DialogTitle>
-                  </DialogHeader>
-                  <ColumnReorderDialog
-                    columns={allVisibleColumns}
-                    onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
-                  />
-                </DialogContent>
-              </Dialog>
-              {filtersActive && (
-                <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
-                  <FilterX className="mr-1 h-3 w-3" /> Limpar
-                </Button>
-              )}
-              <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
-                  <div className="space-y-2">
-                    <Label>Mês de referência</Label>
-                    <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
-                      {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+            {!isCustomer ? (
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
+                <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Reordenar Colunas</DialogTitle>
+                    </DialogHeader>
+                    <ColumnReorderDialog
+                      columns={allVisibleColumns}
+                      onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
+                    />
+                  </DialogContent>
+                </Dialog>
+                {filtersActive && (
+                  <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
+                    <FilterX className="mr-1 h-3 w-3" /> Limpar
+                  </Button>
+                )}
+                <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
+                    <div className="space-y-2">
+                      <Label>Mês de referência</Label>
+                      <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
+                        {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 no-print">
+                <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+                {filtersActive && (
+                  <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
+                    <FilterX className="mr-1 h-3 w-3" /> Limpar
+                  </Button>
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0 sm:p-6 overflow-x-auto fiscal-table-wrap">
             {isLoading ? (
@@ -579,14 +608,14 @@ export default function Movement() {
                         </TableHead>
                       );
                     })}
-                    <TableHead className="no-print"></TableHead>
+                    {!isCustomer && <TableHead className="no-print"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                    <TableCell colSpan={allVisibleColumns.length + 2} className="text-center text-muted-foreground py-8">
-                        {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
+                    <TableCell colSpan={allVisibleColumns.length + (isCustomer ? 1 : 2)} className="text-center text-muted-foreground py-8">
+                        {filtersActive ? "Nenhum registro corresponde aos filtros." : isCustomer ? "Nenhuma competência registrada." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -612,7 +641,7 @@ export default function Movement() {
                             <TableCell key={c} data-col-cat={col.category} className="p-1">
                               <CellEditor
                                 value={value}
-                                readonly={isCellReadonly(c)}
+                                readonly={isCustomer || isCellReadonly(c)}
                                 onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
                               />
                             </TableCell>
@@ -635,24 +664,27 @@ export default function Movement() {
                             <TableCell key={col.id} data-col-cat="custom" className="p-1">
                               <CellEditor
                                 value={current}
+                                readonly={isCustomer}
                                 onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: col.id, value: v })}
                               />
                             </TableCell>
                           );
                         }
                       })}
-                      <TableCell className="no-print">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
-                          }}
-                          aria-label="Excluir"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
+                      {!isCustomer && (
+                        <TableCell className="no-print">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                            }}
+                            aria-label="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                   {rows.length > 0 && (
@@ -674,7 +706,7 @@ export default function Movement() {
                           );
                         }
                       })}
-                      <TableCell className="no-print" />
+                      {!isCustomer && <TableCell className="no-print" />}
                     </TableRow>
                   )}
                 </TableBody>
@@ -693,16 +725,18 @@ export default function Movement() {
                     <Card key={r.id} className="overflow-hidden border-border/50 shadow-none bg-card">
                       <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
                         <span className="font-bold text-xs">{displayCompetencia(r.competencia)}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => {
-                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
-                          }}
-                          className="h-6 w-6"
-                        >
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
+                        {!isCustomer && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => {
+                              if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                            }}
+                            className="h-6 w-6"
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                       <div className="p-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
                         {allVisibleColumns.map((col) => {
