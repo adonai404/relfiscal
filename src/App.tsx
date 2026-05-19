@@ -18,7 +18,8 @@ import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
 import Presentation from "./pages/Presentation.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
-import AdminUsers from "./pages/AdminUsers.tsx";
+ import AdminUsers from "./pages/AdminUsers.tsx";
+ import AdminCustomers from "./pages/AdminCustomers.tsx";
  import TaxPlanning from "./pages/TaxPlanning.tsx";
  import TaxPlanningDetail from "./pages/TaxPlanningDetail.tsx";
 import ProfileSettings from "./pages/ProfileSettings.tsx";
@@ -49,6 +50,7 @@ const App = () => (
                  <Route path="/planejamento/:id" element={<ProtectedRoute><TaxPlanningDetail /></ProtectedRoute>} />
                  <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
                  <Route path="/conexao-api" element={<ProtectedRoute><ApiConnection /></ProtectedRoute>} />
+                 <Route path="/admin/clientes" element={<ProtectedRoute requireSuperAdmin><AdminCustomers /></ProtectedRoute>} />
                 <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

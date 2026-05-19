@@ -257,6 +257,69 @@ export type Database = {
           },
         ]
       }
+      customer_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          customer_id: string
+          id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_companies_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fiscal_config: {
         Row: {
           aliquota_simples_nacional: number
@@ -485,6 +548,7 @@ export type Database = {
           access_requested_at: string | null
           approved: boolean
           created_at: string
+          customer_id: string | null
           email: string | null
           id: string
           status: Database["public"]["Enums"]["user_status"]
@@ -496,6 +560,7 @@ export type Database = {
           access_requested_at?: string | null
           approved?: boolean
           created_at?: string
+          customer_id?: string | null
           email?: string | null
           id?: string
           status?: Database["public"]["Enums"]["user_status"]
@@ -507,6 +572,7 @@ export type Database = {
           access_requested_at?: string | null
           approved?: boolean
           created_at?: string
+          customer_id?: string | null
           email?: string | null
           id?: string
           status?: Database["public"]["Enums"]["user_status"]
@@ -514,7 +580,15 @@ export type Database = {
           user_id?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tags: {
         Row: {

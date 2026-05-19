@@ -1,4 +1,4 @@
- import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator, Settings as SettingsIcon, ShieldCheck, Link2 } from "lucide-react";
+ import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator, Settings as SettingsIcon, ShieldCheck, Link2, Users } from "lucide-react";
  import { useNavigate } from "react-router-dom";
  import { useQuery } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
@@ -89,7 +89,17 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
           bg: "bg-orange-500/10",
           forceEnabled: true,
         },
-       ...(isSuperAdmin ? [{
+        ...(isSuperAdmin ? [
+        {
+          title: "Clientes",
+          description: "Gerenciar grupos de empresas por cliente",
+          icon: Users,
+          path: "/admin/clientes",
+          color: "text-blue-600",
+          bg: "bg-blue-600/10",
+          forceEnabled: true,
+        },
+        {
          title: "Administração",
          description: "Gerenciar usuários e permissões",
          icon: ShieldCheck,
