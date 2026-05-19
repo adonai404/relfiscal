@@ -663,13 +663,13 @@ export default function Dashboard() {
 function KpiCard({ icon, title, value, hint }: { icon: React.ReactNode; title: string; value: string; hint?: string }) {
   return (
     <Card className="overflow-hidden">
-      <CardContent className="p-5">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <div className="rounded-md bg-muted/60 p-2">{icon}</div>
+      <CardContent className="p-3 sm:p-5">
+        <div className="mb-1 sm:mb-2 flex items-center justify-between">
+          <p className="text-[10px] sm:text-sm text-muted-foreground font-medium uppercase tracking-wider sm:normal-case sm:tracking-normal">{title}</p>
+          <div className="rounded-md bg-muted/60 p-1.5 sm:p-2">{icon}</div>
         </div>
-        <p className="text-2xl font-bold tracking-tight">{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+        <p className="text-lg sm:text-2xl font-bold tracking-tight">{value}</p>
+        {hint && <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">{hint}</p>}
       </CardContent>
     </Card>
   );
@@ -684,12 +684,12 @@ function MiniCard({
     : "border-primary/30 bg-primary/5";
   return (
     <Card className={`border ${toneClass}`}>
-      <CardContent className="flex items-center gap-4 p-4">
-        <div className="rounded-md bg-card p-2">{icon}</div>
+      <CardContent className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+        <div className="rounded-md bg-card p-1.5 sm:p-2">{icon}</div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-bold">{value}</p>
-          {sub && <p className="truncate text-xs text-muted-foreground">{sub}</p>}
+          <p className="text-[10px] sm:text-xs text-muted-foreground">{label}</p>
+          <p className="text-lg sm:text-xl font-bold leading-tight">{value}</p>
+          {sub && <p className="truncate text-[10px] sm:text-xs text-muted-foreground">{sub}</p>}
         </div>
       </CardContent>
     </Card>
