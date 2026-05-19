@@ -30,7 +30,7 @@ import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/componen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { parseBrNumber } from "@/lib/format";
  
- export const SimplesNacionalPlanningForm = ({ planning, onSave }: { planning: any, onSave: (data: any) => void }) => {
+ export const SimplesNacionalPlanningForm = ({ planning, onSave }: { planning: any, onSave?: (data: any) => void }) => {
   const companyId = planning?.company_id;
    const [year, setYear] = useState(planning?.data?.year || new Date().getFullYear().toString());
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });

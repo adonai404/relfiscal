@@ -460,7 +460,9 @@ export default function TaxPlanning() {
                                      <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
                                        {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
                                      </Badge>
-                                     <DropdownMenu>
+                                       {!isCustomer && (
+                                       </DropdownMenu>
+                                       )}
                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                          <Button variant="ghost" size="icon" className="h-8 w-8">
                                            <MoreVertical className="h-4 w-4" />

@@ -9,7 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
  import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
 import { toast } from "sonner";
 
+import { useProfile } from "@/hooks/useProfile";
+
 export default function TaxPlanningDetail() {
+  const { profile } = useProfile();
+  const isCustomer = !!profile?.customer_id;
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -78,7 +82,7 @@ export default function TaxPlanningDetail() {
         {planning?.tax_regime === 'LUCRO PRESUMIDO' && (
           <LucroPresumidoForm 
             planning={planning} 
-            onSave={(data) => updateMutation.mutate(data)} 
+            onSave={isCustomer ? undefined : (data) => updateMutation.mutate(data)} 
           />
         )}
  
@@ -93,9 +97,9 @@ export default function TaxPlanningDetail() {
          {planning?.tax_regime === 'SIMPLES NACIONAL' && (
            <SimplesNacionalPlanningForm 
              planning={planning} 
-             onSave={(data) => updateMutation.mutate(data)} 
-           />
-         )}
+            onSave={isCustomer ? undefined : (data) => updateMutation.mutate(data)} 
+          />
+        )}
  
          {planning?.tax_regime !== 'LUCRO PRESUMIDO' && 
           planning?.tax_regime !== 'POR PRODUTO (XML)' && 

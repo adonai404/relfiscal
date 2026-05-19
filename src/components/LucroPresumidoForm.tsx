@@ -26,7 +26,7 @@ interface QuarterlyRetention {
   irrf_retido: number;
 }
 
-export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave: (data: any) => void }) => {
+export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave?: (data: any) => void }) => {
   const [activityType, setActivityType] = useState(planning?.data?.activityType || 'comercio');
   const [year, setYear] = useState(planning?.data?.year || new Date().getFullYear().toString());
 
