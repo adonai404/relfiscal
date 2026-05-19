@@ -519,13 +519,13 @@ export default function Companies() {
                 <Users className="mr-2 h-4 w-4" /> Usuários
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="hidden sm:inline-flex">
               <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/apresentacao")}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/apresentacao")} className="hidden sm:inline-flex">
               <PresentationIcon className="mr-2 h-4 w-4" /> Apresentação
             </Button>
-            <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
+            <Button variant="default" size="sm" onClick={() => navigate("/combo")} className="hidden sm:inline-flex">
               <Layers className="mr-2 h-4 w-4" /> Combo
             </Button>
             <ThemeToggle />
