@@ -525,11 +525,12 @@ export default function Movement() {
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto fiscal-table-wrap">
+          <CardContent className="p-0 sm:p-6 overflow-x-auto fiscal-table-wrap">
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
-              <Table className="fiscal-table">
+              <>
+              <Table className="fiscal-table hidden sm:table">
                 <TableHeader>
                   <TableRow>
                     <TableHead data-col-cat="competencia" className="sticky left-0 bg-card">
