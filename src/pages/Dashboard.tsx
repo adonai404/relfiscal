@@ -298,7 +298,7 @@ export default function Dashboard() {
 
       <main className="w-full space-y-6 px-4 py-6 sm:px-6">
         {/* Tag filter */}
-        {tags.length > 0 && (
+        {!isCustomer && tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
             <span className="text-xs font-medium text-muted-foreground">Filtrar por tag:</span>
             {tags.map((t) => {
