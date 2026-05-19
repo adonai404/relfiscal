@@ -333,28 +333,28 @@ export default function Dashboard() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <KpiCard
-            icon={<Building2 className="h-5 w-5" />}
+            icon={<Building2 className="h-4 w-4 sm:h-5 sm:w-5" />}
             title="Empresas Monitoradas"
             value={String(filteredCompanies.length)}
-            hint={`${metrics.ativas.length} ativas · ${metrics.inativas.length} sem dados`}
+            hint={`${metrics.ativas.length} ativas`}
           />
           <KpiCard
-           icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
-           title="Faturamento Consolidado"
-           value={brl(metrics.totals.saida)}
+            icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />}
+            title="Faturamento"
+            value={brl(metrics.totals.saida)}
            hint={`Entradas ${brl(metrics.totals.entrada)}`}
          />
          <KpiCard
-           icon={<Wallet className="h-5 w-5 text-primary" />}
-           title="Total de Impostos"
-           value={brl(metrics.totalImpostos)}
+            icon={<Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />}
+            title="Total Impostos"
+            value={brl(metrics.totalImpostos)}
            hint="Conforme configuração fiscal"
          />
           <KpiCard
-            icon={<Percent className="h-5 w-5 text-amber-500" />}
-            title="Carga Tributária Global"
+            icon={<Percent className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />}
+            title="Carga Global"
             value={`${(metrics.cargaTributaria * 100).toFixed(2)}%`}
             hint={`${brl(metrics.totalImpostos)} em tributos`}
           />
