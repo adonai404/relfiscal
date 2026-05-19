@@ -27,6 +27,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
 import { useTags, useCompanyTags } from "@/hooks/useTags";
+import { useProfile } from "@/hooks/useProfile";
 import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
 import { X } from "lucide-react";
 import { getTaxColumns, type ColumnKey, type FiscalConfig } from "@/hooks/useFiscalConfig";
