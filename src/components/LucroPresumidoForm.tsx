@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 interface MonthlyRow {
   mes: string;
@@ -76,7 +77,7 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
     r.total = r.receita_tributada_pis_cofins + r.receita_monofasica_pis_cofins;
     r.pis = r.receita_tributada_pis_cofins * params.pis_rate;
     r.cofins = r.receita_tributada_pis_cofins * params.cofins_rate;
-    r.icms = r.receita_bruta * params.aliquota_icms; // Base default is gross revenue as per rules
+    r.icms = r.receita_bruta * params.aliquota_icms;
     r.icms_pagar = Math.max(0, r.icms - r.credito_icms);
     return r;
   };
@@ -122,10 +123,6 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
       bc_csll = qRevenue * params.csll_servico;
       bc_irpj = qRevenue * params.irpj_servico;
     } else {
-      // For mixed, we'd ideally need a split of revenue. 
-      // Rule says: BC CSLL = Rec Comercio * 12% + Rec Serviço * 32%
-      // Since we don't have the split in the monthly table yet, we default to service rate or let user edit BC.
-      // For now, let's stick to simple activity type selection.
       bc_csll = qRevenue * params.csll_servico;
       bc_irpj = qRevenue * params.irpj_servico;
     }
@@ -149,31 +146,27 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
   };
 
   return (
-    <div className="space-y-6 text-foreground">
-      <div className="flex flex-col lg:flex-row gap-6">
+    <div className="space-y-4 sm:space-y-6 text-foreground px-1 sm:px-0">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
         <Card className="flex-1 shadow-sm border-border/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Dados Cadastrais</CardTitle>
+          <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-3">
+            <CardTitle className="text-[10px] sm:text-sm font-bold uppercase tracking-wider text-muted-foreground">Dados Cadastrais</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Ano de Apuração</Label>
-              <Input className="h-9 font-medium" value={year} onChange={e => setYear(e.target.value)} />
+          <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-6 pt-0 sm:pt-0">
+            <div className="space-y-1">
+              <Label className="text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">Ano</Label>
+              <Input className="h-8 sm:h-9 text-xs sm:text-sm font-medium" value={year} onChange={e => setYear(e.target.value)} />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Regime</Label>
-              <Input className="h-9 font-medium bg-muted/30" value="Lucro Presumido" disabled />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Atividade</Label>
+            <div className="space-y-1">
+              <Label className="text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">Atividade</Label>
               <Select value={activityType} onValueChange={setActivityType}>
-                <SelectTrigger className="h-9 font-medium">
+                <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="comercio">Comércio</SelectItem>
                   <SelectItem value="servico">Serviço</SelectItem>
-                  <SelectItem value="misto">Comércio e Serviço</SelectItem>
+                  <SelectItem value="misto">Misto</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -181,44 +174,41 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
         </Card>
 
         <Card className="flex-1 shadow-sm border-border/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Presunções e Alíquotas</CardTitle>
+          <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-3">
+            <CardTitle className="text-[10px] sm:text-sm font-bold uppercase tracking-wider text-muted-foreground">Presunções e Alíquotas</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">ICMS (%)</Label>
+          <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-6 pt-0 sm:pt-0">
+            <div className="space-y-1">
+              <Label className="text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">ICMS (%)</Label>
               <Input 
-                className="h-9 font-medium text-center" 
+                className="h-8 sm:h-9 text-xs sm:text-sm font-medium text-center" 
                 type="number" 
                 value={params.aliquota_icms * 100} 
                 onChange={e => setParams({...params, aliquota_icms: (parseFloat(e.target.value) || 0)/100})} 
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">PIS (%)</Label>
-              <div className="h-9 flex items-center justify-center font-bold text-sm bg-muted/20 rounded-md border border-input">0,65%</div>
+            <div className="space-y-1">
+              <Label className="text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">PIS (%)</Label>
+              <div className="h-8 sm:h-9 flex items-center justify-center font-bold text-[10px] sm:text-sm bg-muted/20 rounded-md border border-input">0,65%</div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">COFINS (%)</Label>
-              <div className="h-9 flex items-center justify-center font-bold text-sm bg-muted/20 rounded-md border border-input">3%</div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">CSLL (%)</Label>
-              <div className="h-9 flex items-center justify-center font-bold text-sm bg-muted/20 rounded-md border border-input">9%</div>
+            <div className="space-y-1">
+              <Label className="text-[8px] sm:text-[10px] uppercase font-bold text-muted-foreground">COFINS (%)</Label>
+              <div className="h-8 sm:h-9 flex items-center justify-center font-bold text-[10px] sm:text-sm bg-muted/20 rounded-md border border-input">3%</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Card className="shadow-sm border-border/60 overflow-hidden">
-        <CardHeader className="bg-muted/10 border-b py-4">
-          <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>Tabela Mensal de Apuração</span>
-            <span className="text-[10px] font-normal text-muted-foreground">Valores em R$</span>
+        <CardHeader className="bg-muted/10 border-b p-3 sm:py-4">
+          <CardTitle className="text-[10px] sm:text-sm font-bold uppercase tracking-wider flex items-center justify-between">
+            <span>Tabela Mensal</span>
+            <span className="text-[8px] sm:text-[10px] font-normal text-muted-foreground">Valores em R$</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full border-collapse text-[10px]">
+          {/* Desktop Table */}
+          <table className="w-full border-collapse text-[10px] hidden sm:table">
             <thead>
               <tr className="bg-muted/30 border-b">
                 <th className="p-2 border-r text-left w-20">MÊS</th>
@@ -226,8 +216,8 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
                 <th className="p-2 border-r text-right w-24">CRÉD. ICMS</th>
                 <th className="p-2 border-r text-right w-24">REC. BRUTA</th>
                 <th className="p-2 border-r text-right w-24">REC. MONOF.</th>
-                <th className="p-2 border-r text-right w-24 bg-primary/5 text-primary">PIS (8109)</th>
-                <th className="p-2 border-r text-right w-24 bg-primary/5 text-primary">COFINS (2172)</th>
+                <th className="p-2 border-r text-right w-24 bg-primary/5 text-primary">PIS</th>
+                <th className="p-2 border-r text-right w-24 bg-primary/5 text-primary">COFINS</th>
                 <th className="p-2 border-r text-right w-24">ICMS TOTAL</th>
                 <th className="p-2 text-right w-24 font-bold bg-green-50/50">ICMS PAGAR</th>
               </tr>
@@ -259,21 +249,77 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
               </tr>
             </tbody>
           </table>
+
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-2 p-2 bg-muted/5">
+            {monthlyData.map((m, idx) => (
+              <Card key={idx} className="overflow-hidden border-border/50 shadow-none bg-card">
+                <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
+                  <span className="font-black text-[10px] uppercase tracking-tighter italic text-primary">{m.mes}</span>
+                  <span className="font-black text-[10px] text-green-800">{formatCurrency(m.icms_pagar)} <span className="text-[8px] font-normal text-muted-foreground uppercase">(ICMS)</span></span>
+                </div>
+                <div className="p-2 grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[8px] uppercase font-black text-muted-foreground">Entrada</Label>
+                    <Input className="h-7 text-xs p-1" type="number" value={m.entrada || ''} onChange={e => handleInputChange(idx, 'entrada', e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[8px] uppercase font-black text-muted-foreground">Rec. Bruta</Label>
+                    <Input className="h-7 text-xs p-1 font-bold" type="number" value={m.receita_bruta || ''} onChange={e => handleInputChange(idx, 'receita_bruta', e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[8px] uppercase font-black text-muted-foreground">Créd. ICMS</Label>
+                    <Input className="h-7 text-xs p-1" type="number" value={m.credito_icms || ''} onChange={e => handleInputChange(idx, 'credito_icms', e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[8px] uppercase font-black text-muted-foreground">Rec. Monof.</Label>
+                    <Input className="h-7 text-xs p-1" type="number" value={m.receita_monofasica_pis_cofins || ''} onChange={e => handleInputChange(idx, 'receita_monofasica_pis_cofins', e.target.value)} />
+                  </div>
+                </div>
+                <div className="p-2 bg-primary/5 grid grid-cols-2 gap-2 border-t text-[9px] font-bold">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">PIS:</span>
+                    <span className="text-green-700">{formatCurrency(m.pis)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">COFINS:</span>
+                    <span className="text-green-700">{formatCurrency(m.cofins)}</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+            <Card className="p-3 bg-muted border-none shadow-none">
+              <div className="flex justify-between items-center mb-2 pb-1 border-b border-muted-foreground/20">
+                <span className="text-[10px] font-black uppercase">Totais Anuais</span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px]">
+                <div className="flex justify-between border-b border-muted-foreground/10 pb-1">
+                  <span className="text-muted-foreground uppercase font-medium">Rec. Bruta:</span>
+                  <span className="font-black">{formatCurrency(totals.receita_bruta)}</span>
+                </div>
+                <div className="flex justify-between border-b border-muted-foreground/10 pb-1">
+                  <span className="text-muted-foreground uppercase font-medium text-primary">DAS (PIS/COF):</span>
+                  <span className="font-black text-primary">{formatCurrency(totals.pis + totals.cofins)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground uppercase font-medium text-green-800">ICMS Pagar:</span>
+                  <span className="font-black text-green-800">{formatCurrency(totals.icms_pagar)}</span>
+                </div>
+              </div>
+            </Card>
+          </div>
         </CardContent>
       </Card>
 
       <Card className="shadow-sm border-border/60 overflow-hidden">
-        <CardHeader className="bg-muted/10 border-b py-4">
-          <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center justify-between">
+        <CardHeader className="bg-muted/10 border-b p-3 sm:py-4">
+          <CardTitle className="text-[10px] sm:text-sm font-bold uppercase tracking-wider flex items-center justify-between">
             <span>Impostos Trimestrais (IRPJ & CSLL)</span>
-            <div className="flex gap-4 text-[10px] font-normal uppercase">
-              <span className="flex items-center gap-1"><div className="w-2 h-2 bg-green-100 rounded-full"></div> CSLL: 2372</span>
-              <span className="flex items-center gap-1"><div className="w-2 h-2 bg-green-100 rounded-full"></div> IRPJ: 2089</span>
-            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full border-collapse text-[10px]">
+          {/* Desktop Table */}
+          <table className="w-full border-collapse text-[10px] hidden sm:table">
             <thead>
               <tr className="bg-muted/30 border-b">
                 <th className="p-2 border-r text-left w-20">TRIMESTRE</th>
@@ -328,16 +374,78 @@ export const LucroPresumidoForm = ({ planning, onSave }: { planning: any, onSave
               })}
             </tbody>
           </table>
+
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-2 p-2 bg-muted/5">
+            {[1, 2, 3, 4].map((q, idx) => {
+              const qData = getQuarterlyData(idx);
+              return (
+                <Card key={idx} className="overflow-hidden border-border/50 shadow-none bg-card">
+                  <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
+                    <span className="font-black text-[10px] uppercase tracking-tighter italic text-primary">{q}º TRIMESTRE</span>
+                  </div>
+                  <div className="p-2 grid grid-cols-2 gap-3">
+                    <div className="space-y-1 col-span-2 grid grid-cols-2 gap-2">
+                       <div className="flex flex-col">
+                         <span className="text-[8px] uppercase font-black text-muted-foreground">BC CSLL</span>
+                         <span className="text-[10px] font-bold">{formatCurrency(qData.bc_csll)}</span>
+                       </div>
+                       <div className="flex flex-col">
+                         <span className="text-[8px] uppercase font-black text-muted-foreground">BC IRPJ</span>
+                         <span className="text-[10px] font-bold">{formatCurrency(qData.bc_irpj)}</span>
+                       </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[8px] uppercase font-black text-muted-foreground">CSLL Retida</Label>
+                      <Input 
+                        className="h-7 text-xs p-1" 
+                        type="number" 
+                        value={quarterlyRetentions[idx].csll_retido || ''} 
+                        onChange={e => {
+                          const newRet = [...quarterlyRetentions];
+                          newRet[idx].csll_retido = parseFloat(e.target.value) || 0;
+                          setQuarterlyRetentions(newRet);
+                        }} 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[8px] uppercase font-black text-muted-foreground">IRRF Retido</Label>
+                      <Input 
+                        className="h-7 text-xs p-1" 
+                        type="number" 
+                        value={quarterlyRetentions[idx].irrf_retido || ''} 
+                        onChange={e => {
+                          const newRet = [...quarterlyRetentions];
+                          newRet[idx].irrf_retido = parseFloat(e.target.value) || 0;
+                          setQuarterlyRetentions(newRet);
+                        }} 
+                      />
+                    </div>
+                  </div>
+                  <div className="p-2 bg-green-50/30 grid grid-cols-2 gap-2 border-t text-[9px] font-bold">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground uppercase text-[8px]">CSLL a Pagar:</span>
+                      <span className="text-green-800 text-[10px]">{formatCurrency(qData.csll_pagar)}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground uppercase text-[8px]">IRPJ a Pagar:</span>
+                      <span className="text-green-800 text-[10px]">{formatCurrency(qData.irpj_pagar)}</span>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
       
-      <div className="flex justify-end pt-4">
-        <button 
+      <div className="flex justify-end pt-2 sm:pt-4">
+        <Button 
           onClick={() => onSave({ activityType, year, params, monthlyData, quarterlyRetentions })}
-          className="bg-primary text-primary-foreground px-8 py-2.5 rounded-lg font-bold shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all active:scale-95"
+          className="bg-primary text-primary-foreground h-10 sm:h-12 w-full sm:w-auto px-8 rounded-lg font-black uppercase tracking-widest shadow-lg hover:shadow-primary/20 transition-all text-xs sm:text-sm"
         >
-          Salvar Dados da Apuração
-        </button>
+          Salvar Apuração
+        </Button>
       </div>
     </div>
   );
