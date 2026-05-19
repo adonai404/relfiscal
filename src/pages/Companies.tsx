@@ -93,7 +93,13 @@ export default function Companies() {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("companies:view", viewMode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("companies:view", viewMode);
+      // Auto switch from table to grid on small screens
+      if (viewMode === "table" && window.innerWidth < 640) {
+        setViewMode("grid");
+      }
+    }
   }, [viewMode]);
 
   // Folders query
