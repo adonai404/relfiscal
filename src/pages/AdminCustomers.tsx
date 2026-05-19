@@ -1,7 +1,7 @@
  import { useState } from "react";
  import { useNavigate } from "react-router-dom";
  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
- import { ArrowLeft, Loader2, Users, Building2, Search, X, Check, UserPlus, Trash2, Plus } from "lucide-react";
+ import { ArrowLeft, Loader2, Users, Building2, Search, X, Check, UserPlus, Trash2, Plus, UserCircle } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -35,6 +35,52 @@
    const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "" });
    const [linkingCustomer, setLinkingCustomer] = useState<Customer | null>(null);
    const [companySearch, setCompanySearch] = useState("");
+   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+   const [selectedCustomerForUser, setSelectedCustomerForUser] = useState<Customer | null>(null);
+   const [newUser, setNewUser] = useState({ username: "", email: "", password: "" });
+   const [isCreatingUser, setIsCreatingUser] = useState(false);
+   const createUserForCustomer = async () => {
+     if (!selectedCustomerForUser) return;
+     setIsCreatingUser(true);
+     try {
+       // 1. Create the auth user
+       const { data: authData, error: authError } = await supabase.auth.signUp({
+         email: newUser.email,
+         password: newUser.password,
+         options: {
+           data: {
+             full_name: newUser.username,
+             username: newUser.username,
+           }
+         }
+       });
+ 
+       if (authError) throw authError;
+       if (!authData.user) throw new Error("Erro ao criar usuário");
+ 
+       // 2. The profile is usually created by a trigger, but we need to update it with the customer_id
+       // We might need to wait a bit or use a retry logic if the trigger hasn't finished
+       const { error: profileError } = await supabase
+         .from("profiles" as any)
+         .update({ 
+           customer_id: selectedCustomerForUser.id,
+           username: newUser.username,
+           status: "ativo"
+         } as any)
+         .eq("user_id", authData.user.id);
+ 
+       if (profileError) throw profileError;
+ 
+       toast.success("Usuário criado e vinculado ao cliente");
+       setIsCreateUserOpen(false);
+       setNewUser({ username: "", email: "", password: "" });
+     } catch (e: any) {
+       toast.error(e.message);
+     } finally {
+       setIsCreatingUser(false);
+     }
+   };
+ 
  
    const { data: customers = [], isLoading } = useQuery({
      queryKey: ["admin-customers"],
@@ -196,13 +242,78 @@
                          {new Date(c.created_at).toLocaleDateString("pt-BR")}
                        </TableCell>
                        <TableCell className="text-right space-x-2">
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={() => setLinkingCustomer(c)}
-                         >
-                           <Building2 className="mr-1 h-4 w-4" /> Empresas
-                         </Button>
+                         <div className="flex gap-2 justify-end">
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => {
+                               setSelectedCustomerForUser(c);
+                               setIsCreateUserOpen(true);
+                             }}
+                             title="Criar acesso para este cliente"
+                           >
+                             <UserPlus className="mr-1 h-4 w-4" /> Usuário
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => setLinkingCustomer(c)}
+                           >
+                             <Building2 className="mr-1 h-4 w-4" /> Empresas
+                           </Button>
+                         </div>
+ 
+       {/* Dialog: Criar Usuário para Cliente */}
+       <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Criar Acesso para Cliente</DialogTitle>
+             <DialogDescription>
+               Crie um login para <strong>{selectedCustomerForUser?.name}</strong>. 
+               Ele poderá acessar apenas as empresas vinculadas a este cliente.
+             </DialogDescription>
+           </DialogHeader>
+           <div className="space-y-4 py-4">
+             <div className="space-y-2">
+               <Label htmlFor="reg-username">Nome de Usuário</Label>
+               <Input 
+                 id="reg-username" 
+                 placeholder="ex: joaosilva"
+                 value={newUser.username} 
+                 onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+               />
+             </div>
+             <div className="space-y-2">
+               <Label htmlFor="reg-email">Email</Label>
+               <Input 
+                 id="reg-email" 
+                 type="email"
+                 placeholder="cliente@email.com"
+                 value={newUser.email} 
+                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+               />
+             </div>
+             <div className="space-y-2">
+               <Label htmlFor="reg-password">Senha Temporária</Label>
+               <Input 
+                 id="reg-password" 
+                 type="password"
+                 value={newUser.password} 
+                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+               />
+             </div>
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setIsCreateUserOpen(false)}>Cancelar</Button>
+             <Button 
+               onClick={createUserForCustomer} 
+               disabled={isCreatingUser || !newUser.username || !newUser.email || !newUser.password}
+             >
+               {isCreatingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Acesso"}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
                          <Button
                            size="sm"
                            variant="ghost"
