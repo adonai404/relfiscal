@@ -698,9 +698,9 @@ function SummaryCard({ label, value, accent }: { label: string; value: number; a
     accent === "primary" ? "text-primary" : "";
   return (
     <Card>
-      <CardContent className="p-4">
-        <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
-        <div className={`mt-1 text-xl font-bold ${accentClass}`}>{brl(value)}</div>
+      <CardContent className="p-3 sm:p-4">
+        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
+        <div className={`mt-0.5 sm:mt-1 text-base sm:text-xl font-bold ${accentClass}`}>{brl(value)}</div>
       </CardContent>
     </Card>
   );
@@ -714,7 +714,7 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
   const [editing, setEditing] = useState(false);
   if (readonly) {
     return (
-      <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado automaticamente">
+      <div className="w-full text-right px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-sm tabular-nums text-muted-foreground italic" title="Calculado automaticamente">
         {brl(value)}
       </div>
     );
@@ -723,7 +723,7 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
     return (
       <button
         type="button"
-        className="w-full text-right px-2 py-1.5 rounded hover:bg-accent transition text-sm tabular-nums"
+        className="w-full text-right px-1 sm:px-2 py-1 sm:py-1.5 rounded hover:bg-accent transition text-[10px] sm:text-sm tabular-nums"
         onClick={() => { setV(toEditable(value)); setEditing(true); }}
       >
         {brl(value)}
@@ -753,7 +753,7 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
         if (e.key === "Escape") setEditing(false);
       }}
       placeholder="0,00"
-      className="h-8 text-right tabular-nums"
+      className="h-7 sm:h-8 text-right tabular-nums text-[10px] sm:text-sm px-1 sm:px-2"
     />
   );
 }
