@@ -426,7 +426,7 @@ export default function Companies() {
         <CompanyTagsPicker
           companyId={c.id}
           trigger={
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
+            <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
               <TagIcon className="h-4 w-4" />
             </Button>
           }
@@ -434,7 +434,7 @@ export default function Companies() {
         {canEdit && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Mais ações">
+              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-primary" aria-label="Mais ações">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
