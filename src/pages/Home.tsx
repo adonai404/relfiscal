@@ -151,10 +151,10 @@ export default function Home() {
          </div>
        </header>
  
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 sm:py-8 sm:px-6">
-          <div className="mb-6 sm:mb-10 text-center sm:text-left">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 sm:mb-2">{getGreeting()}</h2>
-            <p className="text-muted-foreground text-base sm:text-lg">Selecione uma funcionalidade para começar.</p>
+        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:py-8 sm:px-6">
+          <div className="mb-4 sm:mb-10 text-center sm:text-left">
+            <h2 className="text-xl sm:text-3xl font-bold tracking-tight mb-1 sm:mb-2">{getGreeting()}</h2>
+            <p className="text-muted-foreground text-sm sm:text-lg">Selecione uma funcionalidade para começar.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -171,15 +171,15 @@ export default function Home() {
                  onClick={() => navigate(item.path)}
                >
                   <Card className="w-full h-full transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border-border/50 hover:border-primary/50 group-hover:bg-accent/5">
-                    <CardHeader className="p-4 sm:p-6">
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${item.bg} flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110`}>
-                        <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${item.color}`} />
+                    <CardHeader className="p-3 sm:p-6">
+                      <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl ${item.bg} flex items-center justify-center mb-1.5 sm:mb-2 transition-transform duration-300 group-hover:scale-110`}>
+                        <Icon className={`h-4.5 w-4.5 sm:h-6 sm:w-6 ${item.color}`} />
                       </div>
-                      <CardTitle className="flex items-center justify-between group-hover:text-primary transition-colors text-left text-base sm:text-lg">
+                      <CardTitle className="flex items-center justify-between group-hover:text-primary transition-colors text-left text-sm sm:text-lg">
                         {item.title}
-                        <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                       </CardTitle>
-                      <CardDescription className="text-left line-clamp-2 text-xs sm:text-sm">
+                      <CardDescription className="text-left line-clamp-2 text-[10px] sm:text-sm">
                         {item.description}
                       </CardDescription>
                    </CardHeader>

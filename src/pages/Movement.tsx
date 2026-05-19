@@ -452,14 +452,14 @@ export default function Movement() {
 
       <main className="w-full px-4 py-6 sm:px-6 print-main">
         {/* Summary cards */}
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
-          <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
-          <SummaryCard label="Total Saída" value={totals.byCol.saida || 0} />
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
+          <SummaryCard label="Entrada" value={totals.byCol.entrada || 0} accent="success" />
+          <SummaryCard label="Saída" value={totals.byCol.saida || 0} />
           {anyTaxVisible && (
-            <SummaryCard label="Total Impostos" value={totals.totalImpostos} accent="warning" />
+            <SummaryCard label="Impostos" value={totals.totalImpostos} accent="warning" />
           )}
           {showSimplesCard && (
-            <SummaryCard label="Total Simples Nacional" value={totals.totalSimples} accent="primary" />
+            <SummaryCard label="Simples" value={totals.totalSimples} accent="primary" />
           )}
           {showEconomiaCard && (
             <SummaryCard
