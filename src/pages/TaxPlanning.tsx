@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
- import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, FileUp, Package, Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, FileUp, Package, Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
- import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
- import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
- import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,12 +20,21 @@ import { toast } from "sonner";
 export default function TaxPlanning() {
   const navigate = useNavigate();
   const { companies } = useCompany();
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   const isCustomer = !!profile?.customer_id;
+
+  useEffect(() => {
+    if (!profileLoading && isCustomer) {
+      navigate("/app");
+      toast.error("Você não tem permissão para acessar o Planejamento Tributário");
+    }
+  }, [isCustomer, profileLoading, navigate]);
+
   const queryClient = useQueryClient();
-   const [isDialogOpen, setIsDialogOpen] = useState(false);
-   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
-   const [search, setSearch] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
  
    // Form state
    const [title, setTitle] = useState("");
