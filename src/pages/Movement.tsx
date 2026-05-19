@@ -498,51 +498,51 @@ export default function Movement() {
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
-              <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Reordenar Colunas</DialogTitle>
-                  </DialogHeader>
-                  <ColumnReorderDialog
-                    columns={allVisibleColumns}
-                    onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
-                  />
-                </DialogContent>
-              </Dialog>
-              {filtersActive && (
-                <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
-                  <FilterX className="mr-1 h-3 w-3" /> Limpar
-                </Button>
-              )}
-              <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
-                  <div className="space-y-2">
-                    <Label>Mês de referência</Label>
-                    <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
-                      {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+            {!isCustomer ? (
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
+                <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-            )}
-            {isCustomer && (
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Reordenar Colunas</DialogTitle>
+                    </DialogHeader>
+                    <ColumnReorderDialog
+                      columns={allVisibleColumns}
+                      onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
+                    />
+                  </DialogContent>
+                </Dialog>
+                {filtersActive && (
+                  <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
+                    <FilterX className="mr-1 h-3 w-3" /> Limpar
+                  </Button>
+                )}
+                <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
+                    <div className="space-y-2">
+                      <Label>Mês de referência</Label>
+                      <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
+                        {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) : (
               <div className="flex flex-wrap items-center gap-2 no-print">
                 <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
                 {filtersActive && (
