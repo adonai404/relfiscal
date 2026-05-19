@@ -274,7 +274,7 @@ import { parseBrNumber } from "@/lib/format";
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto fiscal-table-wrap">
-          <Table className="fiscal-table text-[11px]">
+          <Table className="fiscal-table text-[11px] hidden sm:table">
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50 uppercase tracking-tighter font-black">
                 <TableHead data-col-cat="competencia" className="p-4 border-r text-left sticky left-0 bg-muted/80 backdrop-blur-sm z-30 w-32 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Competência</TableHead>
@@ -372,7 +372,50 @@ import { parseBrNumber } from "@/lib/format";
                 </TableRow>
               )}
             </TableBody>
-            {movements && movements.length > 0 && (
+          </Table>
+
+          <div className="sm:hidden space-y-2 p-2 bg-muted/5">
+            {movements?.length === 0 && (
+              <p className="text-center text-[10px] text-muted-foreground py-8 italic uppercase tracking-widest">
+                Sem registros no período.
+              </p>
+            )}
+            {movements?.map((row) => {
+              const resolver = buildRowResolver(row, customCols, valuesByMov[row.id] ?? {});
+              return (
+                <Card key={row.id} className="overflow-hidden border-border/50 shadow-none bg-card">
+                  <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
+                    <span className="font-black text-[10px] uppercase tracking-tighter italic text-primary">{displayCompetencia(row.competencia)}</span>
+                  </div>
+                  <div className="p-2 grid grid-cols-2 gap-x-3 gap-y-2">
+                    {allVisibleColumns.map((col) => {
+                      const val = resolver(col.key as string);
+                      let displayVal = "";
+                      if (col.kind === 'custom') {
+                        displayVal = formatCustomValue(val, col.format, col.decimals);
+                      } else if (col.id === 'aliquota_simples_calc') {
+                        displayVal = formatPercent(val);
+                      } else {
+                        displayVal = formatCurrency(val);
+                      }
+                      return (
+                        <div key={col.id} className="flex flex-col gap-0.5 min-w-0">
+                          <span className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter truncate">{col.label}</span>
+                          <span className="text-[10px] font-black tabular-nums truncate tracking-tighter">
+                            {displayVal}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {movements && movements.length > 0 && (
+            <div className="hidden sm:block">
+            <Table className="fiscal-table text-[11px] w-full border-t">
               <tfoot className="bg-muted/40 font-black border-t-2 border-primary/20 sticky bottom-0 z-40 shadow-[0_-4px_6px_rgba(0,0,0,0.02)] uppercase tracking-tighter">
                 <TableRow className="hover:bg-muted/40">
                   <TableCell data-col-cat="competencia" className="p-4 border-r sticky left-0 bg-muted/80 backdrop-blur-sm z-10 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">TOTAL ACUMULADO</TableCell>
