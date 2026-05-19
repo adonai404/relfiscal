@@ -12,11 +12,20 @@ import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function TaxPlanningDetail() {
-  const { profile } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   const isCustomer = !!profile?.customer_id;
   const { id } = useParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!profileLoading && isCustomer) {
+      navigate("/app");
+      toast.error("Você não tem permissão para acessar o Planejamento Tributário");
+    }
+  }, [isCustomer, profileLoading, navigate]);
+
   const queryClient = useQueryClient();
+
 
   const { data: planning, isLoading } = useQuery({
     queryKey: ["tax_planning", id],

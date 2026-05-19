@@ -69,16 +69,16 @@ export default function Home() {
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",
     },
-    {
-      title: "Planejamento Tributário",
-      description: "Simulações de regimes fiscais",
-      icon: Calculator,
-      path: "/planejamento",
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
-      forceEnabled: true,
-    },
     ...(!isCustomer ? [
+      {
+        title: "Planejamento Tributário",
+        description: "Simulações de regimes fiscais",
+        icon: Calculator,
+        path: "/planejamento",
+        color: "text-amber-500",
+        bg: "bg-amber-500/10",
+        forceEnabled: true,
+      },
       {
         title: "Apresentação",
         description: "Cenários de economia tributária",
