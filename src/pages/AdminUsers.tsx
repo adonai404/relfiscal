@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 type Row = {
   user_id: string;
   email: string | null;
-  username: string | null;
+   username: string | null;
+   customer_id: string | null;
   status: "ativo" | "bloqueado";
   created_at: string;
   isSuperAdmin: boolean;
@@ -37,24 +39,52 @@ export default function AdminUsers() {
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
-      const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
+       const [{ data: profiles, error: pErr }, { data: roles, error: rErr }, { data: customers, error: cErr }] = await Promise.all([
         supabase
-          .from("profiles")
-          .select("user_id, email, username, status, created_at")
+           .from("profiles" as any)
+           .select("user_id, email, username, status, created_at, customer_id")
           .order("created_at", { ascending: false }),
-        supabase.from("user_roles").select("user_id, role"),
+         supabase.from("user_roles").select("user_id, role"),
+         supabase.from("customers").select("id, name"),
       ]);
-      if (pErr) throw pErr;
-      if (rErr) throw rErr;
-      const superAdmins = new Set((roles ?? []).filter((r: any) => r.role === "super_admin").map((r: any) => r.user_id));
-      return (profiles ?? []).map((p: any) => ({
-        ...p,
-        isSuperAdmin: superAdmins.has(p.user_id),
-      })) as Row[];
+       if (pErr) throw pErr;
+       if (rErr) throw rErr;
+       if (cErr) throw cErr;
+       const superAdmins = new Set((roles ?? []).filter((r: any) => r.role === "super_admin").map((r: any) => r.user_id));
+       const customerMap = new Map((customers ?? []).map((c: any) => [c.id, c.name]));
+       return (profiles ?? []).map((p: any) => ({
+         ...p,
+         isSuperAdmin: superAdmins.has(p.user_id),
+         customerName: p.customer_id ? customerMap.get(p.customer_id) : null,
+       })) as (Row & { customerName: string | null })[];
     },
   });
 
-  const [linkUser, setLinkUser] = useState<Row | null>(null);
+   const [linkUser, setLinkUser] = useState<(Row & { customerName: string | null }) | null>(null);
+   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+   const [customerUser, setCustomerUser] = useState<(Row & { customerName: string | null }) | null>(null);
+   const { data: allCustomers = [] } = useQuery({
+     queryKey: ["admin-all-customers"],
+     queryFn: async () => {
+       const { data, error } = await supabase.from("customers").select("id, name");
+       if (error) throw error;
+       return data;
+     },
+   });
+ 
+   const setCustomerMutation = useMutation({
+     mutationFn: async ({ userId, customerId }: { userId: string; customerId: string | null }) => {
+       const { error } = await supabase.from("profiles").update({ customer_id: customerId } as any).eq("user_id", userId);
+       if (error) throw error;
+     },
+     onSuccess: () => {
+       toast.success("Vínculo com cliente atualizado");
+       setIsCustomerDialogOpen(false);
+       qc.invalidateQueries({ queryKey: ["admin-users"] });
+     },
+     onError: (e: any) => toast.error(e.message),
+   });
+ 
   const [linkSearch, setLinkSearch] = useState("");
 
   const { data: allCompanies = [] } = useQuery({
@@ -118,12 +148,12 @@ export default function AdminUsers() {
   const ativos = rows.filter((r) => r.status === "ativo");
   const bloqueados = rows.filter((r) => r.status === "bloqueado");
 
-  const renderTable = (data: Row[], emptyMsg: string) => (
+   const renderTable = (data: (Row & { customerName: string | null })[], emptyMsg: string) => (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Usuário</TableHead>
-          <TableHead>Email</TableHead>
+           <TableHead>Usuário / Cliente</TableHead>
+           <TableHead>Email</TableHead>
           <TableHead>Cadastro</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
@@ -141,10 +171,27 @@ export default function AdminUsers() {
             const isSelf = r.user_id === user?.id;
             return (
               <TableRow key={r.user_id}>
-                <TableCell className="font-medium">
-                  {r.username ?? "-"}
-                  {r.isSuperAdmin && <Badge className="ml-2">super admin</Badge>}
-                </TableCell>
+                 <TableCell>
+                   <div className="font-medium">
+                     {r.username ?? "-"}
+                     {r.isSuperAdmin && <Badge className="ml-2">super admin</Badge>}
+                   </div>
+                   {r.customerName && (
+                     <div className="text-xs text-blue-600 font-medium">Cliente: {r.customerName}</div>
+                   )}
+                 </TableCell>
+                   {!isSelf && !r.isSuperAdmin && (
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       onClick={() => {
+                         setCustomerUser(r);
+                         setIsCustomerDialogOpen(true);
+                       }}
+                     >
+                       <Users className="mr-1 h-4 w-4" /> Cliente
+                     </Button>
+                   )}
                 <TableCell className="text-muted-foreground">{r.email ?? "-"}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {new Date(r.created_at).toLocaleDateString("pt-BR")}
@@ -205,7 +252,38 @@ export default function AdminUsers() {
         </div>
       </header>
 
-      <main className="w-full px-4 py-8 sm:px-6 space-y-6">
+       <main className="w-full px-4 py-8 sm:px-6 space-y-6">
+         <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
+           <DialogContent>
+             <DialogHeader>
+               <DialogTitle>Vincular Usuário a um Cliente</DialogTitle>
+               <DialogDescription>
+                 Selecione um cliente para vincular ao usuário <strong>{customerUser?.username || customerUser?.email}</strong>.
+                 Isso permitirá que o usuário visualize as empresas vinculadas a este cliente.
+               </DialogDescription>
+             </DialogHeader>
+             <div className="py-4">
+               <Select 
+                 value={customerUser?.customer_id || "none"} 
+                 onValueChange={(val) => setCustomerMutation.mutate({ userId: customerUser!.user_id, customerId: val === "none" ? null : val })}
+               >
+                 <SelectTrigger>
+                   <SelectValue placeholder="Selecione um cliente" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="none">Nenhum cliente (Acesso padrão)</SelectItem>
+                   {allCustomers.map(c => (
+                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+             <DialogFooter>
+               <Button variant="outline" onClick={() => setIsCustomerDialogOpen(false)}>Fechar</Button>
+             </DialogFooter>
+           </DialogContent>
+         </Dialog>
+ 
         <Dialog open={!!linkUser} onOpenChange={(open) => !open && setLinkUser(null)}>
           <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
