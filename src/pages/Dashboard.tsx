@@ -360,7 +360,7 @@ export default function Dashboard() {
         </div>
 
          {/* Indicadores de Carga Tributária */}
-         <div className="grid gap-4 md:grid-cols-3">
+         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
            <MiniCard
              tone="success"
              icon={<Trophy className="h-4 w-4" />}
