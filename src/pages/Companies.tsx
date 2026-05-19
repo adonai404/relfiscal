@@ -670,6 +670,7 @@ export default function Companies() {
                   <FolderPlus className="mr-2 h-4 w-4" /> Nova pasta
                 </Button>
               )}
+            </div>
           </aside>
           )}
 
