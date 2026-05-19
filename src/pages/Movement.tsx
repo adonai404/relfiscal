@@ -613,8 +613,8 @@ export default function Movement() {
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                    <TableCell colSpan={allVisibleColumns.length + 2} className="text-center text-muted-foreground py-8">
-                        {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
+                    <TableCell colSpan={allVisibleColumns.length + (isCustomer ? 1 : 2)} className="text-center text-muted-foreground py-8">
+                        {filtersActive ? "Nenhum registro corresponde aos filtros." : isCustomer ? "Nenhuma competência registrada." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -640,7 +640,7 @@ export default function Movement() {
                             <TableCell key={c} data-col-cat={col.category} className="p-1">
                               <CellEditor
                                 value={value}
-                                readonly={isCellReadonly(c)}
+                                readonly={isCustomer || isCellReadonly(c)}
                                 onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
                               />
                             </TableCell>
@@ -663,24 +663,27 @@ export default function Movement() {
                             <TableCell key={col.id} data-col-cat="custom" className="p-1">
                               <CellEditor
                                 value={current}
+                                readonly={isCustomer}
                                 onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: col.id, value: v })}
                               />
                             </TableCell>
                           );
                         }
                       })}
-                      <TableCell className="no-print">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
-                          }}
-                          aria-label="Excluir"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
+                      {!isCustomer && (
+                        <TableCell className="no-print">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                            }}
+                            aria-label="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                   {rows.length > 0 && (
@@ -702,7 +705,7 @@ export default function Movement() {
                           );
                         }
                       })}
-                      <TableCell className="no-print" />
+                      {!isCustomer && <TableCell className="no-print" />}
                     </TableRow>
                   )}
                 </TableBody>
@@ -721,16 +724,18 @@ export default function Movement() {
                     <Card key={r.id} className="overflow-hidden border-border/50 shadow-none bg-card">
                       <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
                         <span className="font-bold text-xs">{displayCompetencia(r.competencia)}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => {
-                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
-                          }}
-                          className="h-6 w-6"
-                        >
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
+                        {!isCustomer && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => {
+                              if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                            }}
+                            className="h-6 w-6"
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                       <div className="p-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
                         {allVisibleColumns.map((col) => {
