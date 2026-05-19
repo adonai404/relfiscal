@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
- import { Input } from "@/components/ui/input";
- import { Label } from "@/components/ui/label";
- import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 import { brl as formatCurrency, displayCompetencia, formatCustomValue } from "@/lib/format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertCircle, TrendingUp, Filter, FilterX } from "lucide-react";
- import { Button } from "@/components/ui/button";
- import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   ALL_COLUMNS, 
   isColumnVisible, 
@@ -50,7 +50,7 @@ import { parseBrNumber } from "@/lib/format";
        return data;
      },
    });
- 
+  
   const { data: config, isLoading: loadingConfig } = useFiscalConfig(companyId);
   const { data: customCols = [], isLoading: loadingCustomCols } = useCustomColumns(companyId);
   const { data: customValues = [], isLoading: loadingValues } = useCustomColumnValues(companyId);
@@ -214,67 +214,67 @@ import { parseBrNumber } from "@/lib/format";
      );
    }
  
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row gap-6">
+   return (
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500 px-1 sm:px-0">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
         <Card className="flex-1 shadow-sm border-border/60 overflow-hidden">
           <div className="h-1 bg-primary/20 w-full" />
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Identificação</CardTitle>
+          <CardHeader className="p-3 sm:p-6 pb-2">
+            <CardTitle className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">Identificação</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Ano Base</Label>
-              <Input className="h-10 font-bold bg-muted/5 border-primary/20 focus:border-primary transition-all" value={year} onChange={e => setYear(e.target.value)} />
+          <CardContent className="grid grid-cols-2 sm:grid-cols-2 gap-4 p-3 sm:p-6 pt-0">
+            <div className="space-y-1">
+              <Label className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground">Ano Base</Label>
+              <Input className="h-8 sm:h-10 text-xs sm:text-sm font-bold bg-muted/5 border-primary/20" value={year} onChange={e => setYear(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Enquadramento Simulado</Label>
-              <div className="h-10 flex items-center px-4 font-black text-xs bg-primary/10 text-primary rounded-md border border-primary/20 uppercase tracking-tighter italic">Simples Nacional</div>
+            <div className="space-y-1">
+              <Label className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground">Regime</Label>
+              <div className="h-8 sm:h-10 flex items-center px-2 sm:px-4 font-black text-[10px] sm:text-xs bg-primary/10 text-primary rounded-md border border-primary/20 uppercase tracking-tighter italic">Simples</div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="flex-1 shadow-sm border-border/60 overflow-hidden">
           <div className="h-1 bg-green-500/20 w-full" />
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-3 w-3" /> Resumo Consolidado
+          <CardHeader className="p-3 sm:p-6 pb-2">
+            <CardTitle className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-3 w-3" /> Resumo
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-6">
-            <div className="space-y-1 border-l-2 border-primary/30 pl-3">
-              <p className="text-[10px] uppercase font-black text-muted-foreground">Faturamento Anual</p>
-              <p className="text-xl font-black text-foreground tracking-tighter">{formatCurrency(totals.byCol.saida)}</p>
+          <CardContent className="grid grid-cols-2 gap-4 p-3 sm:p-6 pt-0">
+            <div className="space-y-0.5 border-l-2 border-primary/30 pl-2">
+              <p className="text-[9px] sm:text-[10px] uppercase font-black text-muted-foreground">Saídas</p>
+              <p className="text-sm sm:text-xl font-black text-foreground tracking-tighter truncate">{formatCurrency(totals.byCol.saida)}</p>
             </div>
-            <div className="space-y-1 border-l-2 border-green-500/30 pl-3">
-              <p className="text-[10px] uppercase font-black text-muted-foreground">DAS Total</p>
-              <p className="text-xl font-black text-green-600 tracking-tighter">{formatCurrency(totals.totalSimples)}</p>
+            <div className="space-y-0.5 border-l-2 border-green-500/30 pl-2">
+              <p className="text-[9px] sm:text-[10px] uppercase font-black text-muted-foreground">DAS Total</p>
+              <p className="text-sm sm:text-xl font-black text-green-600 tracking-tighter truncate">{formatCurrency(totals.totalSimples)}</p>
             </div>
           </CardContent>
         </Card>
       </div>
  
       <Card className="shadow-lg border-border/60 overflow-hidden print:shadow-none print:border-none">
-        <CardHeader className="bg-muted/30 border-b py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-1">
-            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-              Memória de Cálculo Sincronizada
+        <CardHeader className="bg-muted/30 border-b p-3 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-0.5">
+            <CardTitle className="text-xs sm:text-sm font-black uppercase tracking-widest">
+              Memória de Cálculo
             </CardTitle>
-            <CardDescription className="text-[10px] font-medium uppercase text-muted-foreground/70">
-              Refletindo exatamente a estrutura da aba de Movimento em tempo real
+            <CardDescription className="text-[9px] sm:text-[10px] font-medium uppercase text-muted-foreground/70">
+              Sincronizado com Movimento
             </CardDescription>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <PeriodFilter value={period} onChange={setPeriod} available={availableComps} className="h-8 text-xs" />
             {filtersActive && (
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 px-3 text-xs font-bold uppercase tracking-tight hover:text-destructive transition-colors">
-                <FilterX className="mr-2 h-3.5 w-3.5" /> Limpar Filtros
+              <Button variant="ghost" size="xs" onClick={clearAllFilters} className="h-8 px-2 text-[10px] font-bold uppercase tracking-tight">
+                <FilterX className="mr-1 h-3 w-3" /> Limpar
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto fiscal-table-wrap">
-          <Table className="fiscal-table text-[11px]">
+          <Table className="fiscal-table text-[11px] hidden sm:table">
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50 uppercase tracking-tighter font-black">
                 <TableHead data-col-cat="competencia" className="p-4 border-r text-left sticky left-0 bg-muted/80 backdrop-blur-sm z-30 w-32 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Competência</TableHead>
@@ -342,16 +342,17 @@ import { parseBrNumber } from "@/lib/format";
             </TableHeader>
             <TableBody>
               {movements?.map((row) => {
-                const resolver = buildRowResolver(row, customCols, valuesByMov[row.id] ?? {});
+                const valuesForRow = valuesByMov[row.id] ?? {};
+                const resolver = buildRowResolver(row, customCols, valuesForRow);
                 return (
                   <TableRow key={row.id} className="border-b hover:bg-primary/5 transition-colors group">
-                    <TableCell data-col-cat="competencia" className="p-4 font-bold border-r sticky left-0 bg-background group-hover:bg-primary/5 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)] transition-colors">
+                    <TableCell data-col-cat="competencia" className="p-4 font-bold border-r sticky left-0 bg-background group-hover:bg-primary/5 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)] transition-colors text-xs">
                       {displayCompetencia(row.competencia)}
                     </TableCell>
                     {allVisibleColumns.map((col) => {
                       const val = resolver(col.key as string);
                       return (
-                        <TableCell key={col.id} data-col-cat={col.category} className="p-4 border-r text-right font-medium">
+                        <TableCell key={col.id} data-col-cat={col.category} className="p-4 border-r text-right font-medium text-xs">
                           {col.kind === 'custom' 
                             ? formatCustomValue(val, col.format, col.decimals)
                             : col.id === 'aliquota_simples_calc' 
@@ -367,7 +368,7 @@ import { parseBrNumber } from "@/lib/format";
               {(!movements || movements.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={allVisibleColumns.length + 1} className="p-12 text-center text-muted-foreground font-medium italic">
-                    Nenhum registro de movimento encontrado para esta empresa no período.
+                    Nenhum registro encontrado.
                   </TableCell>
                 </TableRow>
               )}
@@ -375,7 +376,7 @@ import { parseBrNumber } from "@/lib/format";
             {movements && movements.length > 0 && (
               <tfoot className="bg-muted/40 font-black border-t-2 border-primary/20 sticky bottom-0 z-40 shadow-[0_-4px_6px_rgba(0,0,0,0.02)] uppercase tracking-tighter">
                 <TableRow className="hover:bg-muted/40">
-                  <TableCell data-col-cat="competencia" className="p-4 border-r sticky left-0 bg-muted/80 backdrop-blur-sm z-10 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">TOTAL ACUMULADO</TableCell>
+                  <TableCell data-col-cat="competencia" className="p-4 border-r sticky left-0 bg-muted/80 backdrop-blur-sm z-30 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">TOTAL</TableCell>
                   {allVisibleColumns.map((col) => {
                     const val = totals.byCol[col.key as string] || 0;
                     return (
@@ -393,17 +394,57 @@ import { parseBrNumber } from "@/lib/format";
               </tfoot>
             )}
           </Table>
+
+          <div className="sm:hidden space-y-2 p-2 bg-muted/5">
+            {movements?.length === 0 && (
+              <p className="text-center text-[10px] text-muted-foreground py-8 italic uppercase tracking-widest">
+                Sem registros no período.
+              </p>
+            )}
+            {movements?.map((row) => {
+              const valuesForRow = valuesByMov[row.id] ?? {};
+              const resolver = buildRowResolver(row, customCols, valuesForRow);
+              return (
+                <Card key={row.id} className="overflow-hidden border-border/50 shadow-none bg-card">
+                  <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
+                    <span className="font-black text-[10px] uppercase tracking-tighter italic text-primary">{displayCompetencia(row.competencia)}</span>
+                  </div>
+                  <div className="p-2 grid grid-cols-2 gap-x-3 gap-y-2">
+                    {allVisibleColumns.map((col) => {
+                      const val = resolver(col.key as string);
+                      let displayVal = "";
+                      if (col.kind === 'custom') {
+                        displayVal = formatCustomValue(val, col.format, col.decimals);
+                      } else if (col.id === 'aliquota_simples_calc') {
+                        displayVal = formatPercent(val);
+                      } else {
+                        displayVal = formatCurrency(val);
+                      }
+                      return (
+                        <div key={col.id} className="flex flex-col gap-0.5 min-w-0">
+                          <span className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter truncate">{col.label}</span>
+                          <span className="text-[10px] font-black tabular-nums truncate tracking-tighter">
+                            {displayVal}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
- 
-      <div className="flex justify-end pt-4">
+
+      <div className="flex justify-end pt-2 sm:pt-4">
         <Button 
           onClick={() => onSave({ year, totals, movements: movements?.length })}
-          className="h-12 px-10 rounded-xl font-black uppercase tracking-widest shadow-xl hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="h-10 sm:h-12 px-6 sm:px-10 rounded-xl font-black uppercase tracking-widest shadow-xl hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] text-xs sm:text-sm w-full sm:w-auto"
         >
           Gravar Planejamento
         </Button>
-     </div>
+      </div>
     </div>
   );
 };

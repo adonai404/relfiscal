@@ -407,7 +407,7 @@ export default function Movement() {
       <header className="no-print border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
+             <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Building2 className="h-5 w-5 text-primary" />
@@ -417,11 +417,11 @@ export default function Movement() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={sharePublic}>
-              <Share2 className="mr-2 h-4 w-4" /> Página pública
+            <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
+              <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir
+            <Button variant="outline" size="xs" onClick={() => window.print()} className="hidden sm:flex">
+              <Printer className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Imprimir
             </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
@@ -450,9 +450,9 @@ export default function Movement() {
         />
       </div>
 
-      <main className="w-full px-4 py-6 sm:px-6 print-main">
+      <main className="w-full px-2 py-3 sm:px-6 sm:py-6 print-main">
         {/* Summary cards */}
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
+        <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Entrada" value={totals.byCol.entrada || 0} accent="success" />
           <SummaryCard label="Saída" value={totals.byCol.saida || 0} />
           {anyTaxVisible && (
@@ -471,9 +471,9 @@ export default function Movement() {
         </div>
 
         <Card className="print-container">
-          <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+          <CardHeader className="flex flex-col gap-2 p-3 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <CardTitle>Movimento Fiscal</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Movimento Fiscal</CardTitle>
               {filtersActive && (
                 <Badge variant="secondary" className="gap-1">
                   <Filter className="h-3 w-3" />
@@ -481,7 +481,7 @@ export default function Movement() {
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 no-print">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
               <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
               <Dialog>
                 <DialogTrigger asChild>
@@ -500,8 +500,8 @@ export default function Movement() {
                 </DialogContent>
               </Dialog>
               {filtersActive && (
-                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                  <FilterX className="mr-2 h-4 w-4" /> Limpar
+                <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
+                  <FilterX className="mr-1 h-3 w-3" /> Limpar
                 </Button>
               )}
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -525,11 +525,12 @@ export default function Movement() {
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto fiscal-table-wrap">
+          <CardContent className="p-0 sm:p-6 overflow-x-auto fiscal-table-wrap">
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
-              <Table className="fiscal-table">
+              <>
+              <Table className="fiscal-table hidden sm:table">
                 <TableHeader>
                   <TableRow>
                     <TableHead data-col-cat="competencia" className="sticky left-0 bg-card">
@@ -678,6 +679,58 @@ export default function Movement() {
                   )}
                 </TableBody>
               </Table>
+
+              <div className="sm:hidden space-y-2 p-2">
+                {rows.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground py-8">
+                    {filtersActive ? "Nenhum registro encontrado." : "Nenhuma competência adicionada."}
+                  </p>
+                )}
+                {rows.map((r) => {
+                  const valuesForRow = valuesByMov[r.id] ?? {};
+                  const resolver = buildRowResolver(r, customCols, valuesForRow);
+                  return (
+                    <Card key={r.id} className="overflow-hidden border-border/50 shadow-none bg-card">
+                      <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
+                        <span className="font-bold text-xs">{displayCompetencia(r.competencia)}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => {
+                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                          }}
+                          className="h-6 w-6"
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                      <div className="p-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                        {allVisibleColumns.map((col) => {
+                          let displayVal = "";
+                          let val = 0;
+                          if (col.kind === "standard") {
+                            const c = col.id as ColumnKey;
+                            val = computeColumnValue(r, c);
+                            displayVal = isComputedColumn(c) ? formatPercent(val) : brl(val);
+                          } else {
+                            val = resolver(col.key!);
+                            displayVal = formatCustomValue(val, col.format!, col.decimals!);
+                          }
+                          return (
+                            <div key={col.id} className="flex flex-col gap-0.5 min-w-0">
+                              <span className="text-[9px] text-muted-foreground uppercase font-medium truncate">{col.label}</span>
+                              <span className="text-[11px] font-semibold tabular-nums truncate">
+                                {displayVal}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+              </>
             )}
           </CardContent>
         </Card>

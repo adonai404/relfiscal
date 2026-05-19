@@ -93,7 +93,13 @@ export default function Companies() {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("companies:view", viewMode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("companies:view", viewMode);
+      // Auto switch from table to grid on small screens
+      if (viewMode === "table" && window.innerWidth < 640) {
+        setViewMode("grid");
+      }
+    }
   }, [viewMode]);
 
   // Folders query
@@ -530,23 +536,23 @@ export default function Companies() {
         </div>
       </header>
 
-      <main className="w-full px-4 py-8 sm:px-6">
-        <div className="mb-6 flex items-center justify-between">
+      <main className="w-full px-2 py-3 sm:px-6 sm:py-6 overflow-x-hidden">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Suas empresas</h2>
-            <p className="text-sm text-muted-foreground">Organize em pastas, gerencie estados e selecione uma para o movimento fiscal</p>
+            <h2 className="text-xl sm:text-2xl font-bold">Suas empresas</h2>
+            <p className="text-[10px] sm:text-sm text-muted-foreground">Organize pastas e selecione uma para o movimento</p>
           </div>
           {canCreate && (
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={openCreateFolder}>
-                <FolderPlus className="mr-2 h-4 w-4" /> Nova pasta
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <Button variant="outline" size="xs" onClick={openCreateFolder} className="h-8 text-[10px] sm:h-9 sm:text-xs">
+                <FolderPlus className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Pasta
               </Button>
-              <Button variant="outline" onClick={() => setBatchOpen(true)}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importação
+              <Button variant="outline" size="xs" onClick={() => setBatchOpen(true)} className="h-8 text-[10px] sm:h-9 sm:text-xs">
+                <FileSpreadsheet className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Importar
               </Button>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                  <Button><Plus className="mr-2 h-4 w-4" /> Nova empresa</Button>
+                  <Button size="xs" className="h-8 text-[10px] sm:h-9 sm:text-xs"><Plus className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Empresa</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>Cadastrar empresa</DialogTitle></DialogHeader>
@@ -591,7 +597,7 @@ export default function Companies() {
           )}
         </div>
 
-        <div className={cn("grid gap-6", !isCustomer ? "lg:grid-cols-[260px_1fr]" : "grid-cols-1")}>
+        <div className={cn("grid gap-4 sm:gap-6", !isCustomer ? "lg:grid-cols-[260px_1fr]" : "grid-cols-1")}>
           {/* Sidebar de pastas */}
           {!isCustomer && (
             <aside className="space-y-2">
@@ -676,21 +682,21 @@ export default function Companies() {
 
           {/* Conteúdo */}
           <div className="min-w-0">
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CompanyStatus)}>
-                <TabsList>
-                  <TabsTrigger value="ativa">Ativas <span className="ml-2 rounded-full bg-emerald-500/20 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400">{statusCounts.ativa}</span></TabsTrigger>
-                  <TabsTrigger value="inativa">Inativas <span className="ml-2 rounded-full bg-amber-500/20 px-1.5 text-[10px] text-amber-700 dark:text-amber-400">{statusCounts.inativa}</span></TabsTrigger>
-                  <TabsTrigger value="arquivada">Arquivadas <span className="ml-2 rounded-full bg-muted px-1.5 text-[10px]">{statusCounts.arquivada}</span></TabsTrigger>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CompanyStatus)} className="w-full sm:w-auto">
+                <TabsList className="w-full sm:w-auto h-8 sm:h-10">
+                  <TabsTrigger value="ativa" className="flex-1 sm:flex-initial text-[10px] sm:text-xs">Ativas <span className="ml-1 sm:ml-2 rounded-full bg-emerald-500/20 px-1 text-[9px] sm:text-[10px] text-emerald-700 dark:text-emerald-400">{statusCounts.ativa}</span></TabsTrigger>
+                  <TabsTrigger value="inativa" className="flex-1 sm:flex-initial text-[10px] sm:text-xs">Inativas <span className="ml-1 sm:ml-2 rounded-full bg-amber-500/20 px-1 text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-400">{statusCounts.inativa}</span></TabsTrigger>
+                  <TabsTrigger value="arquivada" className="flex-1 sm:flex-initial text-[10px] sm:text-xs">Arq. <span className="ml-1 sm:ml-2 rounded-full bg-muted px-1 text-[9px] sm:text-[10px]">{statusCounts.arquivada}</span></TabsTrigger>
                 </TabsList>
               </Tabs>
-              <div className="relative w-full max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="relative w-full sm:max-w-[200px]">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Pesquisar..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-8 h-8 text-xs"
                 />
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -704,6 +710,7 @@ export default function Companies() {
                   variant="outline"
                   size="sm"
                   aria-label="Modo de visualização"
+                  className="hidden sm:inline-flex"
                 >
                   <ToggleGroupItem value="grid" aria-label="Cartões"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
                   <ToggleGroupItem value="list" aria-label="Lista"><Rows3 className="h-4 w-4" /></ToggleGroupItem>
@@ -727,7 +734,7 @@ export default function Companies() {
                 </CardContent>
               </Card>
             ) : viewMode === "grid" ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {filtered.map((c) => {
                   const regime = c.regime;
                   const status = (c.status ?? "ativa") as CompanyStatus;
@@ -743,21 +750,21 @@ export default function Companies() {
                       )}
                       onClick={() => select(c)}
                     >
-                      <CardHeader>
+                      <CardHeader className="p-3 sm:p-6 pb-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <CardTitle className="text-lg truncate">{c.nome_fantasia}</CardTitle>
-                            <CardDescription className="line-clamp-1">{c.razao_social}</CardDescription>
+                            <CardTitle className="text-sm sm:text-lg truncate">{c.nome_fantasia}</CardTitle>
+                            <CardDescription className="text-[10px] sm:text-xs line-clamp-1">{c.razao_social}</CardDescription>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            <Badge variant="outline" className={STATUS_BADGE_CLASSES[status]}>
+                            <Badge variant="outline" className={cn(STATUS_BADGE_CLASSES[status], "h-5 text-[9px] sm:text-xs")}>
                               {STATUS_LABELS[status]}
                             </Badge>
                             {renderCompanyActions(c)}
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="text-sm text-muted-foreground space-y-1">
+                      <CardContent className="p-3 sm:p-6 pt-0 text-[11px] sm:text-sm text-muted-foreground space-y-1">
                         <div>CNPJ: {formatCNPJ(c.cnpj)}</div>
                         <div className="flex items-center gap-2">
                           <span>UF: {c.uf}</span>
@@ -813,7 +820,7 @@ export default function Companies() {
                 })}
               </div>
             ) : (
-              <div className="rounded-lg border bg-card overflow-x-auto">
+              <div className="rounded-lg border bg-card overflow-x-auto hidden sm:block">
                 <Table>
                   <TableHeader>
                     <TableRow>

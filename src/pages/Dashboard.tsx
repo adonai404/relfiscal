@@ -297,7 +297,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="w-full space-y-6 px-4 py-6 sm:px-6">
+      <main className="w-full space-y-3 sm:space-y-6 px-2 py-3 sm:px-6">
         {/* Tag filter */}
         {!isCustomer && tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
@@ -333,7 +333,7 @@ export default function Dashboard() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <KpiCard
             icon={<Building2 className="h-4 w-4 sm:h-5 sm:w-5" />}
             title="Empresas Monitoradas"
@@ -361,7 +361,7 @@ export default function Dashboard() {
         </div>
 
          {/* Indicadores de Carga Tributária */}
-         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+         <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-3">
            <MiniCard
              tone="success"
              icon={<Trophy className="h-4 w-4" />}
@@ -436,11 +436,11 @@ export default function Dashboard() {
         {/* Time series + Composição */}
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Evolução Consolidada</CardTitle>
-              <CardDescription>Entradas, saídas e impostos por competência (todas as empresas)</CardDescription>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-sm sm:text-base">Evolução Consolidada</CardTitle>
+              <CardDescription className="text-[10px] sm:text-sm">Entradas, saídas e impostos por competência</CardDescription>
             </CardHeader>
-            <CardContent className="h-[320px]">
+            <CardContent className="h-[220px] sm:h-[320px] p-2 sm:p-6 pt-0">
               {metrics.serieFmt.length === 0 ? (
                 <EmptyChart />
               ) : (
@@ -465,11 +465,11 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Composição Tributária</CardTitle>
-              <CardDescription>Distribuição dos tributos pagos</CardDescription>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-sm sm:text-base">Composição Tributária</CardTitle>
+              <CardDescription className="text-[10px] sm:text-sm">Distribuição dos tributos pagos</CardDescription>
             </CardHeader>
-            <CardContent className="h-[320px]">
+            <CardContent className="h-[220px] sm:h-[320px] p-2 sm:p-6 pt-0">
               {metrics.composicao.length === 0 ? (
                 <EmptyChart />
               ) : (
@@ -495,20 +495,20 @@ export default function Dashboard() {
         {/* Rankings: Top faturamento, Top entrada, Top carga */}
         <div className="grid gap-4 lg:grid-cols-3">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-emerald-500" /> Top 5 Compras
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" /> Top 5 Compras
               </CardTitle>
-              <CardDescription>Empresas com maior volume de entrada</CardDescription>
+              <CardDescription className="text-[10px] sm:text-sm">Maiores volumes de entrada</CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            <CardContent className="h-[220px] sm:h-[300px] p-2 sm:p-6 pt-0">
               {metrics.topEntrada.length === 0 ? <EmptyChart /> : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={metrics.topEntrada} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11}
                       tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={10} width={window.innerWidth < 640 ? 80 : 120} />
                     <Tooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                       formatter={(v: number) => brl(v)}
@@ -521,20 +521,20 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-amber-500" /> Top 5 Faturamento
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" /> Top 5 Faturamento
               </CardTitle>
-              <CardDescription>Empresas com maior volume de saída</CardDescription>
+              <CardDescription className="text-[10px] sm:text-sm">Maiores volumes de saída</CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            <CardContent className="h-[220px] sm:h-[300px] p-2 sm:p-6 pt-0">
               {metrics.topFaturamento.length === 0 ? <EmptyChart /> : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={metrics.topFaturamento} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11}
                       tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={10} width={window.innerWidth < 640 ? 80 : 120} />
                     <Tooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                       formatter={(v: number) => brl(v)}
