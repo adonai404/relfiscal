@@ -120,6 +120,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
