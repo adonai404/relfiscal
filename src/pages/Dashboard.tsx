@@ -27,6 +27,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
 import { useTags, useCompanyTags } from "@/hooks/useTags";
+import { useProfile } from "@/hooks/useProfile";
 import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
 import { X } from "lucide-react";
 import { getTaxColumns, type ColumnKey, type FiscalConfig } from "@/hooks/useFiscalConfig";
@@ -52,7 +53,9 @@ const COLORS = [
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isSuperAdmin } = useUserRole();
+  const { profile } = useProfile();
+  const isCustomer = !!profile?.customer_id;
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -268,7 +271,7 @@ export default function Dashboard() {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/empresas" replace />;
+  if (!isSuperAdmin && !isCustomer) return <Navigate to="/empresas" replace />;
 
   return (
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
@@ -279,8 +282,8 @@ export default function Dashboard() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Activity className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">Dashboard Administrativo</h1>
-            <Badge variant="secondary" className="ml-2">Admin</Badge>
+            <h1 className="text-lg font-semibold">{isCustomer ? "Meus Indicadores" : "Dashboard Administrativo"}</h1>
+            <Badge variant="secondary" className="ml-2">{isCustomer ? "Cliente" : "Admin"}</Badge>
           </div>
           <div className="flex items-center gap-2">
             <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
