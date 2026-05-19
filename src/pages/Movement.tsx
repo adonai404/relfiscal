@@ -406,16 +406,31 @@ export default function Movement() {
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="no-print border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Building2 className="h-5 w-5 text-primary" />
-            <div>
-              <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
-              <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
-            </div>
-          </div>
+            {/* View-only mode for customers: hide all input/edit actions */}
+            {!isCustomer && (
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Building2 className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
+                  <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
+                </div>
+              </div>
+            )}
+            {isCustomer && (
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Building2 className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
+                  <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)}</div>
+                </div>
+              </div>
+            )}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
               <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
@@ -461,13 +476,13 @@ export default function Movement() {
           {showSimplesCard && (
             <SummaryCard label="Simples" value={totals.totalSimples} accent="primary" />
           )}
-          {showEconomiaCard && (
-            <SummaryCard
-              label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
-              value={Math.abs(totals.economia)}
-              accent={totals.economia >= 0 ? "success" : "destructive"}
-            />
-          )}
+            {showEconomiaCard && !isCustomer && (
+              <SummaryCard
+                label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
+                value={Math.abs(totals.economia)}
+                accent={totals.economia >= 0 ? "success" : "destructive"}
+              />
+            )}
         </div>
 
         <Card className="print-container">
