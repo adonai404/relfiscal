@@ -461,30 +461,30 @@ export default function TaxPlanning() {
                                        {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
                                      </Badge>
                                        {!isCustomer && (
-                                       </DropdownMenu>
+                                         <DropdownMenu>
+                                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                             <Button variant="ghost" size="icon" className="h-8 w-8">
+                                               <MoreVertical className="h-4 w-4" />
+                                             </Button>
+                                           </DropdownMenuTrigger>
+                                           <DropdownMenuContent align="end">
+                                             <DropdownMenuItem disabled className="text-xs font-semibold">
+                                               Mover para Grupo
+                                             </DropdownMenuItem>
+                                             <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
+                                               Nenhum
+                                             </DropdownMenuItem>
+                                             {groups.map((g: any) => (
+                                               <DropdownMenuItem 
+                                                 key={g.id} 
+                                                 onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                               >
+                                                 {g.name}
+                                               </DropdownMenuItem>
+                                             ))}
+                                           </DropdownMenuContent>
+                                         </DropdownMenu>
                                        )}
-                                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                         <Button variant="ghost" size="icon" className="h-8 w-8">
-                                           <MoreVertical className="h-4 w-4" />
-                                         </Button>
-                                       </DropdownMenuTrigger>
-                                       <DropdownMenuContent align="end">
-                                         <DropdownMenuItem disabled className="text-xs font-semibold">
-                                           Mover para Grupo
-                                         </DropdownMenuItem>
-                                         <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
-                                           Nenhum
-                                         </DropdownMenuItem>
-                                         {groups.map((g: any) => (
-                                           <DropdownMenuItem 
-                                             key={g.id} 
-                                             onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
-                                           >
-                                             {g.name}
-                                           </DropdownMenuItem>
-                                         ))}
-                                       </DropdownMenuContent>
-                                     </DropdownMenu>
                                    </div>
                                  </div>
                                  <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>
