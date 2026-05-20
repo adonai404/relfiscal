@@ -515,6 +515,7 @@ export default function Movement() {
                 <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
                   <Settings className="mr-2 h-4 w-4" /> Configurações
                 </Button>
+                <Dialog open={configOpen} onOpenChange={setConfigOpen}>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Configurações da Empresa</DialogTitle>
