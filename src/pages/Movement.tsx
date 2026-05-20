@@ -512,12 +512,9 @@ export default function Movement() {
             </div>
             {!isCustomer ? (
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
-                <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" /> Configurações
-                    </Button>
-                  </DialogTrigger>
+                <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
+                  <Settings className="mr-2 h-4 w-4" /> Configurações
+                </Button>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Configurações da Empresa</DialogTitle>
