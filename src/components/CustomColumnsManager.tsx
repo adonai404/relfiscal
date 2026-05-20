@@ -21,9 +21,10 @@ import { type Formula, type FormulaToken, slugifyKey, validateFormula, formulaTo
 interface Props {
   companyId: string;
   config: FiscalConfig | null | undefined;
+  hideCard?: boolean;
 }
 
-export function CustomColumnsManager({ companyId, config }: Props) {
+export function CustomColumnsManager({ companyId, config, hideCard }: Props) {
   const { data: columns = [], isLoading } = useCustomColumns(companyId);
   const createMut = useCreateCustomColumn(companyId);
   const updateMut = useUpdateCustomColumn(companyId);
