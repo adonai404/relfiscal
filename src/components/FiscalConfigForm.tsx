@@ -100,7 +100,7 @@ export function FiscalConfigForm({ config, onSuccess }: FiscalConfigFormProps) {
           <ScrollArea className="h-[300px] pr-4">
             <div className="grid gap-3">
               <div className="space-y-1.5">
-                <Label size="sm">Competência</Label>
+                <Label className="text-xs">Competência</Label>
                 <Input 
                   value={formData.label_competencia || ""} 
                   onChange={(e) => handleLabelChange("competencia" as any, e.target.value)}
@@ -108,7 +108,7 @@ export function FiscalConfigForm({ config, onSuccess }: FiscalConfigFormProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label size="sm">Entrada</Label>
+                <Label className="text-xs">Entrada</Label>
                 <Input 
                   value={formData.label_entrada || ""} 
                   onChange={(e) => handleLabelChange("entrada" as any, e.target.value)}
@@ -116,7 +116,7 @@ export function FiscalConfigForm({ config, onSuccess }: FiscalConfigFormProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label size="sm">Saída</Label>
+                <Label className="text-xs">Saída</Label>
                 <Input 
                   value={formData.label_saida || ""} 
                   onChange={(e) => handleLabelChange("saida" as any, e.target.value)}
@@ -125,7 +125,7 @@ export function FiscalConfigForm({ config, onSuccess }: FiscalConfigFormProps) {
               </div>
               {TOGGLEABLE_COLUMNS.map((col) => (
                 <div key={col} className="space-y-1.5">
-                  <Label size="sm">{getColumnLabel(undefined, col)}</Label>
+                  <Label className="text-xs">{getColumnLabel(undefined, col)}</Label>
                   <Input 
                     value={(formData as any)[`label_${col}`] || ""} 
                     onChange={(e) => handleLabelChange(col, e.target.value)}
@@ -159,7 +159,7 @@ export function FiscalConfigForm({ config, onSuccess }: FiscalConfigFormProps) {
               type="number"
               step="0.01"
               value={formData.aliquota_simples_nacional || 0}
-              onChange={(e) => handleToggle("aliquota_simples_nacional", parseFloat(e.target.value) || 0)}
+              onChange={(e) => setFormData(prev => ({ ...prev, aliquota_simples_nacional: parseFloat(e.target.value) || 0 }))}
               placeholder="0,00"
             />
             <p className="text-xs text-muted-foreground">
