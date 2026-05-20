@@ -1,4 +1,3 @@
- import ApiConnection from "./pages/ApiConnection.tsx";
  import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -17,9 +16,9 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Combo from "./pages/Combo.tsx";
 import Movement from "./pages/Movement.tsx";
 import Presentation from "./pages/Presentation.tsx";
+import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
- import AdminUsers from "./pages/AdminUsers.tsx";
- import AdminCustomers from "./pages/AdminCustomers.tsx";
+import AdminUsers from "./pages/AdminUsers.tsx";
  import TaxPlanning from "./pages/TaxPlanning.tsx";
  import TaxPlanningDetail from "./pages/TaxPlanningDetail.tsx";
 import ProfileSettings from "./pages/ProfileSettings.tsx";
@@ -46,11 +45,10 @@ const App = () => (
                 <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
                 <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
                 <Route path="/apresentacao" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
+                <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                  <Route path="/planejamento" element={<ProtectedRoute><TaxPlanning /></ProtectedRoute>} />
                  <Route path="/planejamento/:id" element={<ProtectedRoute><TaxPlanningDetail /></ProtectedRoute>} />
-                 <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-                 <Route path="/conexao-api" element={<ProtectedRoute><ApiConnection /></ProtectedRoute>} />
-                 <Route path="/admin/clientes" element={<ProtectedRoute requireSuperAdmin><AdminCustomers /></ProtectedRoute>} />
+                <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
                 <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

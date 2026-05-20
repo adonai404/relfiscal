@@ -1,38 +1,23 @@
- import { SimplesNacionalPlanningForm } from "@/components/SimplesNacionalPlanningForm";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Loader2, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
- import { LucroPresumidoForm } from "@/components/LucroPresumidoForm";
- import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
+import { LucroPresumidoForm } from "@/components/LucroPresumidoForm";
 import { toast } from "sonner";
 
-import { useProfile } from "@/hooks/useProfile";
-
 export default function TaxPlanningDetail() {
-  const { profile, isLoading: profileLoading } = useProfile();
-  const isCustomer = !!profile?.customer_id;
   const { id } = useParams();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!profileLoading && isCustomer) {
-      navigate("/app");
-      toast.error("Você não tem permissão para acessar o Planejamento Tributário");
-    }
-  }, [isCustomer, profileLoading, navigate]);
-
   const queryClient = useQueryClient();
-
 
   const { data: planning, isLoading } = useQuery({
     queryKey: ["tax_planning", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tax_planning")
-         .select("*, companies(nome_fantasia, razao_social, cnpj)")
+        .select("*, companies(nome_fantasia, razao_social)")
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -88,31 +73,12 @@ export default function TaxPlanningDetail() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6">
-        {planning?.tax_regime === 'LUCRO PRESUMIDO' && (
+        {planning?.tax_regime === 'LUCRO PRESUMIDO' ? (
           <LucroPresumidoForm 
             planning={planning} 
-            onSave={isCustomer ? undefined : (data) => updateMutation.mutate(data)} 
+            onSave={(data) => updateMutation.mutate(data)} 
           />
-        )}
- 
-         {planning?.tax_regime === 'POR PRODUTO (XML)' && (
-           <TaxPlanningProductXML 
-             planningId={id} 
-             companyId={planning?.company_id} 
-             companyCnpj={planning?.companies?.cnpj} 
-           />
-         )}
- 
-         {planning?.tax_regime === 'SIMPLES NACIONAL' && (
-           <SimplesNacionalPlanningForm 
-             planning={planning} 
-            onSave={isCustomer ? undefined : (data) => updateMutation.mutate(data)} 
-          />
-        )}
- 
-         {planning?.tax_regime !== 'LUCRO PRESUMIDO' && 
-          planning?.tax_regime !== 'POR PRODUTO (XML)' && 
-          planning?.tax_regime !== 'SIMPLES NACIONAL' && (
+        ) : (
           <div className="text-center py-20 bg-muted/20 rounded-xl border border-dashed">
             <h2 className="text-xl font-semibold mb-2">Regime em desenvolvimento</h2>
             <p className="text-muted-foreground">O formulário para {planning?.tax_regime} ainda está sendo preparado.</p>

@@ -59,9 +59,8 @@ export default function Companies() {
   const { user, loading, signOut } = useAuth();
   const { companies, loadingCompanies, setSelectedCompany, refetch } = useCompany();
   const { isSuperAdmin } = useUserRole();
-  const { profile, isActive } = useProfile();
-  const isCustomer = !!profile?.customer_id;
-  const canCreate = (isActive || isSuperAdmin) && !isCustomer;
+  const { isActive } = useProfile();
+  const canCreate = isActive || isSuperAdmin;
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -93,13 +92,7 @@ export default function Companies() {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("companies:view", viewMode);
-      // Auto switch from table to grid on small screens
-      if (viewMode === "table" && window.innerWidth < 640) {
-        setViewMode("grid");
-      }
-    }
+    if (typeof window !== "undefined") localStorage.setItem("companies:view", viewMode);
   }, [viewMode]);
 
   // Folders query
@@ -122,16 +115,10 @@ export default function Companies() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
-    const select = (c: Company) => {
-      setSelectedCompany(c);
-      const searchParams = new URLSearchParams(window.location.search);
-      const redirectTo = searchParams.get("redirect");
-      if (redirectTo) {
-        navigate(redirectTo);
-      } else {
-        navigate(`/movimento?company=${c.id}`);
-      }
-    };
+   const select = (c: Company) => {
+     setSelectedCompany(c);
+     navigate(`/movimento?company=${c.id}`);
+   };
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -424,7 +411,6 @@ export default function Companies() {
   };
 
   const renderCompanyActions = (c: Company) => {
-    if (isCustomer) return null;
     const canEdit = isSuperAdmin || c.created_by === user.id;
     const status = (c.status ?? "ativa") as CompanyStatus;
     return (
@@ -432,7 +418,7 @@ export default function Companies() {
         <CompanyTagsPicker
           companyId={c.id}
           trigger={
-            <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Gerenciar tags">
               <TagIcon className="h-4 w-4" />
             </Button>
           }
@@ -440,7 +426,7 @@ export default function Companies() {
         {canEdit && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-primary" aria-label="Mais ações">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Mais ações">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -519,13 +505,13 @@ export default function Companies() {
                 <Users className="mr-2 h-4 w-4" /> Usuários
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="hidden sm:inline-flex">
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
               <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/apresentacao")} className="hidden sm:inline-flex">
+            <Button variant="outline" size="sm" onClick={() => navigate("/apresentacao")}>
               <PresentationIcon className="mr-2 h-4 w-4" /> Apresentação
             </Button>
-            <Button variant="default" size="sm" onClick={() => navigate("/combo")} className="hidden sm:inline-flex">
+            <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
               <Layers className="mr-2 h-4 w-4" /> Combo
             </Button>
             <ThemeToggle />
@@ -536,23 +522,23 @@ export default function Companies() {
         </div>
       </header>
 
-      <main className="w-full px-2 py-3 sm:px-6 sm:py-6 overflow-x-hidden">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <main className="w-full px-4 py-8 sm:px-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold">Suas empresas</h2>
-            <p className="text-[10px] sm:text-sm text-muted-foreground">Organize pastas e selecione uma para o movimento</p>
+            <h2 className="text-2xl font-bold">Suas empresas</h2>
+            <p className="text-sm text-muted-foreground">Organize em pastas, gerencie estados e selecione uma para o movimento fiscal</p>
           </div>
           {canCreate && (
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <Button variant="outline" size="xs" onClick={openCreateFolder} className="h-8 text-[10px] sm:h-9 sm:text-xs">
-                <FolderPlus className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Pasta
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={openCreateFolder}>
+                <FolderPlus className="mr-2 h-4 w-4" /> Nova pasta
               </Button>
-              <Button variant="outline" size="xs" onClick={() => setBatchOpen(true)} className="h-8 text-[10px] sm:h-9 sm:text-xs">
-                <FileSpreadsheet className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Importar
+              <Button variant="outline" onClick={() => setBatchOpen(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importação
               </Button>
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                  <Button size="xs" className="h-8 text-[10px] sm:h-9 sm:text-xs"><Plus className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" /> Empresa</Button>
+                  <Button><Plus className="mr-2 h-4 w-4" /> Nova empresa</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>Cadastrar empresa</DialogTitle></DialogHeader>
@@ -597,10 +583,9 @@ export default function Companies() {
           )}
         </div>
 
-        <div className={cn("grid gap-4 sm:gap-6", !isCustomer ? "lg:grid-cols-[260px_1fr]" : "grid-cols-1")}>
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
           {/* Sidebar de pastas */}
-          {!isCustomer && (
-            <aside className="space-y-2">
+          <aside className="space-y-2">
             <div className="rounded-lg border bg-card p-2">
               <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Pastas
@@ -677,26 +662,28 @@ export default function Companies() {
                 </Button>
               )}
             </div>
+            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+              💡 Arraste uma empresa para uma pasta para movê-la.
+            </div>
           </aside>
-          )}
 
           {/* Conteúdo */}
           <div className="min-w-0">
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CompanyStatus)} className="w-full sm:w-auto">
-                <TabsList className="w-full sm:w-auto h-8 sm:h-10">
-                  <TabsTrigger value="ativa" className="flex-1 sm:flex-initial text-[10px] sm:text-xs">Ativas <span className="ml-1 sm:ml-2 rounded-full bg-emerald-500/20 px-1 text-[9px] sm:text-[10px] text-emerald-700 dark:text-emerald-400">{statusCounts.ativa}</span></TabsTrigger>
-                  <TabsTrigger value="inativa" className="flex-1 sm:flex-initial text-[10px] sm:text-xs">Inativas <span className="ml-1 sm:ml-2 rounded-full bg-amber-500/20 px-1 text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-400">{statusCounts.inativa}</span></TabsTrigger>
-                  <TabsTrigger value="arquivada" className="flex-1 sm:flex-initial text-[10px] sm:text-xs">Arq. <span className="ml-1 sm:ml-2 rounded-full bg-muted px-1 text-[9px] sm:text-[10px]">{statusCounts.arquivada}</span></TabsTrigger>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CompanyStatus)}>
+                <TabsList>
+                  <TabsTrigger value="ativa">Ativas <span className="ml-2 rounded-full bg-emerald-500/20 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400">{statusCounts.ativa}</span></TabsTrigger>
+                  <TabsTrigger value="inativa">Inativas <span className="ml-2 rounded-full bg-amber-500/20 px-1.5 text-[10px] text-amber-700 dark:text-amber-400">{statusCounts.inativa}</span></TabsTrigger>
+                  <TabsTrigger value="arquivada">Arquivadas <span className="ml-2 rounded-full bg-muted px-1.5 text-[10px]">{statusCounts.arquivada}</span></TabsTrigger>
                 </TabsList>
               </Tabs>
-              <div className="relative w-full sm:max-w-[200px]">
-                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <div className="relative w-full max-w-sm">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Pesquisar..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-8 text-xs"
+                  className="pl-9"
                 />
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -710,7 +697,6 @@ export default function Companies() {
                   variant="outline"
                   size="sm"
                   aria-label="Modo de visualização"
-                  className="hidden sm:inline-flex"
                 >
                   <ToggleGroupItem value="grid" aria-label="Cartões"><LayoutGrid className="h-4 w-4" /></ToggleGroupItem>
                   <ToggleGroupItem value="list" aria-label="Lista"><Rows3 className="h-4 w-4" /></ToggleGroupItem>
@@ -734,7 +720,7 @@ export default function Companies() {
                 </CardContent>
               </Card>
             ) : viewMode === "grid" ? (
-              <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {filtered.map((c) => {
                   const regime = c.regime;
                   const status = (c.status ?? "ativa") as CompanyStatus;
@@ -750,33 +736,33 @@ export default function Companies() {
                       )}
                       onClick={() => select(c)}
                     >
-                      <CardHeader className="p-3 sm:p-6 pb-2">
+                      <CardHeader>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <CardTitle className="text-sm sm:text-lg truncate">{c.nome_fantasia}</CardTitle>
-                            <CardDescription className="text-[10px] sm:text-xs line-clamp-1">{c.razao_social}</CardDescription>
+                            <CardTitle className="text-lg truncate">{c.nome_fantasia}</CardTitle>
+                            <CardDescription className="line-clamp-1">{c.razao_social}</CardDescription>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            <Badge variant="outline" className={cn(STATUS_BADGE_CLASSES[status], "h-5 text-[9px] sm:text-xs")}>
+                            <Badge variant="outline" className={STATUS_BADGE_CLASSES[status]}>
                               {STATUS_LABELS[status]}
                             </Badge>
                             {renderCompanyActions(c)}
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="p-3 sm:p-6 pt-0 text-[11px] sm:text-sm text-muted-foreground space-y-1">
+                      <CardContent className="text-sm text-muted-foreground space-y-1">
                         <div>CNPJ: {formatCNPJ(c.cnpj)}</div>
                         <div className="flex items-center gap-2">
                           <span>UF: {c.uf}</span>
                           {regime && <Badge variant="secondary" className="text-[10px]">{regimeLabels[regime] ?? regime}</Badge>}
                         </div>
-                        {!isCustomer && c.folder_id && (
+                        {c.folder_id && (
                           <div className="flex items-center gap-1.5 text-xs">
                             <Folder className="h-3 w-3" style={{ color: folders.find((f) => f.id === c.folder_id)?.color }} />
                             {folders.find((f) => f.id === c.folder_id)?.name ?? "Pasta"}
                           </div>
                         )}
-                        {!isCustomer && <div className="pt-1"><CompanyTagsChips companyId={c.id} /></div>}
+                        <div className="pt-1"><CompanyTagsChips companyId={c.id} /></div>
                       </CardContent>
                     </Card>
                   );
@@ -820,7 +806,7 @@ export default function Companies() {
                 })}
               </div>
             ) : (
-              <div className="rounded-lg border bg-card overflow-x-auto hidden sm:block">
+              <div className="rounded-lg border bg-card overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>

@@ -1,1 +1,0 @@
-CREATE POLICY "Super admin insert companies" ON public.companies FOR INSERT TO authenticated WITH CHECK (public.is_super_admin(auth.uid()));

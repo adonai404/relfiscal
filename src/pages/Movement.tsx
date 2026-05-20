@@ -120,7 +120,6 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
@@ -135,7 +134,6 @@ import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
   buildRowResolver,
 } from "@/hooks/useCustomColumns";
-import { FiscalConfigForm } from "@/components/FiscalConfigForm";
 
 interface MovementRow {
   id: string;
@@ -153,16 +151,10 @@ interface MovementRow {
   cofins: number;
   irpj: number;
   csll: number;
-  nfe_saida: number;
-  nfe_entrada: number;
-  cupom: number;
-  servico: number;
 }
 
 export default function Movement() {
   const { signOut } = useAuth();
-  const { profile } = useProfile();
-  const isCustomer = !!profile?.customer_id;
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -410,37 +402,25 @@ export default function Movement() {
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="no-print border-b bg-card/60 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-            {/* View-only mode for customers: hide all input/edit actions */}
-            {!isCustomer && (
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Building2 className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
-                  <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
-                </div>
-              </div>
-            )}
-            {isCustomer && (
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon-sm" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Building2 className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
-                  <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)}</div>
-                </div>
-              </div>
-            )}
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
-              <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
+          <div className="flex items-center gap-3">
+             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="xs" onClick={() => window.print()} className="hidden sm:flex">
-              <Printer className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Imprimir
+            <Building2 className="h-5 w-5 text-primary" />
+            <div>
+              <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
+              <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes")}>
+              <Settings className="mr-2 h-4 w-4" /> Configurações
+            </Button>
+            <Button variant="outline" size="sm" onClick={sharePublic}>
+              <Share2 className="mr-2 h-4 w-4" /> Página pública
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimir
             </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
@@ -469,30 +449,30 @@ export default function Movement() {
         />
       </div>
 
-      <main className="w-full px-2 py-3 sm:px-6 sm:py-6 print-main">
+      <main className="w-full px-4 py-6 sm:px-6 print-main">
         {/* Summary cards */}
-        <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5 print-cards">
-          <SummaryCard label="Entrada" value={totals.byCol.entrada || 0} accent="success" />
-          <SummaryCard label="Saída" value={totals.byCol.saida || 0} />
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
+          <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
+          <SummaryCard label="Total Saída" value={totals.byCol.saida || 0} />
           {anyTaxVisible && (
-            <SummaryCard label="Impostos" value={totals.totalImpostos} accent="warning" />
+            <SummaryCard label="Total Impostos" value={totals.totalImpostos} accent="warning" />
           )}
           {showSimplesCard && (
-            <SummaryCard label="Simples" value={totals.totalSimples} accent="primary" />
+            <SummaryCard label="Total Simples Nacional" value={totals.totalSimples} accent="primary" />
           )}
-            {showEconomiaCard && !isCustomer && (
-              <SummaryCard
-                label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
-                value={Math.abs(totals.economia)}
-                accent={totals.economia >= 0 ? "success" : "destructive"}
-              />
-            )}
+          {showEconomiaCard && (
+            <SummaryCard
+              label={totals.economia >= 0 ? "No Simples paga MENOS" : "No Simples paga MAIS"}
+              value={Math.abs(totals.economia)}
+              accent={totals.economia >= 0 ? "success" : "destructive"}
+            />
+          )}
         </div>
 
         <Card className="print-container">
-          <CardHeader className="flex flex-col gap-2 p-3 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
+          <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm sm:text-base">Movimento Fiscal</CardTitle>
+              <CardTitle>Movimento Fiscal</CardTitle>
               {filtersActive && (
                 <Badge variant="secondary" className="gap-1">
                   <Filter className="h-3 w-3" />
@@ -500,80 +480,55 @@ export default function Movement() {
                 </Badge>
               )}
             </div>
-            {!isCustomer ? (
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
-                <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" /> Configurações
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Configurações da Empresa</DialogTitle>
-                    </DialogHeader>
-                    {config && <FiscalConfigForm config={config} />}
-                  </DialogContent>
-                </Dialog>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Reordenar Colunas</DialogTitle>
-                    </DialogHeader>
-                    <ColumnReorderDialog
-                      columns={allVisibleColumns}
-                      onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
-                    />
-                  </DialogContent>
-                </Dialog>
-                {filtersActive && (
-                  <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
-                    <FilterX className="mr-1 h-3 w-3" /> Limpar
+            <div className="flex flex-wrap items-center gap-2 no-print">
+              <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ArrowLeftRight className="mr-2 h-4 w-4" /> Reordenar Colunas
                   </Button>
-                )}
-                <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
-                    <div className="space-y-2">
-                      <Label>Mês de referência</Label>
-                      <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
-                        {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2 no-print">
-                <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
-                {filtersActive && (
-                  <Button variant="ghost" size="xs" onClick={clearAllFilters} className="sm:size-sm">
-                    <FilterX className="mr-1 h-3 w-3" /> Limpar
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Reordenar Colunas</DialogTitle>
+                  </DialogHeader>
+                  <ColumnReorderDialog
+                    columns={allVisibleColumns}
+                    onSave={(newOrder) => updateColumnOrder.mutate(newOrder)}
+                  />
+                </DialogContent>
+              </Dialog>
+              {filtersActive && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                  <FilterX className="mr-2 h-4 w-4" /> Limpar
+                </Button>
+              )}
+              <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Competência
                   </Button>
-                )}
-              </div>
-            )}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Nova competência</DialogTitle></DialogHeader>
+                  <div className="space-y-2">
+                    <Label>Mês de referência</Label>
+                    <Input type="month" value={newComp} onChange={(e) => setNewComp(e.target.value)} />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => addRow.mutate(newComp)} disabled={addRow.isPending}>
+                      {addRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Adicionar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
-          <CardContent className="p-0 sm:p-6 overflow-x-auto fiscal-table-wrap">
+          <CardContent className="overflow-x-auto fiscal-table-wrap">
             {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : (
-              <>
-              <Table className="fiscal-table hidden sm:table">
+              <Table className="fiscal-table">
                 <TableHeader>
                   <TableRow>
                     <TableHead data-col-cat="competencia" className="sticky left-0 bg-card">
@@ -622,14 +577,14 @@ export default function Movement() {
                         </TableHead>
                       );
                     })}
-                    {!isCustomer && <TableHead className="no-print"></TableHead>}
+                    <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 && (
                     <TableRow>
-                    <TableCell colSpan={allVisibleColumns.length + (isCustomer ? 1 : 2)} className="text-center text-muted-foreground py-8">
-                        {filtersActive ? "Nenhum registro corresponde aos filtros." : isCustomer ? "Nenhuma competência registrada." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
+                    <TableCell colSpan={allVisibleColumns.length + 2} className="text-center text-muted-foreground py-8">
+                        {filtersActive ? "Nenhum registro corresponde aos filtros." : "Nenhuma competência ainda. Clique em \"Adicionar Competência\"."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -655,7 +610,7 @@ export default function Movement() {
                             <TableCell key={c} data-col-cat={col.category} className="p-1">
                               <CellEditor
                                 value={value}
-                                readonly={isCustomer || isCellReadonly(c)}
+                                readonly={isCellReadonly(c)}
                                 onCommit={(v) => updateCell.mutate({ id: r.id, field: c as keyof MovementRow, value: v })}
                               />
                             </TableCell>
@@ -678,27 +633,24 @@ export default function Movement() {
                             <TableCell key={col.id} data-col-cat="custom" className="p-1">
                               <CellEditor
                                 value={current}
-                                readonly={isCustomer}
                                 onCommit={(v) => upsertCustom.mutate({ movement_id: r.id, column_id: col.id, value: v })}
                               />
                             </TableCell>
                           );
                         }
                       })}
-                      {!isCustomer && (
-                        <TableCell className="no-print">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
-                            }}
-                            aria-label="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      )}
+                      <TableCell className="no-print">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
+                          }}
+                          aria-label="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {rows.length > 0 && (
@@ -720,65 +672,11 @@ export default function Movement() {
                           );
                         }
                       })}
-                      {!isCustomer && <TableCell className="no-print" />}
+                      <TableCell className="no-print" />
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
-
-              <div className="sm:hidden space-y-2 p-2">
-                {rows.length === 0 && (
-                  <p className="text-center text-xs text-muted-foreground py-8">
-                    {filtersActive ? "Nenhum registro encontrado." : "Nenhuma competência adicionada."}
-                  </p>
-                )}
-                {rows.map((r) => {
-                  const valuesForRow = valuesByMov[r.id] ?? {};
-                  const resolver = buildRowResolver(r, customCols, valuesForRow);
-                  return (
-                    <Card key={r.id} className="overflow-hidden border-border/50 shadow-none bg-card">
-                      <div className="p-2 bg-muted/20 border-b flex items-center justify-between">
-                        <span className="font-bold text-xs">{displayCompetencia(r.competencia)}</span>
-                        {!isCustomer && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => {
-                              if (confirm(`Excluir competência ${displayCompetencia(r.competencia)}?`)) deleteRow.mutate(r.id);
-                            }}
-                            className="h-6 w-6"
-                          >
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="p-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
-                        {allVisibleColumns.map((col) => {
-                          let displayVal = "";
-                          let val = 0;
-                          if (col.kind === "standard") {
-                            const c = col.id as ColumnKey;
-                            val = computeColumnValue(r, c);
-                            displayVal = isComputedColumn(c) ? formatPercent(val) : brl(val);
-                          } else {
-                            val = resolver(col.key!);
-                            displayVal = formatCustomValue(val, col.format!, col.decimals!);
-                          }
-                          return (
-                            <div key={col.id} className="flex flex-col gap-0.5 min-w-0">
-                              <span className="text-[9px] text-muted-foreground uppercase font-medium truncate">{col.label}</span>
-                              <span className="text-[11px] font-semibold tabular-nums truncate">
-                                {displayVal}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-              </>
             )}
           </CardContent>
         </Card>
@@ -799,9 +697,9 @@ function SummaryCard({ label, value, accent }: { label: string; value: number; a
     accent === "primary" ? "text-primary" : "";
   return (
     <Card>
-      <CardContent className="p-3 sm:p-4">
-        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
-        <div className={`mt-0.5 sm:mt-1 text-base sm:text-xl font-bold ${accentClass}`}>{brl(value)}</div>
+      <CardContent className="p-4">
+        <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
+        <div className={`mt-1 text-xl font-bold ${accentClass}`}>{brl(value)}</div>
       </CardContent>
     </Card>
   );
@@ -815,7 +713,7 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
   const [editing, setEditing] = useState(false);
   if (readonly) {
     return (
-      <div className="w-full text-right px-1 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-sm tabular-nums text-muted-foreground italic" title="Calculado automaticamente">
+      <div className="w-full text-right px-2 py-1.5 text-sm tabular-nums text-muted-foreground italic" title="Calculado automaticamente">
         {brl(value)}
       </div>
     );
@@ -824,7 +722,7 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
     return (
       <button
         type="button"
-        className="w-full text-right px-1 sm:px-2 py-1 sm:py-1.5 rounded hover:bg-accent transition text-[10px] sm:text-sm tabular-nums"
+        className="w-full text-right px-2 py-1.5 rounded hover:bg-accent transition text-sm tabular-nums"
         onClick={() => { setV(toEditable(value)); setEditing(true); }}
       >
         {brl(value)}
@@ -854,7 +752,7 @@ function CellEditor({ value, onCommit, readonly }: { value: number; onCommit: (v
         if (e.key === "Escape") setEditing(false);
       }}
       placeholder="0,00"
-      className="h-7 sm:h-8 text-right tabular-nums text-[10px] sm:text-sm px-1 sm:px-2"
+      className="h-8 text-right tabular-nums"
     />
   );
 }

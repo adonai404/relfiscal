@@ -5,17 +5,16 @@ import { useAuth } from "./useAuth";
 import { useUserRole } from "./useUserRole";
 
 export interface Company {
-   id: string;
-   cnpj: string;
-   razao_social: string;
-   nome_fantasia: string;
-   uf: string;
-   slug: string;
-   status?: "ativa" | "inativa" | "arquivada";
-   folder_id?: string | null;
-   regime?: string;
-   created_by?: string | null;
-   api_key?: string | null;
+  id: string;
+  cnpj: string;
+  razao_social: string;
+  nome_fantasia: string;
+  uf: string;
+  slug: string;
+  status?: "ativa" | "inativa" | "arquivada";
+  folder_id?: string | null;
+  regime?: string;
+  created_by?: string | null;
 }
 
 interface CompanyCtx {
@@ -44,11 +43,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const { data: companies = [], isLoading, refetch } = useQuery({
     queryKey: ["companies", user?.id, isSuperAdmin],
     enabled: !!user,
-     queryFn: async () => {
-       let query = supabase
-         .from("companies")
-         .select("id, cnpj, razao_social, nome_fantasia, uf, slug, regime, created_by, status, folder_id, api_key")
-         .order("nome_fantasia");
+    queryFn: async () => {
+      let query = supabase
+        .from("companies")
+        .select("id, cnpj, razao_social, nome_fantasia, uf, slug, regime, created_by, status, folder_id")
+        .order("nome_fantasia");
 
       // RLS now handles visibility based on user_has_company_access
       const { data, error } = await query;

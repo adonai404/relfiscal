@@ -1,40 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, FileUp, Package, Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+ import { ChevronLeft, Plus, Calculator, Loader2, Search, Building2, Briefcase, FolderPlus, Folder, MoreVertical, Layers, FileUp, Package, Trash2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ import { TaxPlanningProductXML } from "@/components/TaxPlanningProductXML";
+ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/hooks/useCompany";
-import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 
 export default function TaxPlanning() {
   const navigate = useNavigate();
   const { companies } = useCompany();
-  const { profile, isLoading: profileLoading } = useProfile();
-  const isCustomer = !!profile?.customer_id;
-
-  useEffect(() => {
-    if (!profileLoading && isCustomer) {
-      navigate("/app");
-      toast.error("Você não tem permissão para acessar o Planejamento Tributário");
-    }
-  }, [isCustomer, profileLoading, navigate]);
-
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
-  const [search, setSearch] = useState("");
-
+   const [isDialogOpen, setIsDialogOpen] = useState(false);
+   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+   const [search, setSearch] = useState("");
  
    // Form state
    const [title, setTitle] = useState("");
@@ -101,24 +89,7 @@ export default function TaxPlanning() {
        toast.success("Grupo atualizado com sucesso!");
      },
    });
- 
-   const deletePlanningMutation = useMutation({
-     mutationFn: async (id: string) => {
-       const { error } = await supabase
-         .from("tax_planning")
-         .delete()
-         .eq("id", id);
-       if (error) throw error;
-     },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ["tax_planning"] });
-       toast.success("Planejamento excluído com sucesso!");
-     },
-     onError: (error: any) => {
-       toast.error(error.message || "Erro ao excluir planejamento");
-     },
-   });
- 
+
    const createMutation = useMutation({
      mutationFn: async (planningData: any) => {
        const { groupId, ...rest } = planningData;
@@ -178,8 +149,7 @@ export default function TaxPlanning() {
             <h1 className="text-lg font-bold">Planejamento Tributário</h1>
           </div>
 
-           {!isCustomer && (
-             <div className="flex gap-2">
+           <div className="flex gap-2">
              <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
                <DialogTrigger asChild>
                  <Button variant="outline">
@@ -261,11 +231,10 @@ export default function TaxPlanning() {
                          <SelectValue placeholder="Selecione o regime" />
                        </SelectTrigger>
                        <SelectContent>
-                          <SelectItem value="SIMPLES NACIONAL">SIMPLES NACIONAL</SelectItem>
-                          <SelectItem value="LUCRO REAL">LUCRO REAL</SelectItem>
-                          <SelectItem value="LUCRO PRESUMIDO">LUCRO PRESUMIDO</SelectItem>
-                          <SelectItem value="POR PRODUTO (XML)">POR PRODUTO (XML)</SelectItem>
-                        </SelectContent>
+                         <SelectItem value="SIMPLES NACIONAL">SIMPLES NACIONAL</SelectItem>
+                         <SelectItem value="LUCRO REAL">LUCRO REAL</SelectItem>
+                         <SelectItem value="LUCRO PRESUMIDO">LUCRO PRESUMIDO</SelectItem>
+                       </SelectContent>
                      </Select>
                    </div>
                    <div className="grid gap-2">
@@ -295,7 +264,6 @@ export default function TaxPlanning() {
             </DialogContent>
              </Dialog>
            </div>
-           )}
         </div>
       </header>
 +
@@ -310,11 +278,16 @@ export default function TaxPlanning() {
           />
         </div>
 +
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="groups">Grupos</TabsTrigger>
-            </TabsList>
+         <Tabs defaultValue="all" className="w-full">
+           <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
+             <TabsTrigger value="all">Todos</TabsTrigger>
+             <TabsTrigger value="groups">Grupos</TabsTrigger>
+             <TabsTrigger value="products">Por Produto (XML)</TabsTrigger>
+           </TabsList>
+
+           <TabsContent value="products" className="mt-6">
+             <TaxPlanningProductXML />
+           </TabsContent>
 
            <TabsContent value="all" className="mt-6">
              {isLoading ? (
@@ -353,8 +326,7 @@ export default function TaxPlanning() {
                            <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
                              {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
                            </Badge>
-                            {!isCustomer && (
-                            <DropdownMenu>
+                           <DropdownMenu>
                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                <Button variant="ghost" size="icon" className="h-8 w-8">
                                  <MoreVertical className="h-4 w-4" />
@@ -367,30 +339,16 @@ export default function TaxPlanning() {
                                <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
                                  Nenhum
                                </DropdownMenuItem>
-                                {groups.map((g: any) => (
-                                  <DropdownMenuItem 
-                                    key={g.id} 
-                                    onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
-                                  >
-                                    {g.name}
-                                  </DropdownMenuItem>
-                                ))}
-                                <div className="h-px bg-muted my-1" />
-                                <DropdownMenuItem 
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm("Tem certeza que deseja excluir este planejamento?")) {
-                                      deletePlanningMutation.mutate(p.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Excluir
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            )}
+                               {groups.map((g: any) => (
+                                 <DropdownMenuItem 
+                                   key={g.id} 
+                                   onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                 >
+                                   {g.name}
+                                 </DropdownMenuItem>
+                               ))}
+                             </DropdownMenuContent>
+                           </DropdownMenu>
                          </div>
                        </div>
                        <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>
@@ -469,31 +427,29 @@ export default function TaxPlanning() {
                                      <Badge variant={p.status === 'draft' ? 'secondary' : 'default'}>
                                        {p.status === 'draft' ? 'Rascunho' : 'Finalizado'}
                                      </Badge>
-                                       {!isCustomer && (
-                                         <DropdownMenu>
-                                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                                               <MoreVertical className="h-4 w-4" />
-                                             </Button>
-                                           </DropdownMenuTrigger>
-                                           <DropdownMenuContent align="end">
-                                             <DropdownMenuItem disabled className="text-xs font-semibold">
-                                               Mover para Grupo
-                                             </DropdownMenuItem>
-                                             <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
-                                               Nenhum
-                                             </DropdownMenuItem>
-                                             {groups.map((g: any) => (
-                                               <DropdownMenuItem 
-                                                 key={g.id} 
-                                                 onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
-                                               >
-                                                 {g.name}
-                                               </DropdownMenuItem>
-                                             ))}
-                                           </DropdownMenuContent>
-                                         </DropdownMenu>
-                                       )}
+                                     <DropdownMenu>
+                                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                         <Button variant="ghost" size="icon" className="h-8 w-8">
+                                           <MoreVertical className="h-4 w-4" />
+                                         </Button>
+                                       </DropdownMenuTrigger>
+                                       <DropdownMenuContent align="end">
+                                         <DropdownMenuItem disabled className="text-xs font-semibold">
+                                           Mover para Grupo
+                                         </DropdownMenuItem>
+                                         <DropdownMenuItem onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: null })}>
+                                           Nenhum
+                                         </DropdownMenuItem>
+                                         {groups.map((g: any) => (
+                                           <DropdownMenuItem 
+                                             key={g.id} 
+                                             onClick={() => updatePlanningGroupMutation.mutate({ planningId: p.id, groupId: g.id })}
+                                           >
+                                             {g.name}
+                                           </DropdownMenuItem>
+                                         ))}
+                                       </DropdownMenuContent>
+                                     </DropdownMenu>
                                    </div>
                                  </div>
                                  <CardTitle className="mt-4 text-lg line-clamp-1">{p.title}</CardTitle>

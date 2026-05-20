@@ -1,21 +1,25 @@
-Restaurarei o painel de configurações por empresa dentro da tela de **Movimento**, permitindo o ajuste de rótulos, visibilidade de colunas e taxas do Simples Nacional, conforme solicitado. Também removerei o acesso às configurações globais da tela inicial, centralizando a gestão na empresa selecionada.
+# Planejamento: Implementar módulo de Planejamento Tributário / Lucro Presumido
 
-### Alterações técnicas:
+## Objetivo
+Criar uma interface detalhada e funcional para apuração mensal e trimestral de impostos para empresas no Lucro Presumido.
 
-1.  **Componente `FiscalConfigForm`**: Criarei um novo componente `src/components/FiscalConfigForm.tsx` (já que o original não foi encontrado) que gerenciará:
-    *   **Rótulos de Colunas**: Campos de texto para personalizar o nome de cada coluna (ICMS, PIS, COFINS, etc.).
-    *   **Visibilidade**: Switches para ativar/desativar a exibição de colunas específicas.
-    *   **Cálculo Automático**: Configuração da alíquota do Simples Nacional e toggle para cálculo automático.
-    *   **Colunas de Imposto**: Seleção de quais colunas compõem o total de "Impostos" nos KPIs.
+## Arquitetura de UI
+1. **Cabeçalho:** Informações da empresa e parâmetros de cálculo (campos editáveis).
+2. **Tabela Mensal:** 12 meses (Janeiro - Dezembro) com colunas solicitadas para cálculos automáticos.
+3. **Impostos Trimestrais:** Bloco inferior para apuração trimestral (BC CSLL/IRPJ, retenções, impostos a pagar).
+4. **Resumo:** Códigos de receita em destaque.
 
-2.  **Integração no `Movement.tsx`**:
-    *   Adicionarei um botão de engrenagem (**Settings**) no cabeçalho ou barra de ferramentas (apenas para não-clientes).
-    *   Abrirei um `Dialog` contendo o `FiscalConfigForm`.
-    *   Garantirei que as alterações sejam salvas via `useUpdateFiscalConfig` e invalidem o cache para atualização instantânea da tabela.
+## Detalhes Técnicos
+- **Estado Local:** Utilizar `useState` complexo ou `useReducer` para gerenciar a tabela de dados mensal, permitindo edições e recalculos automáticos.
+- **Cálculos:** Implementar as fórmulas especificadas para PIS, COFINS, ICMS (com crédito), CSLL e IRPJ (com adicional).
+- **Formatadores:** Helper functions para formatar valores como BRL (R$ 1.234,56) e percentuais (0,65%).
+- **Persistência:** Utilizar o campo `data` (JSONB) na tabela `tax_planning` para salvar o estado completo da simulação.
 
-3.  **Ajuste na `Home.tsx`**:
-    *   Removerei o item "Minha Conta" do grid de funcionalidades da tela inicial.
-    *   O usuário ainda poderá acessar configurações de perfil se desejar através de outros meios, mas a "aba de configurações" principal solicitada para sair da home será removida.
+## Estrutura de Componentes
+- `LucroPresumidoForm`: Componente principal que renderiza toda a lógica de apuração.
+- `TaxPlanningDetail`: Nova página que carrega o planejamento existente e exibe o `LucroPresumidoForm`.
 
-4.  **Limitação de Acesso**:
-    *   O botão de configurações dentro do Movimento será ocultado para perfis de **Cliente** (`isCustomer`), mantendo o modo apenas leitura para eles.
+## Plano de Execução
+1. Criar `LucroPresumidoForm.tsx`.
+2. Atualizar `TaxPlanning.tsx` para redirecionar para a página de edição/detalhe ao clicar em um planejamento.
+3. Implementar a lógica de cálculo dentro do componente para oferecer feedback em tempo real.

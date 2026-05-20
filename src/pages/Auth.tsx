@@ -227,6 +227,11 @@ export default function Auth() {
                            />
                          </div>
                        </div>
+                       <div className="rounded-lg bg-primary/5 p-3 border border-primary/10">
+                         <p className="text-xs text-primary/80 leading-relaxed text-center">
+                           O primeiro usuário cadastrado torna-se automaticamente o administrador do sistema.
+                         </p>
+                       </div>
                        <Button type="submit" className="w-full h-11 text-base font-semibold transition-all hover:translate-y-[-1px] active:translate-y-[1px]" disabled={submitting}>
                          {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <>Criar minha conta <ArrowRight className="ml-2 h-4 w-4" /></>}
                        </Button>

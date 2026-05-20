@@ -27,7 +27,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
 import { useTags, useCompanyTags } from "@/hooks/useTags";
-import { useProfile } from "@/hooks/useProfile";
 import { tagBadgeStyle } from "@/components/CompanyTagsPicker";
 import { X } from "lucide-react";
 import { getTaxColumns, type ColumnKey, type FiscalConfig } from "@/hooks/useFiscalConfig";
@@ -53,9 +52,7 @@ const COLORS = [
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
-  const { isSuperAdmin } = useUserRole();
-  const { profile } = useProfile();
-  const isCustomer = !!profile?.customer_id;
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -271,35 +268,34 @@ export default function Dashboard() {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isSuperAdmin && !isCustomer) return <Navigate to="/empresas" replace />;
+  if (!isAdmin) return <Navigate to="/empresas" replace />;
 
   return (
     <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="flex w-full flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar" className="h-8 w-8">
+             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Activity className="h-5 w-5 text-primary" />
-            <h1 className="text-base font-semibold sm:text-lg">{isCustomer ? "Meus Indicadores" : "Dashboard Administrativo"}</h1>
-            <Badge variant="secondary" className="ml-1 text-[10px] sm:ml-2 sm:text-xs">{isCustomer ? "Cliente" : "Admin"}</Badge>
+            <h1 className="text-lg font-semibold">Dashboard Administrativo</h1>
+            <Badge variant="secondary" className="ml-2">Admin</Badge>
           </div>
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
+          <div className="flex items-center gap-2">
             <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
-            <div className="flex items-center gap-1 sm:gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" className="h-8 w-8">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
+            <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="w-full space-y-3 sm:space-y-6 px-2 py-3 sm:px-6">
+      <main className="w-full space-y-6 px-4 py-6 sm:px-6">
         {/* Tag filter */}
-        {!isCustomer && tags.length > 0 && (
+        {tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card/50 p-3">
             <span className="text-xs font-medium text-muted-foreground">Filtrar por tag:</span>
             {tags.map((t) => {
@@ -333,35 +329,35 @@ export default function Dashboard() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KpiCard
-            icon={<Building2 className="h-4 w-4 sm:h-5 sm:w-5" />}
+            icon={<Building2 className="h-5 w-5" />}
             title="Empresas Monitoradas"
             value={String(filteredCompanies.length)}
-            hint={`${metrics.ativas.length} ativas`}
+            hint={`${metrics.ativas.length} ativas · ${metrics.inativas.length} sem dados`}
           />
           <KpiCard
-            icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />}
-            title="Faturamento"
-            value={brl(metrics.totals.saida)}
+           icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+           title="Faturamento Consolidado"
+           value={brl(metrics.totals.saida)}
            hint={`Entradas ${brl(metrics.totals.entrada)}`}
          />
          <KpiCard
-            icon={<Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />}
-            title="Total Impostos"
-            value={brl(metrics.totalImpostos)}
+           icon={<Wallet className="h-5 w-5 text-primary" />}
+           title="Total de Impostos"
+           value={brl(metrics.totalImpostos)}
            hint="Conforme configuração fiscal"
          />
           <KpiCard
-            icon={<Percent className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />}
-            title="Carga Global"
+            icon={<Percent className="h-5 w-5 text-amber-500" />}
+            title="Carga Tributária Global"
             value={`${(metrics.cargaTributaria * 100).toFixed(2)}%`}
             hint={`${brl(metrics.totalImpostos)} em tributos`}
           />
         </div>
 
          {/* Indicadores de Carga Tributária */}
-         <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-3">
+         <div className="grid gap-4 md:grid-cols-3">
            <MiniCard
              tone="success"
              icon={<Trophy className="h-4 w-4" />}
@@ -436,11 +432,11 @@ export default function Dashboard() {
         {/* Time series + Composição */}
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-sm sm:text-base">Evolução Consolidada</CardTitle>
-              <CardDescription className="text-[10px] sm:text-sm">Entradas, saídas e impostos por competência</CardDescription>
+            <CardHeader>
+              <CardTitle>Evolução Consolidada</CardTitle>
+              <CardDescription>Entradas, saídas e impostos por competência (todas as empresas)</CardDescription>
             </CardHeader>
-            <CardContent className="h-[220px] sm:h-[320px] p-2 sm:p-6 pt-0">
+            <CardContent className="h-[320px]">
               {metrics.serieFmt.length === 0 ? (
                 <EmptyChart />
               ) : (
@@ -465,11 +461,11 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-sm sm:text-base">Composição Tributária</CardTitle>
-              <CardDescription className="text-[10px] sm:text-sm">Distribuição dos tributos pagos</CardDescription>
+            <CardHeader>
+              <CardTitle>Composição Tributária</CardTitle>
+              <CardDescription>Distribuição dos tributos pagos</CardDescription>
             </CardHeader>
-            <CardContent className="h-[220px] sm:h-[320px] p-2 sm:p-6 pt-0">
+            <CardContent className="h-[320px]">
               {metrics.composicao.length === 0 ? (
                 <EmptyChart />
               ) : (
@@ -495,20 +491,20 @@ export default function Dashboard() {
         {/* Rankings: Top faturamento, Top entrada, Top carga */}
         <div className="grid gap-4 lg:grid-cols-3">
           <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" /> Top 5 Compras
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-500" /> Top 5 Compras
               </CardTitle>
-              <CardDescription className="text-[10px] sm:text-sm">Maiores volumes de entrada</CardDescription>
+              <CardDescription>Empresas com maior volume de entrada</CardDescription>
             </CardHeader>
-            <CardContent className="h-[220px] sm:h-[300px] p-2 sm:p-6 pt-0">
+            <CardContent className="h-[300px]">
               {metrics.topEntrada.length === 0 ? <EmptyChart /> : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={metrics.topEntrada} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11}
                       tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={10} width={window.innerWidth < 640 ? 80 : 120} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
                     <Tooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                       formatter={(v: number) => brl(v)}
@@ -521,20 +517,20 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" /> Top 5 Faturamento
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-500" /> Top 5 Faturamento
               </CardTitle>
-              <CardDescription className="text-[10px] sm:text-sm">Maiores volumes de saída</CardDescription>
+              <CardDescription>Empresas com maior volume de saída</CardDescription>
             </CardHeader>
-            <CardContent className="h-[220px] sm:h-[300px] p-2 sm:p-6 pt-0">
+            <CardContent className="h-[300px]">
               {metrics.topFaturamento.length === 0 ? <EmptyChart /> : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={metrics.topFaturamento} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11}
                       tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={10} width={window.innerWidth < 640 ? 80 : 120} />
+                    <YAxis type="category" dataKey="nome_fantasia" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
                     <Tooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                       formatter={(v: number) => brl(v)}
@@ -573,7 +569,7 @@ export default function Dashboard() {
         </div>
 
         {/* Distribuição por UF + Ranking detalhado */}
-        <div className="hidden md:grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -663,13 +659,13 @@ export default function Dashboard() {
 function KpiCard({ icon, title, value, hint }: { icon: React.ReactNode; title: string; value: string; hint?: string }) {
   return (
     <Card className="overflow-hidden">
-      <CardContent className="p-3 sm:p-5">
-        <div className="mb-1 sm:mb-2 flex items-center justify-between">
-          <p className="text-[10px] sm:text-sm text-muted-foreground font-medium uppercase tracking-wider sm:normal-case sm:tracking-normal">{title}</p>
-          <div className="rounded-md bg-muted/60 p-1.5 sm:p-2">{icon}</div>
+      <CardContent className="p-5">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <div className="rounded-md bg-muted/60 p-2">{icon}</div>
         </div>
-        <p className="text-lg sm:text-2xl font-bold tracking-tight">{value}</p>
-        {hint && <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-muted-foreground truncate">{hint}</p>}
+        <p className="text-2xl font-bold tracking-tight">{value}</p>
+        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
       </CardContent>
     </Card>
   );
@@ -684,12 +680,12 @@ function MiniCard({
     : "border-primary/30 bg-primary/5";
   return (
     <Card className={`border ${toneClass}`}>
-      <CardContent className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-        <div className="rounded-md bg-card p-1.5 sm:p-2">{icon}</div>
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className="rounded-md bg-card p-2">{icon}</div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] sm:text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg sm:text-xl font-bold leading-tight">{value}</p>
-          {sub && <p className="truncate text-[10px] sm:text-xs text-muted-foreground">{sub}</p>}
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-bold">{value}</p>
+          {sub && <p className="truncate text-xs text-muted-foreground">{sub}</p>}
         </div>
       </CardContent>
     </Card>

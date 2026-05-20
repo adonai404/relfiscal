@@ -1,48 +1,16 @@
- import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator, Settings as SettingsIcon, ShieldCheck, Link2, Users } from "lucide-react";
  import { useNavigate } from "react-router-dom";
- import { useQuery } from "@tanstack/react-query";
- import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator } from "lucide-react";
  import { useAuth } from "@/hooks/useAuth";
  import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { ThemeToggle } from "@/components/ThemeToggle";
  
-export default function Home() {
+ export default function Home() {
   const { user, signOut } = useAuth();
-  const { data: profileData } = useQuery({
-    queryKey: ["profile-details", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("status, customer_id")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.role;
-    },
-  });
-
-  const isSuperAdmin = userRole === "super_admin";
-  const isCustomer = !!profileData?.customer_id;
-  const { selectedCompany } = useCompany();
-  const navigate = useNavigate();
-
+   const { selectedCompany } = useCompany();
+   const navigate = useNavigate();
+ 
   const getGreeting = () => {
     const hour = new Date().getHours();
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
@@ -52,32 +20,22 @@ export default function Home() {
     return `Boa noite, ${userName}`;
   };
 
-  const menuItems = [
-    {
-      title: "Movimento",
-      description: "Lançamentos fiscais e conciliação",
-      icon: ArrowLeftRight,
-      path: "/empresas",
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-    },
-    {
-      title: "Dashboard",
-      description: "Visão geral e indicadores",
-      icon: LayoutDashboard,
-      path: "/dashboard",
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
-    },
-    ...(!isCustomer ? [
+    const menuItems = [
       {
-        title: "Planejamento Tributário",
-        description: "Simulações de regimes fiscais",
-        icon: Calculator,
-        path: "/planejamento",
-        color: "text-amber-500",
-        bg: "bg-amber-500/10",
-        forceEnabled: true,
+        title: "Movimento",
+        description: "Lançamentos fiscais e conciliação",
+        icon: ArrowLeftRight,
+        path: "/empresas",
+        color: "text-blue-500",
+        bg: "bg-blue-500/10",
+      },
+      {
+        title: "Dashboard",
+        description: "Visão geral e indicadores",
+        icon: LayoutDashboard,
+        path: "/dashboard",
+        color: "text-emerald-500",
+        bg: "bg-emerald-500/10",
       },
       {
         title: "Apresentação",
@@ -88,37 +46,24 @@ export default function Home() {
         bg: "bg-purple-500/10",
       },
       {
-        title: "Conexão API",
-        description: "Integração externa de dados",
-        icon: Link2,
-        path: "/conexao-api",
-        color: "text-indigo-500",
-        bg: "bg-indigo-500/10",
-        forceEnabled: true,
-      },
-    ] : []),
-    // Minha Conta removed as per request to centralize settings in Movement
-    ...(isSuperAdmin ? [
-      {
-        title: "Clientes",
-        description: "Gerenciar grupos de empresas por cliente",
-        icon: Users,
-        path: "/admin/clientes",
-        color: "text-blue-600",
-        bg: "bg-blue-600/10",
+        title: "Planejamento Tributário",
+        description: "Simulações de regimes fiscais",
+        icon: Calculator,
+        path: "/planejamento",
+        color: "text-amber-500",
+        bg: "bg-amber-500/10",
         forceEnabled: true,
       },
       {
-        title: "Administração",
-        description: "Gerenciar usuários e permissões",
-        icon: ShieldCheck,
-        path: "/admin/usuarios",
-        color: "text-rose-500",
-        bg: "bg-rose-500/10",
+        title: "Minha Conta",
+        description: "Perfil, senha e segurança",
+        icon: UserCog,
+        path: "/minha-conta",
+        color: "text-orange-500",
+        bg: "bg-orange-500/10",
         forceEnabled: true,
-      }
-    ] : []),
-  ];
+      },
+    ];
  
    return (
      <div className="min-h-screen w-full flex flex-col" style={{ background: "var(--gradient-subtle)" }}>
@@ -143,16 +88,17 @@ export default function Home() {
          </div>
        </header>
  
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:py-8 sm:px-6">
-          <div className="mb-4 sm:mb-10 text-center sm:text-left">
-            <h2 className="text-xl sm:text-3xl font-bold tracking-tight mb-1 sm:mb-2">{getGreeting()}</h2>
-            <p className="text-muted-foreground text-sm sm:text-lg">Selecione uma funcionalidade para começar.</p>
-          </div>
+       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 sm:px-6">
+         <div className="mb-10 text-center sm:text-left">
+           <h2 className="text-3xl font-bold tracking-tight mb-2">{getGreeting()}</h2>
+           <p className="text-muted-foreground text-lg">Selecione uma funcionalidade para começar.</p>
+         </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {menuItems.map((item, idx) => {
              const Icon = item.icon;
-               const isDisabled = false;
+              // Allow "Minha Conta" to be clicked even if no company is selected
+              const isDisabled = !selectedCompany && !(item as any).forceEnabled;
              return (
                <Button
                  key={item.path}
@@ -162,18 +108,18 @@ export default function Home() {
                  style={{ animationDelay: `${idx * 100}ms` }}
                  onClick={() => navigate(item.path)}
                >
-                  <Card className="w-full h-full transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border-border/50 hover:border-primary/50 group-hover:bg-accent/5">
-                    <CardHeader className="p-3 sm:p-6">
-                      <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl ${item.bg} flex items-center justify-center mb-1.5 sm:mb-2 transition-transform duration-300 group-hover:scale-110`}>
-                        <Icon className={`h-4.5 w-4.5 sm:h-6 sm:w-6 ${item.color}`} />
-                      </div>
-                      <CardTitle className="flex items-center justify-between group-hover:text-primary transition-colors text-left text-sm sm:text-lg">
-                        {item.title}
-                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      </CardTitle>
-                      <CardDescription className="text-left line-clamp-2 text-[10px] sm:text-sm">
-                        {item.description}
-                      </CardDescription>
+                 <Card className="w-full h-full transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border-border/50 hover:border-primary/50 group-hover:bg-accent/5">
+                   <CardHeader>
+                     <div className={`w-12 h-12 rounded-2xl ${item.bg} flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110`}>
+                       <Icon className={`h-6 w-6 ${item.color}`} />
+                     </div>
+                     <CardTitle className="flex items-center justify-between group-hover:text-primary transition-colors text-left">
+                       {item.title}
+                       <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                     </CardTitle>
+                     <CardDescription className="text-left line-clamp-2">
+                       {item.description}
+                     </CardDescription>
                    </CardHeader>
                  </Card>
                </Button>
