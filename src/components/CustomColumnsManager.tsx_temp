@@ -1,0 +1,181 @@
+import { useMemo, useState } from "react";
+import { Plus, Trash2, Pencil, Calculator, X, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  type CustomColumn,
+  useCustomColumns, useCreateCustomColumn, useDeleteCustomColumn, useUpdateCustomColumn,
+} from "@/hooks/useCustomColumns";
+import {
+  type ColumnKey, ALL_COLUMNS, COMPUTED_COLUMNS, getColumnLabel, type FiscalConfig,
+} from "@/hooks/useFiscalConfig";
+import { type Formula, type FormulaToken, slugifyKey, validateFormula, formulaToText } from "@/lib/formula";
+
+interface Props {
+  companyId: string;
+  config: FiscalConfig | null | undefined;
+}
+
+export function CustomColumnsManager({ companyId, config }: Props) {
+  const { data: columns = [], isLoading } = useCustomColumns(companyId);
+  const createMut = useCreateCustomColumn(companyId);
+  const updateMut = useUpdateCustomColumn(companyId);
+  const deleteMut = useDeleteCustomColumn(companyId);
+  const [editing, setEditing] = useState<CustomColumn | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const labelOf = useMemo(() => {
+    return (key: string): string => {
+      const cc = columns.find((c) => c.key === key);
+      if (cc) return cc.label;
+      return getColumnLabel(config ?? undefined, key as ColumnKey);
+    };
+  }, [columns, config]);
+
+  const handleSave = async (
+    data: { label: string; kind: "manual" | "formula"; formula: Formula; decimals: number; format: "currency" | "percent" },
+    existing?: CustomColumn,
+  ) => {
+    const label = data.label.trim();
+    if (!label) return toast.error("Informe um nome para a coluna");
+    if (data.kind === "formula") {
+      const err = validateFormula(data.formula);
+      if (err) return toast.error(`Fórmula inválida: ${err}`);
+    }
+    try {
+      if (existing) {
+        await updateMut.mutateAsync({
+          id: existing.id,
+          patch: { label, kind: data.kind, formula: data.formula, decimals: data.decimals, format: data.format },
+        });
+        toast.success("Coluna atualizada");
+      } else {
+        // generate unique key from label
+        let baseKey = slugifyKey(label);
+        const existingKeys = new Set([...columns.map((c) => c.key), ...ALL_COLUMNS]);
+        let k = baseKey, i = 2;
+        while (existingKeys.has(k)) { k = `${baseKey}_${i++}`; }
+        await createMut.mutateAsync({
+          key: k, label, kind: data.kind, formula: data.formula, decimals: data.decimals, format: data.format,
+          position: columns.length,
+        });
+        toast.success("Coluna criada");
+      }
+      setEditing(null);
+      setCreating(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const move = (col: CustomColumn, dir: -1 | 1) => {
+    const sorted = [...columns].sort((a, b) => a.position - b.position);
+    const idx = sorted.findIndex((c) => c.id === col.id);
+    const swap = sorted[idx + dir];
+    if (!swap) return;
+    updateMut.mutate({ id: col.id, patch: { position: swap.position } });
+    updateMut.mutate({ id: swap.id, patch: { position: col.position } });
+  };
+
+  const toggleVisible = (col: CustomColumn, v: boolean) => {
+    updateMut.mutate({ id: col.id, patch: { visible: v } }, {
+      onSuccess: () => toast.success(`${col.label} ${v ? "ativada" : "ocultada"}`),
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Colunas Personalizadas</h3>
+          <p className="text-[10px] text-muted-foreground">Crie colunas manuais ou com fórmulas.</p>
+        </div>
+        <Button size="xs" onClick={() => setCreating(true)}>
+          <Plus className="mr-2 h-3 w-3" /> Nova
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+      ) : columns.length === 0 ? (
+        <p className="text-[10px] text-muted-foreground py-4 text-center border rounded-lg bg-muted/20">
+          Nenhuma coluna personalizada ainda.
+        </p>
+      ) : (
+        <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+          {[...columns].sort((a, b) => a.position - b.position).map((col, i, arr) => (
+            <div key={col.id} className="flex items-center gap-2 rounded-lg border p-2 bg-card">
+              <div className="flex flex-col">
+                <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === 0} onClick={() => move(col, -1)}>
+                  <ChevronUp className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === arr.length - 1} onClick={() => move(col, 1)}>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium truncate">{col.label}</span>
+                  <Badge variant={col.kind === "formula" ? "default" : "secondary"} className="h-4 px-1 text-[8px]">
+                    {col.kind === "formula" ? "Fórmula" : "Manual"}
+                  </Badge>
+                </div>
+                {col.kind === "formula" && (
+                  <div className="text-[9px] text-muted-foreground font-mono truncate">
+                    = {formulaToText(col.formula, labelOf) || "(vazia)"}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <Switch 
+                  className="scale-75"
+                  checked={col.visible} 
+                  onCheckedChange={(v) => toggleVisible(col, v)} 
+                />
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(col)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    if (confirm(`Excluir coluna "${col.label}"?`)) {
+                      deleteMut.mutate(col.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <ColumnEditor
+        open={creating || !!editing}
+        existing={editing}
+        columns={columns}
+        config={config}
+        onClose={() => { setCreating(false); setEditing(null); }}
+        onSave={(data) => handleSave(data, editing ?? undefined)}
+        saving={createMut.isPending || updateMut.isPending}
+      />
+    </div>
+  );
+}
+
+// ... (Rest of ColumnEditor from src/components/CustomColumnsManager.tsx)
+// I'll need to copy the full content but I'll do it in a way that I don't break the original file.
+// Actually, I'll just use the component as is and adjust its internal padding/card if needed by wrapping it.
+// But wait, the component is exported, so I can just import it.
+// I'll modify the original component to be more "dialog-friendly" or just use it as is.
+// Actually, it uses Card internally. I'll modify it to optionaly hide the Card wrapper.
