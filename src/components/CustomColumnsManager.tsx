@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   type CustomColumn,
   useCustomColumns, useCreateCustomColumn, useDeleteCustomColumn, useUpdateCustomColumn,
@@ -21,9 +22,10 @@ import { type Formula, type FormulaToken, slugifyKey, validateFormula, formulaTo
 interface Props {
   companyId: string;
   config: FiscalConfig | null | undefined;
+  hideCard?: boolean;
 }
 
-export function CustomColumnsManager({ companyId, config }: Props) {
+export function CustomColumnsManager({ companyId, config, hideCard }: Props) {
   const { data: columns = [], isLoading } = useCustomColumns(companyId);
   const createMut = useCreateCustomColumn(companyId);
   const updateMut = useUpdateCustomColumn(companyId);
@@ -90,86 +92,99 @@ export function CustomColumnsManager({ companyId, config }: Props) {
     });
   };
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+  const renderContent = () => (
+    <>
+      <div className={cn("flex flex-row items-start justify-between gap-4 space-y-0 mb-4", hideCard && "mb-4")}>
         <div>
-          <CardTitle>Colunas Personalizadas</CardTitle>
-          <CardDescription>
-            Crie colunas próprias com valores manuais ou calculadas por fórmula a partir de outras colunas.
-          </CardDescription>
+          <h3 className={cn("text-lg font-semibold", hideCard && "text-sm font-semibold")}>Colunas Personalizadas</h3>
+          <p className={cn("text-sm text-muted-foreground", hideCard && "text-xs")}>
+            Crie colunas próprias com valores manuais ou calculadas por fórmula.
+          </p>
         </div>
         <Button size="sm" onClick={() => setCreating(true)}>
           <Plus className="mr-2 h-4 w-4" /> Nova coluna
         </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>
-        ) : columns.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">
-            Nenhuma coluna personalizada ainda. Clique em <strong>Nova coluna</strong>.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {[...columns].sort((a, b) => a.position - b.position).map((col, i, arr) => (
-              <div key={col.id} className="flex items-center gap-3 rounded-lg border p-3">
-                <div className="flex flex-col">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === 0} onClick={() => move(col, -1)} aria-label="Mover acima">
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === arr.length - 1} onClick={() => move(col, 1)} aria-label="Mover abaixo">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{col.label}</span>
-                    <Badge variant={col.kind === "formula" ? "default" : "secondary"} className="text-xs">
-                      {col.kind === "formula" ? <><Calculator className="mr-1 h-3 w-3" />Fórmula</> : "Manual"}
-                    </Badge>
-                  </div>
-                  {col.kind === "formula" && (
-                    <div className="mt-1 text-xs text-muted-foreground font-mono truncate">
-                      = {formulaToText(col.formula, labelOf) || "(vazia)"}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={col.visible} onCheckedChange={(v) => toggleVisible(col, v)} aria-label="Visibilidade" />
-                  <Button variant="ghost" size="icon" onClick={() => setEditing(col)} aria-label="Editar">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      if (confirm(`Excluir coluna "${col.label}"? Os valores também serão removidos.`)) {
-                        deleteMut.mutate(col.id, {
-                          onSuccess: () => toast.success("Coluna excluída"),
-                          onError: (e: Error) => toast.error(e.message),
-                        });
-                      }
-                    }}
-                    aria-label="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : columns.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-6 text-center border rounded-lg bg-muted/20">
+          Nenhuma coluna personalizada ainda. Clique em <strong>Nova coluna</strong>.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {[...columns].sort((a, b) => a.position - b.position).map((col, i, arr) => (
+            <div key={col.id} className="flex items-center gap-3 rounded-lg border p-3 bg-card">
+              <div className="flex flex-col">
+                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === 0} onClick={() => move(col, -1)} aria-label="Mover acima">
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === arr.length - 1} onClick={() => move(col, 1)} aria-label="Mover abaixo">
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm sm:text-base">{col.label}</span>
+                  <Badge variant={col.kind === "formula" ? "default" : "secondary"} className="text-[10px] sm:text-xs">
+                    {col.kind === "formula" ? <><Calculator className="mr-1 h-3 w-3" />Fórmula</> : "Manual"}
+                  </Badge>
+                </div>
+                {col.kind === "formula" && (
+                  <div className="mt-1 text-xs text-muted-foreground font-mono truncate">
+                    = {formulaToText(col.formula, labelOf) || "(vazia)"}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={col.visible} onCheckedChange={(v) => toggleVisible(col, v)} aria-label="Visibilidade" />
+                <Button variant="ghost" size="icon" onClick={() => setEditing(col)} aria-label="Editar">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    if (confirm(`Excluir coluna "${col.label}"? Os valores também serão removidos.`)) {
+                      deleteMut.mutate(col.id, {
+                        onSuccess: () => toast.success("Coluna excluída"),
+                        onError: (e: Error) => toast.error(e.message),
+                      });
+                    }
+                  }}
+                  aria-label="Excluir"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-        <ColumnEditor
-          open={creating || !!editing}
-          existing={editing}
-          columns={columns}
-          config={config}
-          onClose={() => { setCreating(false); setEditing(null); }}
-          onSave={(data) => handleSave(data, editing ?? undefined)}
-          saving={createMut.isPending || updateMut.isPending}
-        />
+      <ColumnEditor
+        open={creating || !!editing}
+        existing={editing}
+        columns={columns}
+        config={config}
+        onClose={() => { setCreating(false); setEditing(null); }}
+        onSave={(data) => handleSave(data, editing ?? undefined)}
+        saving={createMut.isPending || updateMut.isPending}
+      />
+    </>
+  );
+
+  if (hideCard) return (
+    <div className="space-y-4">
+      {renderContent()}
+    </div>
+  );
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        {renderContent()}
       </CardContent>
     </Card>
   );

@@ -5,7 +5,7 @@ import {
    Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet,
    Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon, Pencil, Folder, FolderPlus,
    FolderOpen, MoreVertical, Copy, Archive, ArchiveRestore, Power, PowerOff, Inbox, Tag as TagIcon,
-   ChevronLeft
+   ChevronLeft, Settings as SettingsIcon
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -450,6 +450,12 @@ export default function Companies() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => duplicateCompany(c)}>
                 <Copy className="mr-2 h-4 w-4" /> Duplicar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setSelectedCompany(c);
+                navigate(`/movimento?company=${c.id}&config=true`);
+              }}>
+                <SettingsIcon className="mr-2 h-4 w-4" /> Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {status !== "ativa" && (
