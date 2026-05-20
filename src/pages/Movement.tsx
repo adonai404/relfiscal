@@ -179,6 +179,7 @@ export default function Movement() {
   const { data: customCols = [] } = useCustomColumns(companyId);
   const { data: customValues = [] } = useCustomColumnValues(companyId);
   const upsertCustom = useUpsertCustomValue(companyId);
+  const updateConfig = useUpdateFiscalConfig(companyId);
 
   // Map: movement_id -> column_id -> value
   const valuesByMov = useMemo(() => {
