@@ -129,7 +129,7 @@ import {
   ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
-  getTaxColumns,
+  getTaxColumns, useUpdateFiscalConfig, TOGGLEABLE_COLUMNS, TAX_ELIGIBLE_COLUMNS,
 } from "@/hooks/useFiscalConfig";
 import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
