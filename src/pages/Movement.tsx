@@ -116,7 +116,6 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,9 +129,8 @@ import {
   ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
-  getTaxColumns, useUpdateFiscalConfig, TOGGLEABLE_COLUMNS, TAX_ELIGIBLE_COLUMNS,
+  getTaxColumns,
 } from "@/hooks/useFiscalConfig";
-import { CustomColumnsManager } from "@/components/CustomColumnsManager";
 import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
   buildRowResolver,
@@ -168,9 +166,6 @@ export default function Movement() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
-  const [configOpen, setConfigOpen] = useState(() => {
-    return new URLSearchParams(window.location.search).get("config") === "true";
-  });
   const [newComp, setNewComp] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -184,7 +179,6 @@ export default function Movement() {
   const { data: customCols = [] } = useCustomColumns(companyId);
   const { data: customValues = [] } = useCustomColumnValues(companyId);
   const upsertCustom = useUpsertCustomValue(companyId);
-  const updateConfig = useUpdateFiscalConfig(companyId);
 
   // Map: movement_id -> column_id -> value
   const valuesByMov = useMemo(() => {
@@ -441,11 +435,6 @@ export default function Movement() {
               </div>
             )}
           <div className="flex items-center gap-2">
-            {!isCustomer && (
-              <Button variant="outline" size="xs" onClick={() => setConfigOpen(true)} className="flex">
-                <Settings className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Configurações
-              </Button>
-            )}
             <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
               <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
             </Button>
@@ -512,146 +501,6 @@ export default function Movement() {
             </div>
             {!isCustomer ? (
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
-                <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
-                  <Settings className="mr-2 h-4 w-4" /> Configurações
-                </Button>
-                <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Configurações da Empresa</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-2">
-                      <Tabs defaultValue="visibilidade" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 h-9 mb-4">
-                          <TabsTrigger value="visibilidade" className="text-xs">Exibição</TabsTrigger>
-                          <TabsTrigger value="calculos" className="text-xs">Cálculos</TabsTrigger>
-                          <TabsTrigger value="custom" className="text-xs">Colunas Custom</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="visibilidade" className="space-y-6 animate-in fade-in-50">
-                          {/* Column Toggles */}
-                          <div className="space-y-4">
-                            <h3 className="text-sm font-semibold border-b pb-2">Visibilidade das Colunas</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {TOGGLEABLE_COLUMNS.map((col) => {
-                                const isVisible = isColumnVisible(config ?? undefined, col);
-                                const label = getColumnLabel(config ?? undefined, col);
-                                return (
-                                  <div key={col} className="flex items-center justify-between gap-2 p-2 rounded-lg border bg-card/50">
-                                    <Label className="text-[11px] truncate">{label}</Label>
-                                    <Button
-                                      variant={isVisible ? "default" : "outline"}
-                                      size="xs"
-                                      className="h-7 text-[10px]"
-                                      onClick={() => updateConfig.mutate({ [`show_${col}_column`]: !isVisible })}
-                                    >
-                                      {isVisible ? "Visível" : "Oculta"}
-                                    </Button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Column Labels */}
-                          <div className="space-y-4">
-                            <h3 className="text-sm font-semibold border-b pb-2">Rótulos Personalizados</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {ALL_COLUMNS.map((col) => {
-                                if (isComputedColumn(col)) return null;
-                                const label = getColumnLabel(config ?? undefined, col);
-                                return (
-                                  <div key={col} className="space-y-1.5">
-                                    <Label className="text-[10px] uppercase text-muted-foreground">{col}</Label>
-                                    <Input
-                                      value={label}
-                                      onChange={(e) => updateConfig.mutate({ [`label_${col}`]: e.target.value })}
-                                      placeholder={col}
-                                      className="h-8 text-xs"
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </TabsContent>
-
-                        <TabsContent value="calculos" className="space-y-6 animate-in fade-in-50">
-                          {/* Tax Settings */}
-                          <div className="space-y-4">
-                            <h3 className="text-sm font-semibold border-b pb-2">Impostos e Cálculos</h3>
-                            <div className="space-y-4 p-4 rounded-lg border bg-primary/5">
-                              <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                  <Label className="text-sm">Cálculo Automático (Simples)</Label>
-                                  <p className="text-[10px] text-muted-foreground">Calcula sn = saída * alíquota</p>
-                                </div>
-                                <Button
-                                  variant={config?.auto_calculate_simples_nacional ? "default" : "outline"}
-                                  size="sm"
-                                  className="h-8"
-                                  onClick={() => updateConfig.mutate({ auto_calculate_simples_nacional: !config?.auto_calculate_simples_nacional })}
-                                >
-                                  {config?.auto_calculate_simples_nacional ? "Ativado" : "Desativado"}
-                                </Button>
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs">Alíquota Simples Nacional (%)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={config?.aliquota_simples_nacional || 0}
-                                  onChange={(e) => updateConfig.mutate({ aliquota_simples_nacional: parseFloat(e.target.value) })}
-                                  className="h-8 text-sm"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <h3 className="text-sm font-semibold border-b pb-2">Composição do Total de Impostos</h3>
-                            <p className="text-xs text-muted-foreground">Selecione quais colunas devem ser somadas no card de "Impostos" e cálculos de economia.</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {TAX_ELIGIBLE_COLUMNS.map((col) => {
-                                const currentTaxes = getTaxColumns(config);
-                                const isTax = currentTaxes.includes(col);
-                                const label = getColumnLabel(config ?? undefined, col);
-                                return (
-                                  <div key={col} className="flex items-center gap-2">
-                                    <Button
-                                      variant={isTax ? "default" : "outline"}
-                                      size="xs"
-                                      className="h-7 px-2 text-[10px]"
-                                      onClick={() => {
-                                        const next = isTax 
-                                          ? currentTaxes.filter(c => c !== col)
-                                          : [...currentTaxes, col];
-                                        updateConfig.mutate({ tax_columns: next });
-                                      }}
-                                    >
-                                      {isTax ? "Sim" : "Não"}
-                                    </Button>
-                                    <span className="text-xs">{label}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </TabsContent>
-
-                        <TabsContent value="custom" className="animate-in fade-in-50">
-                          {companyId && (
-                            <CustomColumnsManager 
-                              companyId={companyId} 
-                              config={config} 
-                              hideCard 
-                            />
-                          )}
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                  </DialogContent>
-                </Dialog>
                 <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
                 <Dialog>
                   <DialogTrigger asChild>

@@ -88,14 +88,6 @@ export default function Home() {
         bg: "bg-purple-500/10",
       },
       {
-        title: "Configurações",
-        description: "Ajustes de colunas, rótulos e cálculos",
-        icon: SettingsIcon,
-        path: selectedCompany ? `/movimento?company=${selectedCompany.id}&config=true` : "/empresas",
-        color: "text-slate-500",
-        bg: "bg-slate-500/10",
-      },
-      {
         title: "Conexão API",
         description: "Integração externa de dados",
         icon: Link2,
