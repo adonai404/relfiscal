@@ -441,6 +441,11 @@ export default function Movement() {
               </div>
             )}
           <div className="flex items-center gap-2">
+            {!isCustomer && (
+              <Button variant="outline" size="xs" onClick={() => setConfigOpen(true)} className="flex">
+                <Settings className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Configurações
+              </Button>
+            )}
             <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
               <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
             </Button>
