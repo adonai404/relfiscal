@@ -132,6 +132,7 @@ import {
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
   getTaxColumns, useUpdateFiscalConfig, TOGGLEABLE_COLUMNS, TAX_ELIGIBLE_COLUMNS,
 } from "@/hooks/useFiscalConfig";
+import { CustomColumnsManager } from "@/components/CustomColumnsManager";
 import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
   buildRowResolver,
