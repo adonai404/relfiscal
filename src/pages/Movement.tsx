@@ -441,6 +441,11 @@ export default function Movement() {
               </div>
             )}
           <div className="flex items-center gap-2">
+            {!isCustomer && (
+              <Button variant="outline" size="xs" onClick={() => setConfigOpen(true)} className="flex">
+                <Settings className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Configurações
+              </Button>
+            )}
             <Button variant="outline" size="xs" onClick={sharePublic} className="hidden sm:flex">
               <Share2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Página pública
             </Button>
@@ -507,12 +512,10 @@ export default function Movement() {
             </div>
             {!isCustomer ? (
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
+                <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
+                  <Settings className="mr-2 h-4 w-4" /> Configurações
+                </Button>
                 <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" /> Configurações
-                    </Button>
-                  </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Configurações da Empresa</DialogTitle>

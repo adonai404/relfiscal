@@ -429,6 +429,18 @@ export default function Companies() {
     const status = (c.status ?? "ativa") as CompanyStatus;
     return (
       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <Button 
+          variant="ghost" 
+          size="icon-sm" 
+          className="text-muted-foreground hover:text-primary" 
+          onClick={() => {
+            setSelectedCompany(c);
+            navigate(`/movimento?company=${c.id}&config=true`);
+          }}
+          aria-label="Configurações"
+        >
+          <SettingsIcon className="h-4 w-4" />
+        </Button>
         <CompanyTagsPicker
           companyId={c.id}
           trigger={
