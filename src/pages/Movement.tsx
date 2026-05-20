@@ -507,7 +507,7 @@ export default function Movement() {
             </div>
             {!isCustomer ? (
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
-                <Dialog>
+                <Dialog open={configOpen} onOpenChange={setConfigOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Settings className="mr-2 h-4 w-4" /> Configurações
