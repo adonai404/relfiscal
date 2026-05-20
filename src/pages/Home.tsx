@@ -97,15 +97,7 @@ export default function Home() {
         forceEnabled: true,
       },
     ] : []),
-    {
-      title: "Minha Conta",
-      description: "Perfil, senha e segurança",
-      icon: UserCog,
-      path: "/minha-conta",
-      color: "text-orange-500",
-      bg: "bg-orange-500/10",
-      forceEnabled: true,
-    },
+    // Minha Conta removed as per request to centralize settings in Movement
     ...(isSuperAdmin ? [
       {
         title: "Clientes",

@@ -135,6 +135,7 @@ import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
   buildRowResolver,
 } from "@/hooks/useCustomColumns";
+import { FiscalConfigForm } from "@/components/FiscalConfigForm";
 
 interface MovementRow {
   id: string;
@@ -502,6 +503,19 @@ export default function Movement() {
             {!isCustomer ? (
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 no-print">
                 <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Settings className="mr-2 h-4 w-4" /> Configurações
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Configurações da Empresa</DialogTitle>
+                    </DialogHeader>
+                    {config && <FiscalConfigForm config={config} />}
+                  </DialogContent>
+                </Dialog>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
