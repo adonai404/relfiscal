@@ -125,7 +125,7 @@ export function AppSidebar() {
                 <Activity className="size-5" />
               </div>
               <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-bold">TaxFlow</span>
+                <span className="font-bold">Fiscal.aqui</span>
                 <span className="text-xs text-muted-foreground font-medium">Gestão Inteligente</span>
               </div>
             </SidebarMenuButton>
