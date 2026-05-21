@@ -32,9 +32,9 @@ export async function extractDataFromPDF(file: File): Promise<ExtractedData> {
 
     // Regras de extração baseadas nas especificações
     
-    // 1. Empresa: Extrair o texto após 'Nome empresarial:', parando antes de 'Data de abertura' ou 'CNPJ'
+    // 1. Empresa: Extrair o texto após 'Nome empresarial:', parando antes de 'Data de abertura' ou 'CNPJ' ou 'Data da consulta'
     let companyName = 'Não encontrado';
-    const companyMatch = fullText.match(/Nome empresarial:\s*(.*?)(?=\s*(Data de abertura|CNPJ|$))/i);
+    const companyMatch = fullText.match(/Nome empresarial:\s*(.*?)(?=\s*(Data de abertura|CNPJ|Data da consulta|$))/i);
     if (companyMatch && companyMatch[1]) {
       companyName = companyMatch[1].trim();
     }
@@ -46,27 +46,43 @@ export async function extractDataFromPDF(file: File): Promise<ExtractedData> {
       cnpj = cnpjMatch[1].trim();
     }
 
-    // 3. Competência: Extrair o mês/ano do 'Período de Apuração'
+    // 3. Competência: Extrair a data inicial do campo 'Período de Apuração' e transformar para MM/AAAA
     let period = 'Não encontrado';
-    const periodMatch = fullText.match(/Período de Apuração:\s*(\d{2}\/\d{4})/i);
-    if (periodMatch && periodMatch[1]) {
-      period = periodMatch[1].trim();
+    const periodMatch = fullText.match(/Período de Apuração:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+    if (periodMatch && periodMatch[2] && periodMatch[3]) {
+      period = `${periodMatch[2]}/${periodMatch[3]}`;
     }
 
-    // 4. Receita: Capturar o valor total da 'Receita Bruta do PA (RPA)'
+    // 4. Receita: Buscar o valor correspondente em "Receita Bruta do PA (RPA) - Competência"
     let revenue = '0,00';
     let status: 'success' | 'no_movement' = 'success';
-    const revenueMatch = fullText.match(/Receita Bruta do PA \(RPA\):\s*R\$\s*([\d.,]+)/i);
-    if (revenueMatch && revenueMatch[1]) {
-      revenue = revenueMatch[1].trim();
-      if (revenue === '0,00' || /^0+([.,]0+)?$/.test(revenue)) {
+    
+    // Tenta encontrar o bloco de receita bruta
+    const rpaMatch = fullText.match(/Receita Bruta do PA \(RPA\) - Competência\s*([\d.,]+)\s*\|\s*([\d.,]+)\s*\|\s*([\d.,]+)/i);
+    
+    if (rpaMatch) {
+      const totalValue = rpaMatch[3].trim();
+      const internalValue = rpaMatch[1].trim();
+      const externalValue = rpaMatch[2].trim();
+      
+      const isZero = (val: string) => val === '0,00' || /^0+([.,]0+)?$/.test(val);
+      
+      if (isZero(internalValue) && isZero(externalValue) && isZero(totalValue)) {
+        revenue = 'Declarado sem movimento';
         status = 'no_movement';
+      } else {
+        revenue = totalValue;
+        status = 'success';
       }
     } else {
-      // Tentar sem o R$
-      const revenueMatchAlt = fullText.match(/Receita Bruta do PA \(RPA\):\s*([\d.,]+)/i);
-      if (revenueMatchAlt && revenueMatchAlt[1]) {
-        revenue = revenueMatchAlt[1].trim();
+      // Fallback para caso o formato seja levemente diferente
+      const fallbackMatch = fullText.match(/Receita Bruta do PA \(RPA\):\s*R?\$\s*([\d.,]+)/i);
+      if (fallbackMatch && fallbackMatch[1]) {
+        revenue = fallbackMatch[1].trim();
+        if (revenue === '0,00') {
+          revenue = 'Declarado sem movimento';
+          status = 'no_movement';
+        }
       }
     }
 
