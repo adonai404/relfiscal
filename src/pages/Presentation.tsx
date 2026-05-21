@@ -311,32 +311,9 @@ export default function Presentation() {
 
   // ============== SETUP VIEW ==============
   if (mode === "setup") {
-    return (
-      <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
-        <header className="border-b bg-card/60 backdrop-blur">
-          <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-            <div className="flex items-center gap-2">
-               <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <PresentationIcon className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-semibold">Apresentação</h1>
-              {finalCompanyIds.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {finalCompanyIds.length} empresa(s)
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </header>
+  return (
+    <div className="w-full">
 
-        <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
           <div className="mb-6">
             <h2 className="text-2xl font-bold">Modo Apresentação</h2>
             <p className="text-sm text-muted-foreground">
