@@ -425,7 +425,8 @@ export default function TaxPlanning() {
                             </div>
                           )}
                         </div>
-                      </CardHeader>
+                      </CardContent>
+
                       <CardFooter className="pt-0">
                         <Button 
                           variant="ghost" 
