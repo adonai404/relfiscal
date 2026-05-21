@@ -65,28 +65,8 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
       },
     ];
  
-   return (
-     <div className="min-h-screen w-full flex flex-col" style={{ background: "var(--gradient-subtle)" }}>
-       <header className="border-b bg-card/60 backdrop-blur">
-         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 max-w-7xl mx-auto">
-           <div className="flex items-center gap-3">
-             <div className="bg-primary/10 p-2 rounded-xl">
-               <Activity className="h-6 w-6 text-primary" />
-             </div>
-             <div>
-               <h1 className="text-lg font-bold tracking-tight">TaxFlow</h1>
-               <p className="text-xs text-muted-foreground font-medium">Gestão Inteligente</p>
-             </div>
-           </div>
-           
-           <div className="flex items-center gap-2">
-             <ThemeToggle />
-             <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-destructive">
-               <LogOut className="h-4 w-4" />
-             </Button>
-           </div>
-         </div>
-       </header>
+    return (
+      <div className="w-full">
  
        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 sm:px-6">
          <div className="mb-10 text-center sm:text-left">
