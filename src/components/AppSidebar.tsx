@@ -10,7 +10,8 @@ import {
   Home,
   Activity,
   ChevronRight,
-  Plus
+  Plus,
+  Wrench
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
@@ -85,6 +86,11 @@ export function AppSidebar() {
       icon: Presentation,
       path: "/apresentacao",
       requiresCompany: true,
+    },
+    {
+      title: "Ferramentas",
+      icon: Wrench,
+      path: "/ferramentas",
     },
   ];
 
