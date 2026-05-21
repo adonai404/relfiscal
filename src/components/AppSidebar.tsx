@@ -133,38 +133,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {/* Company Selector */}
-        <SidebarGroup>
-          {/* Label removida conforme solicitado */}
-          <SidebarGroupContent>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="w-full justify-between" tooltip="Trocar Empresa">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <Building2 className="size-4 shrink-0" />
-                    <span className="truncate">
-                      {selectedCompany?.nome_fantasia || "Nenhuma empresa"}
-                    </span>
-                  </div>
-                  <ChevronRight className="size-4 shrink-0 opacity-50" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-56" align="start">
-                {companies.map((c) => (
-                  <DropdownMenuItem key={c.id} onClick={() => setSelectedCompany(c)}>
-                    <Building2 className="mr-2 h-4 w-4" />
-                    <span className="truncate">{c.nome_fantasia}</span>
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/empresas")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Gerenciar Empresas
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
