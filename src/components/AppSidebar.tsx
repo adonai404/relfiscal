@@ -135,7 +135,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Company Selector */}
         <SidebarGroup>
-          <SidebarGroupLabel>Empresa Selecionada</SidebarGroupLabel>
+          {/* Label removida conforme solicitado */}
           <SidebarGroupContent>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
