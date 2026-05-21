@@ -854,8 +854,8 @@ export default function Presentation() {
               Iniciar Apresentação ({finalCompanyIds.length})
             </Button>
           </div>
-        </main>
       </div>
+
     );
   }
 
