@@ -1,7 +1,7 @@
 import * as pdfjs from 'pdfjs-dist';
 
-// Configurar o worker do PDF.js
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Configurar o worker do PDF.js usando a URL local do node_modules via Vite ou fallback
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export interface ExtractedData {
   fileName: string;
