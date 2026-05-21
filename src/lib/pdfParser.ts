@@ -26,15 +26,36 @@ export async function extractDataFromPDF(file: File): Promise<ExtractedData> {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + ' ';
+      // Agrupar itens por coordenada Y para reconstruir as linhas preservando o layout
+      const Y_TOL = 3;
+      const lineMap = new Map<number, Array<{ str: string; x: number; w: number }>>();
+      for (const item of textContent.items as any[]) {
+        if (!item.str || !item.str.trim()) continue;
+        const y = Math.round(item.transform[5] / Y_TOL) * Y_TOL;
+        if (!lineMap.has(y)) lineMap.set(y, []);
+        lineMap.get(y)!.push({ str: item.str, x: item.transform[4], w: item.width || 0 });
+      }
+      const sortedLines = Array.from(lineMap.entries())
+        .sort((a, b) => b[0] - a[0])
+        .map(([, items]) => {
+          items.sort((a, b) => a.x - b.x);
+          let line = '';
+          for (let k = 0; k < items.length; k++) {
+            if (k > 0 && items[k].x - (items[k - 1].x + items[k - 1].w) > 5) {
+              line += '   ';
+            }
+            line += items[k].str;
+          }
+          return line;
+        });
+      fullText += sortedLines.join('\n') + '\n';
     }
 
     // Regras de extração baseadas nas especificações
     
-    // 1. Empresa: Extrair o texto após 'Nome empresarial:', parando antes de 'Data de abertura' ou 'CNPJ' ou 'Data da consulta'
+    // 1. Empresa: Extrair o texto após 'Nome empresarial:'
     let companyName = 'Não encontrado';
-    const companyMatch = fullText.match(/Nome empresarial:\s*(.*?)(?=\s*(Data de abertura|CNPJ|Data da consulta|$))/i);
+    const companyMatch = fullText.match(/Nome empresarial:\s*(.+?)(?=\s{2,}|\n|Data de abertura|CNPJ|$)/i);
     if (companyMatch && companyMatch[1]) {
       companyName = companyMatch[1].trim();
     }
@@ -56,33 +77,31 @@ export async function extractDataFromPDF(file: File): Promise<ExtractedData> {
     // 4. Receita: Buscar o valor correspondente em "Receita Bruta do PA (RPA) - Competência"
     let revenue = '0,00';
     let status: 'success' | 'no_movement' = 'success';
-    
-    // Tenta encontrar o bloco de receita bruta
-    const rpaMatch = fullText.match(/Receita Bruta do PA \(RPA\) - Competência\s*([\d.,]+)\s*\|\s*([\d.,]+)\s*\|\s*([\d.,]+)/i);
-    
+
+    const isZero = (v: string) => /^0+([.,]0+)?$/.test(v.replace(/\./g, '').replace(',', '.').replace(/\s/g, '')) || v === '0,00';
+
+    // Procura os 3 valores numéricos (Mercado Interno | Mercado Externo | Total) após "Receita Bruta do PA (RPA)"
+    const rpaRegex = /Receita Bruta do PA \(RPA\)[^\d\n]*?([\d.]+,\d{2})[^\d\n]*?([\d.]+,\d{2})[^\d\n]*?([\d.]+,\d{2})/i;
+    const rpaMatch = fullText.match(rpaRegex);
+
     if (rpaMatch) {
-      const totalValue = rpaMatch[3].trim();
-      const internalValue = rpaMatch[1].trim();
-      const externalValue = rpaMatch[2].trim();
-      
-      const isZero = (val: string) => val === '0,00' || /^0+([.,]0+)?$/.test(val);
-      
-      if (isZero(internalValue) && isZero(externalValue) && isZero(totalValue)) {
+      const [, interno, externo, total] = rpaMatch;
+      if (isZero(interno) && isZero(externo) && isZero(total)) {
         revenue = 'Declarado sem movimento';
         status = 'no_movement';
       } else {
-        revenue = totalValue;
+        revenue = total;
         status = 'success';
       }
     } else {
-      // Fallback para caso o formato seja levemente diferente
-      const fallbackMatch = fullText.match(/Receita Bruta do PA \(RPA\):\s*R?\$\s*([\d.,]+)/i);
-      if (fallbackMatch && fallbackMatch[1]) {
-        revenue = fallbackMatch[1].trim();
-        if (revenue === '0,00') {
-          revenue = 'Declarado sem movimento';
-          status = 'no_movement';
-        }
+      // Fallback: captura qualquer valor monetário após a label
+      const fallback = fullText.match(/Receita Bruta do PA \(RPA\)[^\d]*?([\d.]+,\d{2})/i);
+      if (fallback && fallback[1]) {
+        revenue = isZero(fallback[1]) ? 'Declarado sem movimento' : fallback[1];
+        status = isZero(fallback[1]) ? 'no_movement' : 'success';
+      } else {
+        revenue = 'Declarado sem movimento';
+        status = 'no_movement';
       }
     }
 
