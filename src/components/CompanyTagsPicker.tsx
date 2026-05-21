@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Plus, Tag as TagIcon, Trash2, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,8 +39,10 @@ export function CompanyTagsPicker({ companyId, trigger, align = "end" }: Props) 
   const [color, setColor] = useState(COLOR_PALETTE[0]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  useMemo(() => {
-    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  useEffect(() => {
+    supabase.auth.getUser()
+      .then(({ data }) => setCurrentUserId(data.user?.id ?? null))
+      .catch(() => setCurrentUserId(null));
   }, []);
 
   const assigned = useMemo(
