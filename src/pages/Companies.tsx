@@ -488,41 +488,9 @@ export default function Companies() {
   };
 
   return (
-    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
-      <header className="border-b bg-card/60 backdrop-blur">
-        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-           <div className="flex items-center gap-2">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
-               <ChevronLeft className="h-4 w-4" />
-             </Button>
-             <Building2 className="h-5 w-5 text-primary" />
-             <h1 className="text-lg font-semibold">Gerenciar Empresas</h1>
-           </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
-            {isSuperAdmin && (
-              <Button variant="outline" size="sm" onClick={() => navigate("/admin/usuarios")}>
-                <Users className="mr-2 h-4 w-4" /> Usuários
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
-              <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/apresentacao")}>
-              <PresentationIcon className="mr-2 h-4 w-4" /> Apresentação
-            </Button>
-            <Button variant="default" size="sm" onClick={() => navigate("/combo")}>
-              <Layers className="mr-2 h-4 w-4" /> Combo
-            </Button>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="w-full">
+      <div className="px-1 py-4">
 
-      <main className="w-full px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Suas empresas</h2>
