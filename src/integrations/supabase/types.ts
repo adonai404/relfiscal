@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       companies: {
         Row: {
+          api_key: string | null
           cnpj: string
           created_at: string
           created_by: string | null
@@ -30,6 +31,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_key?: string | null
           cnpj: string
           created_at?: string
           created_by?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_key?: string | null
           cnpj?: string
           created_at?: string
           created_by?: string | null
@@ -254,6 +257,69 @@ export type Database = {
           },
         ]
       }
+      customer_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          customer_id: string
+          id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_companies_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fiscal_config: {
         Row: {
           aliquota_simples_nacional: number
@@ -265,6 +331,7 @@ export type Database = {
           label_cofins: string
           label_competencia: string
           label_csll: string
+          label_cupom: string | null
           label_difal: string
           label_encargos_patronal: string
           label_entrada: string
@@ -273,11 +340,15 @@ export type Database = {
           label_icms: string
           label_impostos_federais: string
           label_irpj: string
+          label_nfe_entrada: string | null
+          label_nfe_saida: string | null
           label_pis: string
           label_saida: string
+          label_servico: string | null
           label_simples_nacional: string
           show_cofins_column: boolean
           show_csll_column: boolean
+          show_cupom_column: boolean | null
           show_difal_column: boolean
           show_encargos_patronal_column: boolean
           show_folha_column: boolean
@@ -285,7 +356,10 @@ export type Database = {
           show_icms_column: boolean
           show_impostos_federais_column: boolean
           show_irpj_column: boolean
+          show_nfe_entrada_column: boolean | null
+          show_nfe_saida_column: boolean | null
           show_pis_column: boolean
+          show_servico_column: boolean | null
           show_simples_nacional_column: boolean
           tax_columns: Json
           updated_at: string
@@ -300,6 +374,7 @@ export type Database = {
           label_cofins?: string
           label_competencia?: string
           label_csll?: string
+          label_cupom?: string | null
           label_difal?: string
           label_encargos_patronal?: string
           label_entrada?: string
@@ -308,11 +383,15 @@ export type Database = {
           label_icms?: string
           label_impostos_federais?: string
           label_irpj?: string
+          label_nfe_entrada?: string | null
+          label_nfe_saida?: string | null
           label_pis?: string
           label_saida?: string
+          label_servico?: string | null
           label_simples_nacional?: string
           show_cofins_column?: boolean
           show_csll_column?: boolean
+          show_cupom_column?: boolean | null
           show_difal_column?: boolean
           show_encargos_patronal_column?: boolean
           show_folha_column?: boolean
@@ -320,7 +399,10 @@ export type Database = {
           show_icms_column?: boolean
           show_impostos_federais_column?: boolean
           show_irpj_column?: boolean
+          show_nfe_entrada_column?: boolean | null
+          show_nfe_saida_column?: boolean | null
           show_pis_column?: boolean
+          show_servico_column?: boolean | null
           show_simples_nacional_column?: boolean
           tax_columns?: Json
           updated_at?: string
@@ -335,6 +417,7 @@ export type Database = {
           label_cofins?: string
           label_competencia?: string
           label_csll?: string
+          label_cupom?: string | null
           label_difal?: string
           label_encargos_patronal?: string
           label_entrada?: string
@@ -343,11 +426,15 @@ export type Database = {
           label_icms?: string
           label_impostos_federais?: string
           label_irpj?: string
+          label_nfe_entrada?: string | null
+          label_nfe_saida?: string | null
           label_pis?: string
           label_saida?: string
+          label_servico?: string | null
           label_simples_nacional?: string
           show_cofins_column?: boolean
           show_csll_column?: boolean
+          show_cupom_column?: boolean | null
           show_difal_column?: boolean
           show_encargos_patronal_column?: boolean
           show_folha_column?: boolean
@@ -355,7 +442,10 @@ export type Database = {
           show_icms_column?: boolean
           show_impostos_federais_column?: boolean
           show_irpj_column?: boolean
+          show_nfe_entrada_column?: boolean | null
+          show_nfe_saida_column?: boolean | null
           show_pis_column?: boolean
+          show_servico_column?: boolean | null
           show_simples_nacional_column?: boolean
           tax_columns?: Json
           updated_at?: string
@@ -377,6 +467,7 @@ export type Database = {
           competencia: string
           created_at: string
           csll: number
+          cupom: number | null
           difal: number
           encargos_patronal: number
           entrada: number
@@ -386,8 +477,11 @@ export type Database = {
           id: string
           impostos_federais: number
           irpj: number
+          nfe_entrada: number | null
+          nfe_saida: number | null
           pis: number
           saida: number
+          servico: number | null
           simples_nacional: number
           updated_at: string
         }
@@ -397,6 +491,7 @@ export type Database = {
           competencia: string
           created_at?: string
           csll?: number
+          cupom?: number | null
           difal?: number
           encargos_patronal?: number
           entrada?: number
@@ -406,8 +501,11 @@ export type Database = {
           id?: string
           impostos_federais?: number
           irpj?: number
+          nfe_entrada?: number | null
+          nfe_saida?: number | null
           pis?: number
           saida?: number
+          servico?: number | null
           simples_nacional?: number
           updated_at?: string
         }
@@ -417,6 +515,7 @@ export type Database = {
           competencia?: string
           created_at?: string
           csll?: number
+          cupom?: number | null
           difal?: number
           encargos_patronal?: number
           entrada?: number
@@ -426,8 +525,11 @@ export type Database = {
           id?: string
           impostos_federais?: number
           irpj?: number
+          nfe_entrada?: number | null
+          nfe_saida?: number | null
           pis?: number
           saida?: number
+          servico?: number | null
           simples_nacional?: number
           updated_at?: string
         }
@@ -446,6 +548,7 @@ export type Database = {
           access_requested_at: string | null
           approved: boolean
           created_at: string
+          customer_id: string | null
           email: string | null
           id: string
           status: Database["public"]["Enums"]["user_status"]
@@ -457,6 +560,7 @@ export type Database = {
           access_requested_at?: string | null
           approved?: boolean
           created_at?: string
+          customer_id?: string | null
           email?: string | null
           id?: string
           status?: Database["public"]["Enums"]["user_status"]
@@ -468,6 +572,7 @@ export type Database = {
           access_requested_at?: string | null
           approved?: boolean
           created_at?: string
+          customer_id?: string | null
           email?: string | null
           id?: string
           status?: Database["public"]["Enums"]["user_status"]
@@ -475,7 +580,15 @@ export type Database = {
           user_id?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tags: {
         Row: {
@@ -587,6 +700,7 @@ export type Database = {
           emission_date: string | null
           id: string
           ncm: string | null
+          planning_id: string | null
           product_code: string | null
           product_name: string
           qcom: number | null
@@ -607,6 +721,7 @@ export type Database = {
           emission_date?: string | null
           id?: string
           ncm?: string | null
+          planning_id?: string | null
           product_code?: string | null
           product_name: string
           qcom?: number | null
@@ -627,6 +742,7 @@ export type Database = {
           emission_date?: string | null
           id?: string
           ncm?: string | null
+          planning_id?: string | null
           product_code?: string | null
           product_name?: string
           qcom?: number | null
@@ -649,6 +765,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tax_planning_products_planning_id_fkey"
+            columns: ["planning_id"]
+            isOneToOne: false
+            referencedRelation: "tax_planning"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tax_planning_products_upload_id_fkey"
             columns: ["upload_id"]
             isOneToOne: false
@@ -663,6 +786,7 @@ export type Database = {
           created_at: string
           file_name: string
           id: string
+          planning_id: string | null
           uploaded_by: string
           xml_type: string
         }
@@ -671,6 +795,7 @@ export type Database = {
           created_at?: string
           file_name: string
           id?: string
+          planning_id?: string | null
           uploaded_by?: string
           xml_type: string
         }
@@ -679,6 +804,7 @@ export type Database = {
           created_at?: string
           file_name?: string
           id?: string
+          planning_id?: string | null
           uploaded_by?: string
           xml_type?: string
         }
@@ -688,6 +814,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_planning_xml_uploads_planning_id_fkey"
+            columns: ["planning_id"]
+            isOneToOne: false
+            referencedRelation: "tax_planning"
             referencedColumns: ["id"]
           },
         ]

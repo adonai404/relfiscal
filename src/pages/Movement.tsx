@@ -399,36 +399,8 @@ export default function Movement() {
     col === "simples_nacional" && !!config?.auto_calculate_simples_nacional;
 
   return (
-    <div className="min-h-screen w-full" style={{ background: "var(--gradient-subtle)" }}>
-      <header className="no-print border-b bg-card/60 backdrop-blur">
-        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon" onClick={() => navigate("/app")} aria-label="Voltar">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Building2 className="h-5 w-5 text-primary" />
-            <div>
-              <div className="text-sm font-semibold leading-tight">{selectedCompany.nome_fantasia}</div>
-              <div className="text-xs text-muted-foreground">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes")}>
-              <Settings className="mr-2 h-4 w-4" /> Configurações
-            </Button>
-            <Button variant="outline" size="sm" onClick={sharePublic}>
-              <Share2 className="mr-2 h-4 w-4" /> Página pública
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir
-            </Button>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="w-full">
+
 
       {/* Print-only header */}
       <div className="print-only print-header">
@@ -449,7 +421,7 @@ export default function Movement() {
         />
       </div>
 
-      <main className="w-full px-4 py-6 sm:px-6 print-main">
+      <div className="w-full space-y-6">
         {/* Summary cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
@@ -684,7 +656,7 @@ export default function Movement() {
         <footer className="print-only print-footer">
           Documento gerado em {new Date().toLocaleString("pt-BR")}
         </footer>
-      </main>
+      </div>
     </div>
   );
 }
