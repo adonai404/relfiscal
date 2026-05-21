@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wrench, Upload, FileText, Download, Trash2, CheckCircle2, AlertCircle, Search } from "lucide-react";
+import { Wrench, Upload, FileText, Download, Trash2, CheckCircle2, AlertCircle, Search, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +18,7 @@ interface UserListItem {
 }
 
 export default function Tools() {
+  const [activeTool, setActiveTool] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -77,7 +76,6 @@ export default function Tools() {
   const userList = useMemo((): UserListItem[] => {
     if (!userListInput.trim()) return [];
     return userListInput.split('\n').filter(line => line.trim()).map(line => {
-      // Tentar separar por tabulação ou múltiplos espaços (comum em Excel)
       const parts = line.split(/\t|\s{2,}/);
       const cnpj = parts.find(p => /\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/.test(p)) || "";
       const name = parts.find(p => p !== cnpj && p.trim().length > 0) || "Sem nome";
@@ -91,10 +89,8 @@ export default function Tools() {
 
   const stats = useMemo(() => {
     const processedCnpjs = new Set(results.map(r => normalizeCNPJ(r.cnpj)));
-    
     const found = userList.filter(item => processedCnpjs.has(item.normalizedCnpj));
     const missing = userList.filter(item => !processedCnpjs.has(item.normalizedCnpj));
-    
     return { found, missing };
   }, [results, userList]);
 
@@ -107,22 +103,76 @@ export default function Tools() {
       'Receita Bruta': r.revenue,
       'Status': r.status === 'no_movement' ? 'Sem Movimento' : r.status === 'error' ? 'Erro' : 'Sucesso'
     }));
-
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Resultados");
     XLSX.writeFile(wb, `extracao_fiscal_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  if (!activeTool) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex flex-col gap-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Ferramentas</h1>
+            <p className="text-muted-foreground">
+              Acesse ferramentas úteis para auxiliar no seu dia a dia fiscal.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card 
+              className="hover:bg-accent/50 transition-colors cursor-pointer border-primary/20"
+              onClick={() => setActiveTool('pdf-extractor')}
+            >
+              <CardHeader>
+                <FileDown className="h-8 w-8 mb-2 text-primary" />
+                <CardTitle>Extrator Fiscal PDF</CardTitle>
+                <CardDescription>
+                  Extraia automaticamente dados de declarações fiscais de múltiplos arquivos PDF.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Suporta processamento em lote, conferência de listas e exportação para Excel.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="opacity-60 border-dashed">
+              <CardHeader>
+                <Wrench className="h-8 w-8 mb-2 text-muted-foreground" />
+                <CardTitle>Em Breve</CardTitle>
+                <CardDescription>
+                  Novas ferramentas serão adicionadas aqui futuramente.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground italic">
+                  Estamos trabalhando para trazer as melhores soluções.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Extrator Fiscal PDF</h1>
-            <p className="text-muted-foreground">
-              Extraia automaticamente dados de declarações fiscais em lote.
-            </p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => setActiveTool(null)}>
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Extrator Fiscal PDF</h1>
+              <p className="text-muted-foreground">
+                Extraia automaticamente dados de declarações fiscais em lote.
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             {results.length > 0 && (
@@ -346,4 +396,3 @@ export default function Tools() {
     </div>
   );
 }
-
