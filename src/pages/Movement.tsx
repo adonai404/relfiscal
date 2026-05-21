@@ -421,7 +421,7 @@ export default function Movement() {
         />
       </div>
 
-      <main className="w-full px-4 py-6 sm:px-6 print-main">
+      <div className="w-full space-y-6">
         {/* Summary cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
