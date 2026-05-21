@@ -656,7 +656,7 @@ export default function Movement() {
         <footer className="print-only print-footer">
           Documento gerado em {new Date().toLocaleString("pt-BR")}
         </footer>
-      </main>
+      </div>
     </div>
   );
 }
