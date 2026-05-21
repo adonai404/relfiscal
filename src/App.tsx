@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompanyProvider } from "@/hooks/useCompany";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { MainLayout } from "@/components/MainLayout";
 import Index from "./pages/Index.tsx";
 import Landing from "./pages/Landing.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -36,22 +37,25 @@ const App = () => (
           <AuthProvider>
             <CompanyProvider>
               <Routes>
-                 <Route path="/" element={<Index />} />
-                 <Route path="/landing" element={<Landing />} />
-                 <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/" element={<Index />} />
+                <Route path="/landing" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/empresas" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/combo" element={<ProtectedRoute><Combo /></ProtectedRoute>} />
-                <Route path="/movimento" element={<ProtectedRoute><Movement /></ProtectedRoute>} />
-                <Route path="/apresentacao" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
-                <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                 <Route path="/planejamento" element={<ProtectedRoute><TaxPlanning /></ProtectedRoute>} />
-                 <Route path="/planejamento/:id" element={<ProtectedRoute><TaxPlanningDetail /></ProtectedRoute>} />
-                <Route path="/minha-conta" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-                <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                 <Route path="/p/:slug" element={<PublicMovement />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                
+                <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                  <Route path="/app" element={<Home />} />
+                  <Route path="/empresas" element={<Companies />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/combo" element={<Combo />} />
+                  <Route path="/movimento" element={<Movement />} />
+                  <Route path="/apresentacao" element={<Presentation />} />
+                  <Route path="/configuracoes" element={<Settings />} />
+                  <Route path="/planejamento" element={<TaxPlanning />} />
+                  <Route path="/planejamento/:id" element={<TaxPlanningDetail />} />
+                  <Route path="/minha-conta" element={<ProfileSettings />} />
+                  <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
+                </Route>
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </CompanyProvider>
