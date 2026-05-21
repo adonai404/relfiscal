@@ -1,7 +1,8 @@
 import * as pdfjs from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Configurar o worker do PDF.js usando a URL legada do unpkg para evitar problemas de ESM/mjs
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Usa o worker local empacotado pelo Vite. Evita falhas por CDN/CSP e URLs externas indisponíveis.
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export interface ExtractedData {
   fileName: string;
@@ -16,6 +17,53 @@ export interface ExtractedData {
 export const normalizeCNPJ = (cnpj: string) => {
   return cnpj.replace(/\D/g, '');
 };
+
+const moneyPattern = /\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}/g;
+
+const parseMoney = (value: string) => Number(value.replace(/\./g, '').replace(',', '.')) || 0;
+
+const normalizeText = (text: string) => text.replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ').trim();
+
+const findLineValue = (lines: string[], label: RegExp) => {
+  const line = lines.find((item) => label.test(item));
+  if (!line) return null;
+  const [, value = ''] = line.split(/:\s*/);
+  return value.trim() || null;
+};
+
+export function parseFiscalText(fullText: string, fileName: string): ExtractedData {
+  const text = fullText.replace(/\u00a0/g, ' ');
+  const lines = text.split(/\r?\n/).map(normalizeText).filter(Boolean);
+
+  const companyName = findLineValue(lines, /^Nome empresarial\s*:/i) ?? 'Não encontrado';
+  const cnpjMatch = text.match(/CNPJ\s+Matriz\s*:\s*(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/i);
+  const periodMatch = text.match(/Período\s+de\s+Apuração\s*:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+  const rpaIndex = lines.findIndex((line) => /Receita\s+Bruta\s+do\s+PA\s*\(RPA\)\s*-\s*Competência/i.test(line));
+
+  let revenue = 'Declarado sem movimento';
+  let status: 'success' | 'no_movement' = 'no_movement';
+
+  if (rpaIndex >= 0) {
+    const revenueWindow = lines.slice(rpaIndex, rpaIndex + 6).join(' ');
+    const values = Array.from(revenueWindow.matchAll(moneyPattern), (match) => match[0]);
+    const rpaValues = values.slice(0, 3);
+    const total = rpaValues[2] ?? rpaValues[0];
+
+    if (total && rpaValues.some((value) => parseMoney(value) > 0)) {
+      revenue = total;
+      status = 'success';
+    }
+  }
+
+  return {
+    fileName,
+    companyName,
+    cnpj: cnpjMatch?.[1]?.trim() ?? 'Não encontrado',
+    period: periodMatch ? `${periodMatch[2]}/${periodMatch[3]}` : 'Não encontrado',
+    revenue,
+    status
+  };
+}
 
 export async function extractDataFromPDF(file: File): Promise<ExtractedData> {
   try {
@@ -51,68 +99,7 @@ export async function extractDataFromPDF(file: File): Promise<ExtractedData> {
       fullText += sortedLines.join('\n') + '\n';
     }
 
-    // Regras de extração baseadas nas especificações
-    
-    // 1. Empresa: Extrair o texto após 'Nome empresarial:'
-    let companyName = 'Não encontrado';
-    const companyMatch = fullText.match(/Nome empresarial:\s*(.+?)(?=\s{2,}|\n|Data de abertura|CNPJ|$)/i);
-    if (companyMatch && companyMatch[1]) {
-      companyName = companyMatch[1].trim();
-    }
-
-    // 2. CNPJ: Localizar o padrão 'CNPJ Matriz: XX.XXX.XXX/XXXX-XX'
-    let cnpj = 'Não encontrado';
-    const cnpjMatch = fullText.match(/CNPJ Matriz:\s*(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/i);
-    if (cnpjMatch && cnpjMatch[1]) {
-      cnpj = cnpjMatch[1].trim();
-    }
-
-    // 3. Competência: Extrair a data inicial do campo 'Período de Apuração' e transformar para MM/AAAA
-    let period = 'Não encontrado';
-    const periodMatch = fullText.match(/Período de Apuração:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
-    if (periodMatch && periodMatch[2] && periodMatch[3]) {
-      period = `${periodMatch[2]}/${periodMatch[3]}`;
-    }
-
-    // 4. Receita: Buscar o valor correspondente em "Receita Bruta do PA (RPA) - Competência"
-    let revenue = '0,00';
-    let status: 'success' | 'no_movement' = 'success';
-
-    const isZero = (v: string) => /^0+([.,]0+)?$/.test(v.replace(/\./g, '').replace(',', '.').replace(/\s/g, '')) || v === '0,00';
-
-    // Procura os 3 valores numéricos (Mercado Interno | Mercado Externo | Total) após "Receita Bruta do PA (RPA)"
-    const rpaRegex = /Receita Bruta do PA \(RPA\)[^\d\n]*?([\d.]+,\d{2})[^\d\n]*?([\d.]+,\d{2})[^\d\n]*?([\d.]+,\d{2})/i;
-    const rpaMatch = fullText.match(rpaRegex);
-
-    if (rpaMatch) {
-      const [, interno, externo, total] = rpaMatch;
-      if (isZero(interno) && isZero(externo) && isZero(total)) {
-        revenue = 'Declarado sem movimento';
-        status = 'no_movement';
-      } else {
-        revenue = total;
-        status = 'success';
-      }
-    } else {
-      // Fallback: captura qualquer valor monetário após a label
-      const fallback = fullText.match(/Receita Bruta do PA \(RPA\)[^\d]*?([\d.]+,\d{2})/i);
-      if (fallback && fallback[1]) {
-        revenue = isZero(fallback[1]) ? 'Declarado sem movimento' : fallback[1];
-        status = isZero(fallback[1]) ? 'no_movement' : 'success';
-      } else {
-        revenue = 'Declarado sem movimento';
-        status = 'no_movement';
-      }
-    }
-
-    return {
-      fileName: file.name,
-      companyName,
-      cnpj,
-      period,
-      revenue,
-      status
-    };
+    return parseFiscalText(fullText, file.name);
   } catch (error) {
     console.error(`Erro ao processar ${file.name}:`, error);
     return {
