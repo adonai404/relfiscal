@@ -309,7 +309,7 @@ export default function Tools() {
                             <TableCell className="font-medium">{r.companyName}</TableCell>
                             <TableCell>{r.cnpj}</TableCell>
                             <TableCell>{r.period}</TableCell>
-                            <TableCell>R$ {r.revenue}</TableCell>
+                            <TableCell>{r.revenue === 'Declarado sem movimento' ? r.revenue : `R$ ${r.revenue}`}</TableCell>
                             <TableCell>
                               {r.status === 'no_movement' ? (
                                 <Badge variant="outline" className="text-orange-500 border-orange-500">Sem Movimento</Badge>
@@ -379,7 +379,7 @@ export default function Tools() {
                               {r.status === 'error' ? (
                                 <span className="text-destructive text-xs">{r.errorMessage}</span>
                               ) : (
-                                `R$ ${r.revenue}`
+                                r.revenue === 'Declarado sem movimento' ? r.revenue : `R$ ${r.revenue}`
                               )}
                             </TableCell>
                           </TableRow>
