@@ -34,7 +34,6 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { brl } from "@/lib/format";
 import { PeriodFilter, type PeriodFilterValue } from "@/components/PeriodFilter";
