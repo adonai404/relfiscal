@@ -873,7 +873,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_portal_customer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_can_read_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_has_company_access: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
