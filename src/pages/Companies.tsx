@@ -494,7 +494,7 @@ export default function Companies() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Suas empresas</h2>
-            <p className="text-sm text-muted-foreground">Organize em pastas, gerencie estados e selecione uma para o Empresa.aqui</p>
+            <p className="text-sm text-muted-foreground">Organize em pastas, gerencie estados e selecione uma para o movimento fiscal</p>
           </div>
           {canCreate && (
             <div className="flex items-center gap-2">

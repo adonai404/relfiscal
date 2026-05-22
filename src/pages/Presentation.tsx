@@ -1300,7 +1300,7 @@ function CompanySlide({
       {/* Movements table */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Empresa.aqui — {rows.length} competência(s)</CardTitle>
+          <CardTitle className="text-base">Movimento Fiscal — {rows.length} competência(s)</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {rows.length === 0 ? (

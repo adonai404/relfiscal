@@ -81,15 +81,15 @@ export default function Auth() {
            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
              <TrendingUp className="h-6 w-6" />
            </div>
-           <span className="text-xl font-bold tracking-tight">Empresa.aqui</span>
+           <span className="text-xl font-bold tracking-tight">Movimento Fiscal</span>
          </div>
  
          <div className="relative z-10 space-y-8">
            <div className="space-y-4">
-              <h1 className="text-5xl font-extrabold tracking-tight leading-tight text-emerald-400">
-                Gestão inteligente de <br /><br />
-                Movimentação fiscal
-              </h1>
+             <h1 className="text-5xl font-extrabold tracking-tight leading-tight">
+               Gestão inteligente de <br />
+               <span className="text-primary italic">movimentação fiscal</span>
+             </h1>
              <p className="text-lg text-muted-foreground max-w-lg">
                Acompanhe seus impostos, faturamento e indicadores mensais de forma consolidada e eficiente.
              </p>
@@ -115,7 +115,7 @@ export default function Auth() {
  
          <div className="relative z-10 pt-8 border-t border-border/50">
            <p className="text-sm text-muted-foreground italic">
-             {"\n"}
+             "A ferramenta que precisávamos para ter clareza sobre o peso dos impostos na operação."
            </p>
          </div>
        </div>
@@ -128,7 +128,7 @@ export default function Auth() {
              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                <TrendingUp className="h-7 w-7" />
              </div>
-             <h1 className="text-2xl font-bold">Empresa.aqui</h1>
+             <h1 className="text-2xl font-bold">Movimento Fiscal</h1>
            </div>
  
            <div className="space-y-2 text-center lg:text-left">
