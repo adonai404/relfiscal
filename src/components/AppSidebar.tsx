@@ -120,13 +120,13 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" onClick={() => navigate("/app")}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <SidebarMenuButton size="lg" onClick={() => navigate("/app")} className="hover:bg-transparent">
+              <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-[var(--shadow-soft)]">
                 <Activity className="size-5" />
               </div>
               <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-bold">Fiscal.aqui</span>
-                <span className="text-xs text-muted-foreground font-medium">Gestão Inteligente</span>
+                <span className="font-bold text-base">Fiscal.aqui</span>
+                <span className="text-xs text-muted-foreground font-medium">Gestão Fiscal Inteligente</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

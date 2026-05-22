@@ -639,16 +639,24 @@ export default function Dashboard() {
   );
 }
 
-function KpiCard({ icon, title, value, hint }: { icon: React.ReactNode; title: string; value: string; hint?: string }) {
+const KPI_TONES = [
+  { bg: "var(--gradient-kpi-blue)", chip: "bg-blue-500/15 text-blue-600", ring: "ring-blue-500/20" },
+  { bg: "var(--gradient-kpi-green)", chip: "bg-emerald-500/15 text-emerald-600", ring: "ring-emerald-500/20" },
+  { bg: "var(--gradient-kpi-amber)", chip: "bg-amber-500/15 text-amber-600", ring: "ring-amber-500/20" },
+  { bg: "var(--gradient-kpi-violet)", chip: "bg-violet-500/15 text-violet-600", ring: "ring-violet-500/20" },
+];
+let __kpiIdx = 0;
+function KpiCard({ icon, title, value, hint, tone }: { icon: React.ReactNode; title: string; value: string; hint?: string; tone?: number }) {
+  const t = KPI_TONES[(tone ?? __kpiIdx++) % KPI_TONES.length];
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden border-0 shadow-[var(--shadow-soft)] ring-1 ${t.ring}`} style={{ background: t.bg }}>
       <CardContent className="p-5">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <div className="rounded-md bg-muted/60 p-2">{icon}</div>
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <p className="text-sm font-medium text-foreground/70">{title}</p>
+          <div className={`rounded-xl p-2.5 ${t.chip}`}>{icon}</div>
         </div>
         <p className="text-2xl font-bold tracking-tight">{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+        {hint && <p className="mt-1 text-xs text-foreground/60">{hint}</p>}
       </CardContent>
     </Card>
   );
