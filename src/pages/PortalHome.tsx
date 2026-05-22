@@ -312,13 +312,12 @@ export default function PortalHome() {
               ))}
             </SelectContent>
           </Select>
-          <div className="w-full sm:col-span-2 md:col-span-1 md:w-auto">
-            <PeriodFilter
-              value={period}
-              onChange={setPeriod}
-              available={movements.map((m) => m.competencia)}
-            />
-          </div>
+          <PeriodFilter
+            value={period}
+            onChange={setPeriod}
+            available={movements.map((m) => m.competencia)}
+            className="h-9 w-full justify-start sm:col-span-2 md:col-span-1 md:w-auto md:justify-center"
+          />
           {hasFilters && (
             <Button
               variant="ghost"
