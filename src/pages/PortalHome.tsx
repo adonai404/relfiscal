@@ -279,7 +279,7 @@ export default function PortalHome() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard Executivo</h1>
           <p className="text-sm text-muted-foreground">
@@ -292,15 +292,15 @@ export default function PortalHome() {
             )}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:grid-cols-[minmax(0,12rem)_minmax(0,13rem)_auto_auto] md:items-center">
           <Input
             placeholder="Buscar empresa..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-48"
+            className="h-9 w-full"
           />
           <Select value={companyFilter} onValueChange={setCompanyFilter}>
-            <SelectTrigger className="h-9 w-52">
+            <SelectTrigger className="h-9 w-full">
               <SelectValue placeholder="Empresa" />
             </SelectTrigger>
             <SelectContent>
@@ -316,9 +316,15 @@ export default function PortalHome() {
             value={period}
             onChange={setPeriod}
             available={movements.map((m) => m.competencia)}
+            className="h-9 w-full justify-start sm:col-span-2 md:col-span-1 md:w-auto md:justify-center"
           />
           {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="w-full sm:col-span-2 md:col-span-1 md:w-auto"
+            >
               <X className="mr-1 h-4 w-4" /> Limpar
             </Button>
           )}
