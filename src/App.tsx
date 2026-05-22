@@ -20,6 +20,10 @@ import Presentation from "./pages/Presentation.tsx";
 import Settings from "./pages/Settings.tsx";
 import PublicMovement from "./pages/PublicMovement.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
+import AdminCustomers from "./pages/AdminCustomers.tsx";
+import PortalHome from "./pages/PortalHome.tsx";
+import PortalCompany from "./pages/PortalCompany.tsx";
+import { PortalLayout } from "./components/PortalLayout";
  import TaxPlanning from "./pages/TaxPlanning.tsx";
  import TaxPlanningDetail from "./pages/TaxPlanningDetail.tsx";
 import ProfileSettings from "./pages/ProfileSettings.tsx";
@@ -56,6 +60,12 @@ const App = () => (
                   <Route path="/minha-conta" element={<ProfileSettings />} />
                   <Route path="/ferramentas" element={<Tools />} />
                   <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
+                  <Route path="/admin/clientes" element={<ProtectedRoute requireSuperAdmin><AdminCustomers /></ProtectedRoute>} />
+                </Route>
+
+                <Route path="/portal" element={<PortalLayout />}>
+                  <Route index element={<PortalHome />} />
+                  <Route path="empresa/:id" element={<PortalCompany />} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />

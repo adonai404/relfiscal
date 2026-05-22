@@ -9,10 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Auth() {
    const { user, loading: authLoading } = useAuth();
+   const { isCustomer, isLoading: profileLoading } = useProfile();
   const navigate = useNavigate();
    const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
@@ -41,7 +43,16 @@ export default function Auth() {
      );
    }
  
-   if (user) return <Navigate to="/app" replace />;
+   if (user) {
+     if (profileLoading) {
+       return (
+         <div className="flex min-h-screen items-center justify-center bg-background">
+           <Loader2 className="h-6 w-6 animate-spin" />
+         </div>
+       );
+     }
+     return <Navigate to={isCustomer ? "/portal" : "/app"} replace />;
+   }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +61,7 @@ export default function Auth() {
     setSubmitting(false);
     if (error) return toast.error(error.message);
      toast.success("Bem-vindo!");
-     navigate("/app");
+     navigate("/");
    };
 
   const handleSignUp = async (e: React.FormEvent) => {

@@ -16,7 +16,7 @@ export function ProtectedRoute({
   requireSuperAdmin?: boolean;
 }) {
   const { user, loading, signOut } = useAuth();
-  const { profile, isLoading: loadingProfile, isBlocked } = useProfile();
+  const { profile, isLoading: loadingProfile, isBlocked, isCustomer } = useProfile();
   const { isSuperAdmin } = useUserRole();
 
   if (loading || loadingProfile) {
@@ -27,6 +27,11 @@ export function ProtectedRoute({
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
+
+  // Clientes do portal não acessam a área administrativa
+  if (isCustomer && !isSuperAdmin) {
+    return <Navigate to="/portal" replace />;
+  }
 
   if (requireSuperAdmin && !isSuperAdmin) {
     return <Navigate to="/empresas" replace />;
