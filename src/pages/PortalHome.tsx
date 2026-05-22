@@ -21,7 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { brl } from "@/lib/format";
 import { PeriodFilter, type PeriodFilterValue } from "@/components/PeriodFilter";
@@ -204,6 +217,30 @@ export default function PortalHome() {
     [totals],
   );
 
+  const evolutionData = useMemo(() => {
+    const byComp = new Map<string, { entrada: number; saida: number; impostos: number }>();
+    filteredMov.forEach((r) => {
+      const cur = byComp.get(r.competencia) ?? { entrada: 0, saida: 0, impostos: 0 };
+      cur.entrada += Number(r.entrada || 0);
+      cur.saida += Number(r.saida || 0);
+      const imp = taxFilter
+        ? Number((r as unknown as Record<string, number>)[taxFilter] || 0)
+        : TAX_KEYS.reduce(
+            (s, k) => s + Number((r as unknown as Record<string, number>)[k] || 0),
+            0,
+          );
+      cur.impostos += imp;
+      byComp.set(r.competencia, cur);
+    });
+    return Array.from(byComp.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([competencia, v]) => {
+        const [y, m] = competencia.split("-");
+        const label = m && y ? `${m}/${y.slice(2)}` : competencia;
+        return { competencia, label, ...v };
+      });
+  }, [filteredMov, taxFilter]);
+
   const rankings = useMemo(() => {
     const byCompany = new Map<string, { entrada: number; saida: number; impostos: number }>();
     filteredMov.forEach((r) => {
@@ -317,7 +354,7 @@ export default function PortalHome() {
         />
       </section>
 
-      {/* Composição Tributária */}
+      {/* Composição Tributária + Evolução */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-base">Composição Tributária</CardTitle>
@@ -332,60 +369,176 @@ export default function PortalHome() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : pieData.length === 0 ? (
+          ) : pieData.length === 0 && evolutionData.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               <PiggyBank className="mx-auto mb-2 h-8 w-8 opacity-40" />
-              Nenhum tributo registrado no período.
+              Nenhum dado registrado no período.
             </div>
           ) : (
-            <div className="h-[320px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={70}
-                    outerRadius={120}
-                    paddingAngle={2}
-                    onClick={(d) => setTaxFilter((d as { key: TaxKey }).key)}
-                    className="cursor-pointer outline-none"
-                  >
-                    {pieData.map((d, i) => (
-                      <Cell
-                        key={d.key}
-                        fill={PIE_COLORS[i % PIE_COLORS.length]}
-                        opacity={!taxFilter || taxFilter === d.key ? 1 : 0.25}
-                        stroke="hsl(var(--background))"
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v: number) => brl(Number(v))}
-                    contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Legend
-                    layout="vertical"
-                    verticalAlign="middle"
-                    align="right"
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: 12 }}
-                    onClick={(e) =>
-                      setTaxFilter((prev) => {
-                        const key = (e as unknown as { payload?: { key?: TaxKey } }).payload?.key;
-                        return prev === key ? null : (key ?? null);
-                      })
-                    }
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <Tabs defaultValue="composicao" className="w-full">
+              <TabsList className="mb-4 grid w-full grid-cols-2 sm:w-auto sm:inline-flex">
+                <TabsTrigger value="composicao">Composição</TabsTrigger>
+                <TabsTrigger value="evolucao">Evolução Consolidada</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="composicao" className="mt-0">
+                {pieData.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-muted-foreground">
+                    Nenhum tributo registrado.
+                  </p>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-[1fr_minmax(220px,260px)] md:items-center">
+                    <div className="h-[260px] w-full sm:h-[320px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius="55%"
+                            outerRadius="88%"
+                            paddingAngle={2}
+                            onClick={(d) => setTaxFilter((d as { key: TaxKey }).key)}
+                            className="cursor-pointer outline-none"
+                          >
+                            {pieData.map((d, i) => (
+                              <Cell
+                                key={d.key}
+                                fill={PIE_COLORS[i % PIE_COLORS.length]}
+                                opacity={!taxFilter || taxFilter === d.key ? 1 : 0.25}
+                                stroke="hsl(var(--background))"
+                                strokeWidth={2}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(v: number, _n, p) => [
+                              brl(Number(v)),
+                              (p as { payload?: { name?: string } })?.payload?.name ?? "",
+                            ]}
+                            contentStyle={{
+                              background: "hsl(var(--popover))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: 8,
+                              fontSize: 12,
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-1.5">
+                      {pieData
+                        .slice()
+                        .sort((a, b) => b.value - a.value)
+                        .map((d) => {
+                          const total = pieData.reduce((s, x) => s + x.value, 0) || 1;
+                          const pct = (d.value / total) * 100;
+                          const i = pieData.findIndex((x) => x.key === d.key);
+                          const active = !taxFilter || taxFilter === d.key;
+                          return (
+                            <button
+                              key={d.key}
+                              onClick={() =>
+                                setTaxFilter((prev) => (prev === d.key ? null : d.key))
+                              }
+                              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent ${
+                                active ? "" : "opacity-50"
+                              }`}
+                            >
+                              <span
+                                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                              />
+                              <span className="min-w-0 flex-1 truncate font-medium">{d.name}</span>
+                              <span className="tabular-nums text-muted-foreground">
+                                {pct.toFixed(1)}%
+                              </span>
+                              <span className="hidden tabular-nums sm:inline">{brl(d.value)}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="evolucao" className="mt-0">
+                {evolutionData.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-muted-foreground">
+                    Nenhum movimento no período.
+                  </p>
+                ) : (
+                  <div className="h-[280px] w-full sm:h-[340px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={evolutionData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="gEntrada" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="gSaida" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(142 70% 45%)" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="hsl(142 70% 45%)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="gImpostos" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(38 92% 50%)" stopOpacity={0.45} />
+                            <stop offset="100%" stopColor="hsl(38 92% 50%)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          stroke="hsl(var(--muted-foreground))"
+                          width={70}
+                          tickFormatter={(v) =>
+                            v >= 1000000
+                              ? `${(v / 1000000).toFixed(1)}M`
+                              : v >= 1000
+                                ? `${(v / 1000).toFixed(0)}k`
+                                : String(v)
+                          }
+                        />
+                        <Tooltip
+                          formatter={(v: number) => brl(Number(v))}
+                          contentStyle={{
+                            background: "hsl(var(--popover))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
+                        <Area
+                          type="monotone"
+                          dataKey="entrada"
+                          name="Entradas"
+                          stroke="hsl(217 91% 60%)"
+                          strokeWidth={2}
+                          fill="url(#gEntrada)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="saida"
+                          name="Saídas"
+                          stroke="hsl(142 70% 45%)"
+                          strokeWidth={2}
+                          fill="url(#gSaida)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="impostos"
+                          name={taxFilter ? TAX_LABEL[taxFilter] : "Impostos"}
+                          stroke="hsl(38 92% 50%)"
+                          strokeWidth={2}
+                          fill="url(#gImpostos)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>
@@ -418,6 +571,58 @@ export default function PortalHome() {
           onToggle={() => setShowAllSell((v) => !v)}
           onOpen={(id) => navigate(`/portal/empresa/${id}`)}
         />
+      </section>
+
+      {/* Listagem de empresas */}
+      <section className="space-y-3">
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Minhas empresas</h2>
+            <p className="text-xs text-muted-foreground">
+              Selecione uma empresa para ver os detalhes do movimento.
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {visibleCompanies.length} {visibleCompanies.length === 1 ? "empresa" : "empresas"}
+          </span>
+        </div>
+        {loadingCompanies ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        ) : visibleCompanies.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              Nenhuma empresa encontrada com os filtros atuais.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleCompanies.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => navigate(`/portal/empresa/${c.id}`)}
+                className="group text-left"
+              >
+                <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold">{c.nome_fantasia}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {c.cnpj}
+                        {c.uf ? ` · ${c.uf}` : ""}
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </CardContent>
+                </Card>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
