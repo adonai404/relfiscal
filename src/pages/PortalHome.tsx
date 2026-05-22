@@ -553,7 +553,6 @@ export default function PortalHome() {
           onToggle={() => setShowAllTax((v) => !v)}
           onOpen={(id) => navigate(`/portal/empresa/${id}`)}
           total={totals.totalImpostos}
-          showPercent
         />
         <RankingCard
           title="Mais compram"
