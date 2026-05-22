@@ -139,6 +139,28 @@ export default function Tools() {
               </CardContent>
             </Card>
 
+            <a 
+              href="https://consulta-notas.lovable.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-primary/20 h-full">
+                <CardHeader>
+                  <Search className="h-8 w-8 mb-2 text-primary" />
+                  <CardTitle>Consulta de Notas Fiscais</CardTitle>
+                  <CardDescription>
+                    Pesquise e baixe XMLs de notas fiscais através da chave de acesso.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Ferramenta externa para consulta rápida de documentos fiscais eletrônicos.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+
             <Card className="opacity-60 border-dashed">
               <CardHeader>
                 <Wrench className="h-8 w-8 mb-2 text-muted-foreground" />
