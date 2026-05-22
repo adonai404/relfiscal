@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getOrCreateImportCompanies } from "@/lib/companyImport";
 import {
   PDF_API_LIMITS,
   describeError,
@@ -138,56 +139,17 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
     }
     setImporting(true);
     try {
-      const cnpjs = Array.from(new Set(selected.map((r) => r.cnpj)));
-
-      // 1) Empresas existentes
-      const { data: existing, error: exErr } = await supabase
-        .from("companies")
-        .select("id, cnpj, created_by")
-        .in("cnpj", cnpjs);
-      if (exErr) throw exErr;
-
-      const cnpjToId = new Map<string, string>();
-      const notMine: string[] = [];
-      (existing ?? []).forEach((c) => {
-        if (c.created_by === user.id) cnpjToId.set(c.cnpj, c.id);
-        else notMine.push(c.cnpj);
-      });
-      if (notMine.length > 0) {
-        throw new Error(
-          `CNPJ(s) pertencente(s) a outro usuário: ${notMine.slice(0, 3).join(", ")}${notMine.length > 3 ? "..." : ""}`
-        );
-      }
-
-      // 2) Criar empresas faltantes (usa razão social vinda do PDF)
-      const missing = selected.filter((r) => !cnpjToId.has(r.cnpj));
-      const uniqueMissing = new Map<string, PreviewRow>();
-      missing.forEach((r) => {
-        if (!uniqueMissing.has(r.cnpj)) uniqueMissing.set(r.cnpj, r);
-      });
-      let createdCount = 0;
-      if (uniqueMissing.size > 0) {
-        const toInsert = Array.from(uniqueMissing.values()).map((r) => ({
+      const { idByCnpj: cnpjToId, createdCount } = await getOrCreateImportCompanies(
+        selected.map((r) => ({
           cnpj: r.cnpj,
           razao_social: r.razao_social || "A definir",
           nome_fantasia: r.razao_social || `Empresa ${r.cnpj.slice(-4)}`,
           uf: "SP",
-          regime: "simples_nacional" as const,
-          slug: "",
-          created_by: user.id,
-        }));
-        const { data: created, error: cErr } = await supabase
-          .from("companies")
-          .insert(toInsert as never)
-          .select("id, cnpj");
-        if (cErr) throw cErr;
-        (created ?? []).forEach((c: { id: string; cnpj: string }) => {
-          cnpjToId.set(c.cnpj, c.id);
-          createdCount++;
-        });
-      }
+          regime: "simples_nacional",
+        }))
+      );
 
-      // 3) Upsert do movimento (saída = RPA total, simples_nacional = valor pago do DAS)
+      // Upsert do movimento (saída = RPA total, simples_nacional = valor pago do DAS)
       const payload = selected
         .map((r) => {
           const company_id = cnpjToId.get(r.cnpj);
