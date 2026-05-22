@@ -14,6 +14,21 @@ export interface ImportCompanyResult {
   created: boolean;
 }
 
+type ImportCompanyRpcParams = {
+  _cnpj: string;
+  _razao_social: string;
+  _nome_fantasia: string;
+  _uf: string;
+  _regime: NonNullable<ImportCompanyInput["regime"]>;
+};
+
+type ImportCompanyRpcClient = {
+  rpc: (
+    name: "get_or_create_import_company",
+    params: ImportCompanyRpcParams
+  ) => Promise<{ data: ImportCompanyResult[] | ImportCompanyResult | null; error: Error | null }>;
+};
+
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
 export async function getOrCreateImportCompanies(rows: ImportCompanyInput[]) {
@@ -26,7 +41,7 @@ export async function getOrCreateImportCompanies(rows: ImportCompanyInput[]) {
 
   const results = await Promise.all(
     Array.from(unique.values()).map(async (row) => {
-      const { data, error } = await (supabase as any).rpc("get_or_create_import_company", {
+      const { data, error } = await (supabase as unknown as ImportCompanyRpcClient).rpc("get_or_create_import_company", {
         _cnpj: row.cnpj,
         _razao_social: row.razao_social || "A definir",
         _nome_fantasia: row.nome_fantasia || row.razao_social || `Empresa ${row.cnpj.slice(-4)}`,
