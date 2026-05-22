@@ -641,13 +641,13 @@ function KpiCard({
   };
   return (
     <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${toneClass[tone]}`}>
+      <CardContent className="flex flex-col items-start gap-2 p-4 sm:flex-row sm:items-center sm:gap-3">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${toneClass[tone]}`}>
           {icon}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-          <div className="truncate text-lg font-bold">{value}</div>
+          <div className="text-base font-bold break-words sm:text-lg sm:truncate">{value}</div>
         </div>
       </CardContent>
     </Card>
