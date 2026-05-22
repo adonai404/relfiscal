@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Mail, Building2, Trash2, Key, Power, PowerOff, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -323,15 +323,11 @@ function CompaniesDialog({
   const [picked, setPicked] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Sync when opening
-  useState(() => {});
-  if (customer && picked.length === 0 && customer.company_ids.length > 0) {
-    // initialize once per open
-  }
-
   const isOpen = !!customer;
-  // reset picked whenever customer changes
-  useStateInit(customer?.id, () => setPicked(customer?.company_ids ?? []));
+
+  useEffect(() => {
+    if (customer) setPicked(customer.company_ids ?? []);
+  }, [customer]);
 
   const save = async () => {
     if (!customer) return;
@@ -445,16 +441,4 @@ function ResetPasswordDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-// Tiny helper to reset state when a key value changes
-function useStateInit(key: unknown, fn: () => void) {
-  const ref = (useStateInit as unknown as { _: Map<symbol, unknown> })._ ??
-    ((useStateInit as unknown as { _: Map<symbol, unknown> })._ = new Map());
-  const id = (useStateInit as unknown as { _id?: symbol })._id ??
-    ((useStateInit as unknown as { _id?: symbol })._id = Symbol());
-  if (ref.get(id) !== key) {
-    ref.set(id, key);
-    fn();
-  }
 }
