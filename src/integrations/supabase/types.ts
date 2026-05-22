@@ -852,6 +852,20 @@ export type Database = {
     }
     Functions: {
       generate_slug: { Args: { input_text: string }; Returns: string }
+      get_or_create_import_company: {
+        Args: {
+          _cnpj: string
+          _nome_fantasia?: string
+          _razao_social?: string
+          _regime?: Database["public"]["Enums"]["tax_regime"]
+          _uf?: string
+        }
+        Returns: {
+          cnpj: string
+          created: boolean
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
