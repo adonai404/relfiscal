@@ -217,6 +217,30 @@ export default function PortalHome() {
     [totals],
   );
 
+  const evolutionData = useMemo(() => {
+    const byComp = new Map<string, { entrada: number; saida: number; impostos: number }>();
+    filteredMov.forEach((r) => {
+      const cur = byComp.get(r.competencia) ?? { entrada: 0, saida: 0, impostos: 0 };
+      cur.entrada += Number(r.entrada || 0);
+      cur.saida += Number(r.saida || 0);
+      const imp = taxFilter
+        ? Number((r as unknown as Record<string, number>)[taxFilter] || 0)
+        : TAX_KEYS.reduce(
+            (s, k) => s + Number((r as unknown as Record<string, number>)[k] || 0),
+            0,
+          );
+      cur.impostos += imp;
+      byComp.set(r.competencia, cur);
+    });
+    return Array.from(byComp.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([competencia, v]) => {
+        const [y, m] = competencia.split("-");
+        const label = m && y ? `${m}/${y.slice(2)}` : competencia;
+        return { competencia, label, ...v };
+      });
+  }, [filteredMov, taxFilter]);
+
   const rankings = useMemo(() => {
     const byCompany = new Map<string, { entrada: number; saida: number; impostos: number }>();
     filteredMov.forEach((r) => {
