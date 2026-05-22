@@ -62,7 +62,7 @@ export function PeriodFilter({ value, onChange, className, available }: Props) {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
+      <PopoverContent className="w-[min(20rem,calc(100vw-1.5rem))]" align="end">
         <div className="space-y-3">
           <div>
             <p className="text-sm font-medium">Filtrar por competência</p>
