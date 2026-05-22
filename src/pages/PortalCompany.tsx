@@ -213,10 +213,12 @@ export default function PortalCompany() {
               Nenhuma competência registrada para este período.
             </p>
           ) : (
-            <Table>
+            <Table className="fiscal-table">
               <TableHeader>
                 <TableRow>
-                  <TableHead>{config?.label_competencia ?? "Competência"}</TableHead>
+                  <TableHead className="sticky left-0 bg-card">
+                    {config?.label_competencia ?? "Competência"}
+                  </TableHead>
                   {visibleCols.map((c) => (
                     <TableHead
                       key={c}
@@ -236,12 +238,15 @@ export default function PortalCompany() {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{displayCompetencia(r.competencia)}</TableCell>
+                    <TableCell className="sticky left-0 bg-card font-medium">
+                      {displayCompetencia(r.competencia)}
+                    </TableCell>
                     {visibleCols.map((c) => {
                       const value = computeColumnValue(r, c);
                       return (
                         <TableCell
                           key={c}
+                          data-col-cat={getColumnCategory(c)}
                           className="whitespace-nowrap text-right tabular-nums"
                         >
                           {isComputedColumn(c) ? formatPercent(value) : brl(value)}
@@ -253,6 +258,7 @@ export default function PortalCompany() {
                       return (
                         <TableCell
                           key={cc.id}
+                          data-col-cat="custom"
                           className="whitespace-nowrap text-right tabular-nums"
                         >
                           {formatCustomValue(resolver(cc.key), cc.format, cc.decimals)}
@@ -262,16 +268,24 @@ export default function PortalCompany() {
                   </TableRow>
                 ))}
                 <TableRow className="font-semibold">
-                  <TableCell>TOTAL</TableCell>
+                  <TableCell className="sticky left-0 bg-card">TOTAL</TableCell>
                   {visibleCols.map((c) => (
-                    <TableCell key={c} className="whitespace-nowrap text-right tabular-nums">
+                    <TableCell
+                      key={c}
+                      data-col-cat={getColumnCategory(c)}
+                      className="whitespace-nowrap text-right tabular-nums"
+                    >
                       {isComputedColumn(c)
                         ? formatPercent(totals.byCol[c] || 0)
                         : brl(totals.byCol[c] || 0)}
                     </TableCell>
                   ))}
                   {visibleCustom.map((cc) => (
-                    <TableCell key={cc.id} className="whitespace-nowrap text-right tabular-nums">
+                    <TableCell
+                      key={cc.id}
+                      data-col-cat="custom"
+                      className="whitespace-nowrap text-right tabular-nums"
+                    >
                       {formatCustomValue(totals.byCol[cc.key] || 0, cc.format, cc.decimals)}
                     </TableCell>
                   ))}
