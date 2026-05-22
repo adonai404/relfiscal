@@ -90,6 +90,12 @@ export function AppSidebar() {
 
   const adminItems = [
     {
+      title: "Clientes",
+      icon: Building2,
+      path: "/admin/clientes",
+      superAdminOnly: true,
+    },
+    {
       title: "Usuários",
       icon: Users,
       path: "/admin/usuarios",
