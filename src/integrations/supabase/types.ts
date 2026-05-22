@@ -19,7 +19,7 @@ export type Database = {
           api_key: string | null
           cnpj: string
           created_at: string
-          created_by: string | null
+          created_by: string
           folder_id: string | null
           id: string
           nome_fantasia: string
@@ -34,7 +34,7 @@ export type Database = {
           api_key?: string | null
           cnpj: string
           created_at?: string
-          created_by?: string | null
+          created_by?: string
           folder_id?: string | null
           id?: string
           nome_fantasia: string
@@ -49,7 +49,7 @@ export type Database = {
           api_key?: string | null
           cnpj?: string
           created_at?: string
-          created_by?: string | null
+          created_by?: string
           folder_id?: string | null
           id?: string
           nome_fantasia?: string
