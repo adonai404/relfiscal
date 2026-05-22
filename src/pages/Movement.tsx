@@ -454,6 +454,9 @@ export default function Movement() {
             </div>
             <div className="flex flex-wrap items-center gap-2 no-print">
               <PeriodFilter value={period} onChange={setPeriod} available={availableComps} />
+              <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes")}>
+                <Settings className="mr-2 h-4 w-4" /> Configurações
+              </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
