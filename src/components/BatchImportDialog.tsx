@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getOrCreateImportCompanies } from "@/lib/companyImport";
 import {
   downloadCompaniesTemplate,
   downloadBatchMovementTemplate,
@@ -35,34 +36,8 @@ export function BatchImportDialog({ open, onOpenChange }: Props) {
     if (!user) throw new Error("Não autenticado");
     if (rows.length === 0) throw new Error("Nenhuma empresa válida na planilha.");
 
-    // Quais já existem? (para não tentar duplicar)
-    const cnpjs = rows.map((r) => r.cnpj);
-    const { data: existing, error: exErr } = await supabase
-      .from("companies")
-      .select("cnpj")
-      .in("cnpj", cnpjs);
-    if (exErr) throw exErr;
-    const existingSet = new Set((existing ?? []).map((c) => c.cnpj));
-
-    const toInsert = rows
-      .filter((r) => !existingSet.has(r.cnpj))
-      .map((r) => ({
-        cnpj: r.cnpj,
-        razao_social: r.razao_social,
-        nome_fantasia: r.nome_fantasia,
-        uf: r.uf,
-        regime: r.regime,
-        slug: "", // trigger gera
-        created_by: user.id,
-      }));
-
-    if (toInsert.length === 0) {
-      return { inserted: 0, skipped: rows.length };
-    }
-
-    const { error } = await supabase.from("companies").insert(toInsert as never);
-    if (error) throw error;
-    return { inserted: toInsert.length, skipped: rows.length - toInsert.length };
+    const { createdCount } = await getOrCreateImportCompanies(rows);
+    return { inserted: createdCount, skipped: rows.length - createdCount };
   };
 
   const onCompaniesFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,58 +68,17 @@ export function BatchImportDialog({ open, onOpenChange }: Props) {
     if (!user) throw new Error("Não autenticado");
     if (rows.length === 0) throw new Error("Nenhuma linha válida na planilha de movimento.");
 
-    const allCnpjs = Array.from(new Set(rows.map((r) => r.cnpj)));
-
-    // 1) Buscar empresas que já existem (do usuário ou de qualquer um — RLS de SELECT é pública)
-    const { data: existing, error: exErr } = await supabase
-      .from("companies")
-      .select("id, cnpj, created_by")
-      .in("cnpj", allCnpjs);
-    if (exErr) throw exErr;
-
-    const cnpjToId = new Map<string, string>();
-    const notMine: string[] = [];
-    (existing ?? []).forEach((c) => {
-      if (c.created_by === user.id) {
-        cnpjToId.set(c.cnpj, c.id);
-      } else {
-        notMine.push(c.cnpj);
-      }
-    });
-
-    if (notMine.length > 0) {
-      throw new Error(
-        `Os seguintes CNPJs já existem no sistema mas pertencem a outro usuário: ${notMine.slice(0, 3).join(", ")}${
-          notMine.length > 3 ? "..." : ""
-        }`
-      );
-    }
-
-    // 2) Criar empresas faltantes automaticamente
-    const missing = allCnpjs.filter((c) => !cnpjToId.has(c));
-    let createdCount = 0;
-    if (missing.length > 0) {
-      const toInsert = missing.map((cnpj) => ({
-        cnpj,
+    const { idByCnpj: cnpjToId, createdCount } = await getOrCreateImportCompanies(
+      rows.map((r) => ({
+        cnpj: r.cnpj,
         razao_social: "A definir",
-        nome_fantasia: `Empresa ${cnpj.slice(-4)}`,
+        nome_fantasia: `Empresa ${r.cnpj.slice(-4)}`,
         uf: "SP",
-        regime: "simples_nacional" as const,
-        slug: "",
-        created_by: user.id,
-      }));
-      const { data: created, error: cErr } = await supabase
-        .from("companies")
-        .insert(toInsert as never)
-        .select("id, cnpj");
-      if (cErr) throw cErr;
-      (created ?? []).forEach((c: { id: string; cnpj: string }) => {
-        cnpjToId.set(c.cnpj, c.id);
-        createdCount++;
-      });
-    }
+        regime: "simples_nacional",
+      }))
+    );
 
-    // 3) Inserir/atualizar movimento
+    // Inserir/atualizar movimento
     const payload = rows
       .map((r) => {
         const companyId = cnpjToId.get(r.cnpj);
