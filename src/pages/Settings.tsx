@@ -182,7 +182,7 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Visibilidade de Colunas</CardTitle>
-                <CardDescription>Escolha quais colunas aparecem na tabela do Movimento Fiscal, na página pública e na impressão.</CardDescription>
+                <CardDescription>Escolha quais colunas aparecem na tabela do Empresa.aqui, na página pública e na impressão.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
