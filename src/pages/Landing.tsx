@@ -42,7 +42,7 @@ const Landing = () => {
             >
               <BarChart3 className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold tracking-tight">RelFiscal</span>
+            <span className="text-lg font-semibold tracking-tight">Empresa.aqui</span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
             <a href="#recursos" className="transition hover:text-foreground">Recursos</a>
@@ -86,7 +86,7 @@ const Landing = () => {
               <Sparkles className="h-3 w-3 text-primary" /> Feito para escritórios de contabilidade
             </Badge>
             <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              O movimento fiscal de todos os seus clientes,{" "}
+              Empresa.aqui de todos os seus clientes,{" "}
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: "var(--gradient-primary)" }}
@@ -182,7 +182,7 @@ const Landing = () => {
           <FeatureCard
             icon={<Share2 className="h-5 w-5" />}
             title="Link público"
-            text="Compartilhe o movimento fiscal com seu cliente por uma URL — sem login."
+            text="Compartilhe o Empresa.aqui com seu cliente por uma URL — sem login."
           />
           <FeatureCard
             icon={<Lock className="h-5 w-5" />}
@@ -274,10 +274,10 @@ const Landing = () => {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <BarChart3 className="h-4 w-4 text-primary" />
-            <span>RelFiscal — Movimento fiscal multiempresa</span>
+            <span>Empresa.aqui — Gestão fiscal multiempresa</span>
           </div>
           <div className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} RelFiscal. Todos os direitos reservados.
+            © {new Date().getFullYear()} Empresa.aqui. Todos os direitos reservados.
           </div>
         </div>
       </footer>

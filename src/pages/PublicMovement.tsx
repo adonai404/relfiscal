@@ -144,7 +144,7 @@ export default function PublicMovement() {
   useEffect(() => {
     if (!company) return;
     document.title = `${company.nome_fantasia} — Empresa.aqui`;
-    const desc = `Painel público de movimento fiscal de ${company.nome_fantasia} (${formatCNPJ(company.cnpj)}). Entradas, saídas, impostos e Simples Nacional.`;
+    const desc = `Painel público de Empresa.aqui de ${company.nome_fantasia} (${formatCNPJ(company.cnpj)}). Entradas, saídas, impostos e Simples Nacional.`;
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
