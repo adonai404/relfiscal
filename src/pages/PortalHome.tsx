@@ -572,6 +572,58 @@ export default function PortalHome() {
           onOpen={(id) => navigate(`/portal/empresa/${id}`)}
         />
       </section>
+
+      {/* Listagem de empresas */}
+      <section className="space-y-3">
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Minhas empresas</h2>
+            <p className="text-xs text-muted-foreground">
+              Selecione uma empresa para ver os detalhes do movimento.
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {visibleCompanies.length} {visibleCompanies.length === 1 ? "empresa" : "empresas"}
+          </span>
+        </div>
+        {loadingCompanies ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        ) : visibleCompanies.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              Nenhuma empresa encontrada com os filtros atuais.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleCompanies.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => navigate(`/portal/empresa/${c.id}`)}
+                className="group text-left"
+              >
+                <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold">{c.nome_fantasia}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {c.cnpj}
+                        {c.uf ? ` · ${c.uf}` : ""}
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </CardContent>
+                </Card>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
