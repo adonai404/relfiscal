@@ -70,12 +70,6 @@ export function AppSidebar() {
       adminOnly: true,
     },
     {
-      title: "Movimento",
-      icon: ArrowLeftRight,
-      path: "/movimento",
-      requiresCompany: true,
-    },
-    {
       title: "Planejamento",
       icon: Calculator,
       path: "/planejamento",
