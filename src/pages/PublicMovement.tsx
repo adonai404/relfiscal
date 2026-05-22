@@ -143,8 +143,8 @@ export default function PublicMovement() {
   // SEO: dynamic title + meta description + canonical
   useEffect(() => {
     if (!company) return;
-    document.title = `${company.nome_fantasia} — Movimento Fiscal`;
-    const desc = `Painel público de movimento fiscal de ${company.nome_fantasia} (${formatCNPJ(company.cnpj)}). Entradas, saídas, impostos e Simples Nacional.`;
+    document.title = `${company.nome_fantasia} — Empresa.aqui`;
+    const desc = `Painel público de Empresa.aqui de ${company.nome_fantasia} (${formatCNPJ(company.cnpj)}). Entradas, saídas, impostos e Simples Nacional.`;
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
@@ -213,7 +213,7 @@ export default function PublicMovement() {
           <h1 className="print-title">{company.nome_fantasia}</h1>
           <div className="print-sub">{company.razao_social}</div>
           <div className="print-sub">{formatCNPJ(company.cnpj)} · {company.uf}</div>
-          <div className="print-sub">Movimento Fiscal · gerado em {generatedAt}</div>
+          <div className="print-sub">Empresa.aqui · gerado em {generatedAt}</div>
         </div>
         <img src={qrSrc} alt="QR Code do painel público" className="print-qr" width={110} height={110} />
       </div>
@@ -235,7 +235,7 @@ export default function PublicMovement() {
 
         <Card className="print-container">
           <CardHeader>
-            <CardTitle>Movimento Fiscal</CardTitle>
+            <CardTitle>Empresa.aqui</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto fiscal-table-wrap">
             {loadingRows ? (

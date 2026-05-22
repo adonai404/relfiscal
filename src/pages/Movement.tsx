@@ -408,7 +408,7 @@ export default function Movement() {
           <h1 className="print-title">{selectedCompany.nome_fantasia}</h1>
           <div className="print-sub">{selectedCompany.razao_social}</div>
           <div className="print-sub">{formatCNPJ(selectedCompany.cnpj)} · {selectedCompany.uf}</div>
-          <div className="print-sub">Movimento Fiscal · gerado em {new Date().toLocaleString("pt-BR")}</div>
+          <div className="print-sub">Empresa.aqui · gerado em {new Date().toLocaleString("pt-BR")}</div>
         </div>
         <img
           src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
@@ -444,7 +444,7 @@ export default function Movement() {
         <Card className="print-container">
           <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <CardTitle>Movimento Fiscal</CardTitle>
+              <CardTitle>Empresa.aqui</CardTitle>
               {filtersActive && (
                 <Badge variant="secondary" className="gap-1">
                   <Filter className="h-3 w-3" />
