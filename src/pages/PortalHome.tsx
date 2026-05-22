@@ -34,7 +34,6 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { brl } from "@/lib/format";
 import { PeriodFilter, type PeriodFilterValue } from "@/components/PeriodFilter";
@@ -354,194 +353,189 @@ export default function PortalHome() {
         />
       </section>
 
-      {/* Composição Tributária + Evolução */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-base">Composição Tributária</CardTitle>
-          {taxFilter && (
-            <Button variant="ghost" size="sm" onClick={() => setTaxFilter(null)}>
-              <X className="mr-1 h-3.5 w-3.5" /> Limpar tributo
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : pieData.length === 0 && evolutionData.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              <PiggyBank className="mx-auto mb-2 h-8 w-8 opacity-40" />
-              Nenhum dado registrado no período.
-            </div>
-          ) : (
-            <Tabs defaultValue="composicao" className="w-full">
-              <TabsList className="mb-4 grid w-full grid-cols-2 sm:w-auto sm:inline-flex">
-                <TabsTrigger value="composicao">Composição</TabsTrigger>
-                <TabsTrigger value="evolucao">Evolução Consolidada</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="composicao" className="mt-0">
-                {pieData.length === 0 ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">
-                    Nenhum tributo registrado.
-                  </p>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-[1fr_minmax(220px,260px)] md:items-center">
-                    <div className="h-[260px] w-full sm:h-[320px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius="55%"
-                            outerRadius="88%"
-                            paddingAngle={2}
-                            onClick={(d) => setTaxFilter((d as { key: TaxKey }).key)}
-                            className="cursor-pointer outline-none"
-                          >
-                            {pieData.map((d, i) => (
-                              <Cell
-                                key={d.key}
-                                fill={PIE_COLORS[i % PIE_COLORS.length]}
-                                opacity={!taxFilter || taxFilter === d.key ? 1 : 0.25}
-                                stroke="hsl(var(--background))"
-                                strokeWidth={2}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(v: number, _n, p) => [
-                              brl(Number(v)),
-                              (p as { payload?: { name?: string } })?.payload?.name ?? "",
-                            ]}
-                            contentStyle={{
-                              background: "hsl(var(--popover))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: 8,
-                              fontSize: 12,
-                            }}
+      {/* Composição Tributária + Evolução Consolidada */}
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-base">Composição Tributária</CardTitle>
+            {taxFilter && (
+              <Button variant="ghost" size="sm" onClick={() => setTaxFilter(null)}>
+                <X className="mr-1 h-3.5 w-3.5" /> Limpar tributo
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : pieData.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                <PiggyBank className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                Nenhum tributo registrado no período.
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-[1fr_minmax(180px,220px)] sm:items-center">
+                <div className="h-[260px] w-full sm:h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius="55%"
+                        outerRadius="88%"
+                        paddingAngle={2}
+                        onClick={(d) => setTaxFilter((d as { key: TaxKey }).key)}
+                        className="cursor-pointer outline-none"
+                      >
+                        {pieData.map((d, i) => (
+                          <Cell
+                            key={d.key}
+                            fill={PIE_COLORS[i % PIE_COLORS.length]}
+                            opacity={!taxFilter || taxFilter === d.key ? 1 : 0.25}
+                            stroke="hsl(var(--background))"
+                            strokeWidth={2}
                           />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="space-y-1.5">
-                      {pieData
-                        .slice()
-                        .sort((a, b) => b.value - a.value)
-                        .map((d) => {
-                          const total = pieData.reduce((s, x) => s + x.value, 0) || 1;
-                          const pct = (d.value / total) * 100;
-                          const i = pieData.findIndex((x) => x.key === d.key);
-                          const active = !taxFilter || taxFilter === d.key;
-                          return (
-                            <button
-                              key={d.key}
-                              onClick={() =>
-                                setTaxFilter((prev) => (prev === d.key ? null : d.key))
-                              }
-                              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent ${
-                                active ? "" : "opacity-50"
-                              }`}
-                            >
-                              <span
-                                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                                style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                              />
-                              <span className="min-w-0 flex-1 truncate font-medium">{d.name}</span>
-                              <span className="tabular-nums text-muted-foreground">
-                                {pct.toFixed(1)}%
-                              </span>
-                              <span className="hidden tabular-nums sm:inline">{brl(d.value)}</span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="evolucao" className="mt-0">
-                {evolutionData.length === 0 ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">
-                    Nenhum movimento no período.
-                  </p>
-                ) : (
-                  <div className="h-[280px] w-full sm:h-[340px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={evolutionData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="gEntrada" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.45} />
-                            <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="gSaida" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(142 70% 45%)" stopOpacity={0.45} />
-                            <stop offset="100%" stopColor="hsl(142 70% 45%)" stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="gImpostos" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(38 92% 50%)" stopOpacity={0.45} />
-                            <stop offset="100%" stopColor="hsl(38 92% 50%)" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                        <YAxis
-                          tick={{ fontSize: 11 }}
-                          stroke="hsl(var(--muted-foreground))"
-                          width={70}
-                          tickFormatter={(v) =>
-                            v >= 1000000
-                              ? `${(v / 1000000).toFixed(1)}M`
-                              : v >= 1000
-                                ? `${(v / 1000).toFixed(0)}k`
-                                : String(v)
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(v: number, _n, p) => [
+                          brl(Number(v)),
+                          (p as { payload?: { name?: string } })?.payload?.name ?? "",
+                        ]}
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-1.5">
+                  {pieData
+                    .slice()
+                    .sort((a, b) => b.value - a.value)
+                    .map((d) => {
+                      const total = pieData.reduce((s, x) => s + x.value, 0) || 1;
+                      const pct = (d.value / total) * 100;
+                      const i = pieData.findIndex((x) => x.key === d.key);
+                      const active = !taxFilter || taxFilter === d.key;
+                      return (
+                        <button
+                          key={d.key}
+                          onClick={() =>
+                            setTaxFilter((prev) => (prev === d.key ? null : d.key))
                           }
-                        />
-                        <Tooltip
-                          formatter={(v: number) => brl(Number(v))}
-                          contentStyle={{
-                            background: "hsl(var(--popover))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: 8,
-                            fontSize: 12,
-                          }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-                        <Area
-                          type="monotone"
-                          dataKey="entrada"
-                          name="Entradas"
-                          stroke="hsl(217 91% 60%)"
-                          strokeWidth={2}
-                          fill="url(#gEntrada)"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="saida"
-                          name="Saídas"
-                          stroke="hsl(142 70% 45%)"
-                          strokeWidth={2}
-                          fill="url(#gSaida)"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="impostos"
-                          name={taxFilter ? TAX_LABEL[taxFilter] : "Impostos"}
-                          stroke="hsl(38 92% 50%)"
-                          strokeWidth={2}
-                          fill="url(#gImpostos)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
+                          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent ${
+                            active ? "" : "opacity-50"
+                          }`}
+                        >
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                          />
+                          <span className="min-w-0 flex-1 truncate font-medium">{d.name}</span>
+                          <span className="tabular-nums text-muted-foreground">
+                            {pct.toFixed(1)}%
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Evolução Consolidada</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : evolutionData.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Nenhum movimento no período.
+              </p>
+            ) : (
+              <div className="h-[280px] w-full sm:h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={evolutionData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gEntrada" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gSaida" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(142 70% 45%)" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="hsl(142 70% 45%)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gImpostos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(38 92% 50%)" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="hsl(38 92% 50%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      width={70}
+                      tickFormatter={(v) =>
+                        v >= 1000000
+                          ? `${(v / 1000000).toFixed(1)}M`
+                          : v >= 1000
+                            ? `${(v / 1000).toFixed(0)}k`
+                            : String(v)
+                      }
+                    />
+                    <Tooltip
+                      formatter={(v: number) => brl(Number(v))}
+                      contentStyle={{
+                        background: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
+                    <Area
+                      type="monotone"
+                      dataKey="entrada"
+                      name="Entradas"
+                      stroke="hsl(217 91% 60%)"
+                      strokeWidth={2}
+                      fill="url(#gEntrada)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="saida"
+                      name="Saídas"
+                      stroke="hsl(142 70% 45%)"
+                      strokeWidth={2}
+                      fill="url(#gSaida)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="impostos"
+                      name={taxFilter ? TAX_LABEL[taxFilter] : "Impostos"}
+                      stroke="hsl(38 92% 50%)"
+                      strokeWidth={2}
+                      fill="url(#gImpostos)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Rankings */}
       <section className="grid gap-4 lg:grid-cols-3">
