@@ -66,41 +66,38 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
     ];
  
     return (
-      <div className="w-full">
- 
-        <div className="mb-10">
-          <h2 className="text-3xl font-bold tracking-tight mb-2">{getGreeting()}</h2>
-          <p className="text-muted-foreground text-lg">Selecione uma funcionalidade para começar.</p>
+      <div className="w-full max-w-6xl mx-auto">
+        <div className="mb-10 flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs font-medium text-primary uppercase tracking-wider mb-2">Painel Inicial</p>
+            <h1 className="text-4xl font-bold tracking-tight mb-2">{getGreeting()}</h1>
+            <p className="text-muted-foreground">Acesso rápido às áreas do sistema.</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {menuItems.map((item, idx) => {
             const Icon = item.icon;
             const isDisabled = !selectedCompany && !(item as any).forceEnabled;
             return (
-              <Button
+              <button
                 key={item.path}
-                variant="ghost"
                 disabled={isDisabled}
-                className="h-auto p-0 hover:bg-transparent group animate-in fade-in slide-in-from-bottom-4 duration-500 disabled:opacity-40"
-                style={{ animationDelay: `${idx * 100}ms` }}
+                className="group text-left animate-in fade-in slide-in-from-bottom-3 duration-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ animationDelay: `${idx * 70}ms` }}
                 onClick={() => navigate(item.path)}
               >
-                <Card className="w-full h-full transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border-border/50 hover:border-primary/50 group-hover:bg-accent/5">
-                  <CardHeader>
-                    <div className={`w-12 h-12 rounded-2xl ${item.bg} flex items-center justify-center mb-2 transition-transform duration-300 group-hover:scale-110`}>
-                      <Icon className={`h-6 w-6 ${item.color}`} />
-                    </div>
-                    <CardTitle className="flex items-center justify-between group-hover:text-primary transition-colors text-left">
-                      {item.title}
-                      <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                    </CardTitle>
-                    <CardDescription className="text-left line-clamp-2">
-                      {item.description}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              </Button>
+                <div className="relative h-full rounded-2xl border border-border/60 bg-card p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-[var(--shadow-elegant)] hover:-translate-y-0.5">
+                  <div className={`w-11 h-11 rounded-xl ${item.bg} flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-105`}>
+                    <Icon className={`h-5 w-5 ${item.color}`} />
+                  </div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="font-semibold text-base">{item.title}</h3>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                </div>
+              </button>
             );
           })}
         </div>
