@@ -51,8 +51,7 @@ interface MovementRow {
 
 export default function PortalCompany() {
   const { id } = useParams<{ id: string }>();
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue | null>(null);
-  const [showFilter, setShowFilter] = useState(false);
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>({ from: "", to: "" });
 
   const { data: company, isLoading: loadingCompany } = useQuery({
     queryKey: ["portal_company", id],
@@ -106,11 +105,11 @@ export default function PortalCompany() {
   }, [rawRows, config]);
 
   const rows = useMemo(() => {
-    if (!periodFilter) return computedRows;
+    const { from, to } = periodFilter;
+    if (!from && !to) return computedRows;
     return computedRows.filter((r) => {
-      const [y, m] = r.competencia.split("-").map(Number);
-      if (periodFilter.year && y !== periodFilter.year) return false;
-      if (periodFilter.month && m !== periodFilter.month) return false;
+      if (from && r.competencia < from) return false;
+      if (to && r.competencia > to) return false;
       return true;
     });
   }, [computedRows, periodFilter]);
@@ -182,23 +181,12 @@ export default function PortalCompany() {
             </div>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setShowFilter((v) => !v)}>
-          {showFilter ? <FilterX className="mr-2 h-4 w-4" /> : <Filter className="mr-2 h-4 w-4" />}
-          Período
-        </Button>
+        <PeriodFilter
+          value={periodFilter}
+          onChange={setPeriodFilter}
+          available={computedRows.map((r) => r.competencia)}
+        />
       </div>
-
-      {showFilter && (
-        <Card>
-          <CardContent className="p-4">
-            <PeriodFilter
-              value={periodFilter}
-              onChange={setPeriodFilter}
-              availableRows={computedRows.map((r) => ({ competencia: r.competencia }))}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
