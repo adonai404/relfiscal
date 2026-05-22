@@ -437,9 +437,6 @@ export default function Companies() {
               <DropdownMenuItem onClick={() => duplicateCompany(c)}>
                 <Copy className="mr-2 h-4 w-4" /> Duplicar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSelectedCompany(c); navigate("/configuracoes"); }}>
-                <SettingsIcon className="mr-2 h-4 w-4" /> Configurações
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {status !== "ativa" && (
                 <DropdownMenuItem onClick={() => updateStatus(c, "ativa")}>
