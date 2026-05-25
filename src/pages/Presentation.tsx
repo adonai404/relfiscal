@@ -483,7 +483,7 @@ export default function Presentation() {
                   <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
                     <Checkbox checked={includeSideBySide} onCheckedChange={(v) => setIncludeSideBySide(!!v)} />
                     <div className="text-sm">
-                      <p className="font-medium">Comparativo Lado a Lado <Badge variant="secondary" className="ml-1">Novo</Badge></p>
+                      <div className="font-medium">Comparativo Lado a Lado <Badge variant="secondary" className="ml-1">Novo</Badge></div>
                       <p className="text-xs text-muted-foreground">Empresas em colunas paralelas + total consolidado.</p>
                     </div>
                   </label>
@@ -497,7 +497,7 @@ export default function Presentation() {
                   <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
                     <Checkbox checked={includeScenarios} onCheckedChange={(v) => setIncludeScenarios(!!v)} />
                     <div className="text-sm">
-                      <p className="font-medium">Cenários: Atual × Projetado <Badge variant="secondary" className="ml-1">Economia</Badge></p>
+                      <div className="font-medium">Cenários: Atual × Projetado <Badge variant="secondary" className="ml-1">Economia</Badge></div>
                       <p className="text-xs text-muted-foreground">Compare dois cenários e destaque a economia.</p>
                     </div>
                   </label>
@@ -883,9 +883,9 @@ export default function Presentation() {
           : currentCompany?.nome_fantasia ?? "";
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur">
+      <header className="shrink-0 border-b bg-card/95 backdrop-blur">
         <div className="flex w-full items-center justify-between px-4 py-2 sm:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="sm" onClick={() => setMode("setup")}>
@@ -921,7 +921,7 @@ export default function Presentation() {
       </header>
 
       {/* Slide content */}
-      <main className="relative w-full px-4 py-6 sm:px-8">
+      <main className="relative flex-1 overflow-y-auto overflow-x-hidden w-full px-4 py-6 sm:px-8">
         <div className="mx-auto max-w-[1600px] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key={currentSlide}>
           {loadingMov ? (
             <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>
