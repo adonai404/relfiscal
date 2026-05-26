@@ -82,6 +82,7 @@ export default function Presentation() {
   const [includeSideBySide, setIncludeSideBySide] = useState(true);
   // Slide de Cenários (Atual x Projetado) — foco em economia
   const [includeScenarios, setIncludeScenarios] = useState(true);
+  const [includeDocumentation, setIncludeDocumentation] = useState(true);
   const [scenarioALabel, setScenarioALabel] = useState("Cenário Atual");
   const [scenarioBLabel, setScenarioBLabel] = useState("Cenário Projetado");
   const [scenarioACompanyIds, setScenarioACompanyIds] = useState<string[]>([]);
@@ -233,8 +234,10 @@ export default function Presentation() {
     if (includeCompanySlides) {
       finalCompanies.forEach((c) => {
         out.push({ kind: "company", companyId: c.id });
-        const docs = docsByCompany[c.id] ?? [];
-        docs.forEach((d) => out.push({ kind: "doc", companyId: c.id, docId: d.id }));
+        if (includeDocumentation) {
+          const docs = docsByCompany[c.id] ?? [];
+          docs.forEach((d) => out.push({ kind: "doc", companyId: c.id, docId: d.id }));
+        }
       });
     }
     if (includeScenarios && (scenarioACompanyIds.length > 0 || scenarioBCompanyIds.length > 0)) {
@@ -247,7 +250,7 @@ export default function Presentation() {
     return out;
   }, [
     finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide,
-    includeScenarios, scenarioACompanyIds, scenarioBCompanyIds, docsByCompany,
+    includeScenarios, scenarioACompanyIds, scenarioBCompanyIds, docsByCompany, includeDocumentation,
   ]);
 
   const currentSlideDef = slides[currentSlide];
