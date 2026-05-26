@@ -457,6 +457,12 @@ export default function Movement() {
               <Button variant="outline" size="sm" onClick={() => navigate("/configuracoes")}>
                 <Settings className="mr-2 h-4 w-4" /> Configurações
               </Button>
+              <Button variant="outline" size="sm" onClick={sharePublic}>
+                <Share2 className="mr-2 h-4 w-4" /> Página pública
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir
+              </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
