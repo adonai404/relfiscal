@@ -28,6 +28,7 @@ import { PortalLayout } from "./components/PortalLayout";
  import TaxPlanningDetail from "./pages/TaxPlanningDetail.tsx";
 import ProfileSettings from "./pages/ProfileSettings.tsx";
 import Tools from "./pages/Tools.tsx";
+import Documentation from "./pages/Documentation.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
                   <Route path="/planejamento/:id" element={<TaxPlanningDetail />} />
                   <Route path="/minha-conta" element={<ProfileSettings />} />
                   <Route path="/ferramentas" element={<Tools />} />
+                  <Route path="/documentacao" element={<Documentation />} />
                   <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                   <Route path="/admin/clientes" element={<ProtectedRoute requireSuperAdmin><AdminCustomers /></ProtectedRoute>} />
                 </Route>
