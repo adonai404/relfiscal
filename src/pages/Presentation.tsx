@@ -914,7 +914,9 @@ export default function Presentation() {
         ? "Comparativo Lado a Lado"
         : currentSlideDef?.kind === "scenarios"
           ? "Cenários — Atual × Projetado"
-          : currentCompany?.nome_fantasia ?? "";
+          : currentSlideDef?.kind === "doc"
+            ? (documentation.find((d) => d.id === currentSlideDef.docId)?.title ?? "Informação")
+            : currentCompany?.nome_fantasia ?? "";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background overflow-hidden">
@@ -999,6 +1001,27 @@ export default function Presentation() {
               rows={currentRows}
               cfg={configByCompany[currentCompany.id]}
             />
+          ) : currentSlideDef?.kind === "doc" ? (
+            (() => {
+              const doc = documentation.find((d) => d.id === currentSlideDef.docId);
+              const company = companies.find((c) => c.id === currentSlideDef.companyId);
+              if (!doc) return null;
+              return (
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <CardTitle className="text-2xl">{doc.title}</CardTitle>
+                      {company && (
+                        <span className="text-sm text-muted-foreground">{company.nome_fantasia}</span>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <MarkdownView content={doc.content} />
+                  </CardContent>
+                </Card>
+              );
+            })()
           ) : null}
 
           {/* Slide dots */}
