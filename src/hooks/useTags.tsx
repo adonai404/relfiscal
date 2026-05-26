@@ -16,6 +16,9 @@ export interface CompanyTag {
 export function useTags() {
   return useQuery({
     queryKey: ["tags"],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -31,6 +34,9 @@ export function useTags() {
 export function useCompanyTags() {
   return useQuery({
     queryKey: ["company_tags"],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)

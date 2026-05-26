@@ -43,6 +43,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const { data: companies = [], isLoading, refetch } = useQuery({
     queryKey: ["companies", user?.id, isSuperAdmin],
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       let query = supabase
         .from("companies")
