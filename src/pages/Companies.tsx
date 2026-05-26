@@ -99,6 +99,9 @@ export default function Companies() {
   const { data: folders = [] } = useQuery({
     queryKey: ["company_folders", user?.id, isSuperAdmin],
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       let query = supabase
         .from("company_folders" as any)
