@@ -11,7 +11,8 @@ import {
   Activity,
   ChevronRight,
   Plus,
-  Wrench
+  Wrench,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
@@ -80,6 +81,11 @@ export function AppSidebar() {
       icon: Presentation,
       path: "/apresentacao",
       requiresCompany: true,
+    },
+    {
+      title: "Documentação",
+      icon: FileText,
+      path: "/documentacao",
     },
     {
       title: "Ferramentas",
