@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -37,31 +37,35 @@ function insertLinePrefix(textarea: HTMLTextAreaElement, prefix: string) {
 
 export function MarkdownEditor({ value, onChange }: Props) {
   const [view, setView] = useState<"edit" | "preview" | "split">("split");
-  let ref: HTMLTextAreaElement | null = null;
+  const ref = useRef<HTMLTextAreaElement | null>(null);
 
   const apply = (fn: (t: HTMLTextAreaElement) => { next: string; cursor: number }) => {
-    if (!ref) return;
-    const { next, cursor } = fn(ref);
+    const el = ref.current;
+    if (!el) return;
+    const { next, cursor } = fn(el);
     onChange(next);
     requestAnimationFrame(() => {
-      if (!ref) return;
-      ref.focus();
-      ref.setSelectionRange(cursor, cursor);
+      const e2 = ref.current;
+      if (!e2) return;
+      e2.focus();
+      e2.setSelectionRange(cursor, cursor);
     });
   };
 
   const insertBlock = (block: string) => {
-    if (!ref) return;
-    const start = ref.selectionStart;
-    const value = ref.value;
+    const el = ref.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const value = el.value;
     const prefix = start > 0 && value[start - 1] !== "\n" ? "\n" : "";
     const next = value.slice(0, start) + prefix + block + "\n" + value.slice(start);
     onChange(next);
     requestAnimationFrame(() => {
-      if (!ref) return;
-      ref.focus();
+      const e2 = ref.current;
+      if (!e2) return;
+      e2.focus();
       const pos = start + prefix.length + block.length + 1;
-      ref.setSelectionRange(pos, pos);
+      e2.setSelectionRange(pos, pos);
     });
   };
 
@@ -126,7 +130,7 @@ export function MarkdownEditor({ value, onChange }: Props) {
 
   const editor = (
     <Textarea
-      ref={(el) => { ref = el; }}
+      ref={ref}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Digite o conteúdo em Markdown..."
