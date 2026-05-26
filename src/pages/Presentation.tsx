@@ -538,6 +538,13 @@ export default function Presentation() {
                       <p className="text-xs text-muted-foreground">Compare dois cenários e destaque a economia.</p>
                     </div>
                   </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 hover:bg-accent/40">
+                    <Checkbox checked={includeDocumentation} onCheckedChange={(v) => setIncludeDocumentation(!!v)} />
+                    <div className="text-sm">
+                      <div className="font-medium">Documentação da empresa</div>
+                      <p className="text-xs text-muted-foreground">Inclui as informações publicadas (Markdown) após cada slide de empresa.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
