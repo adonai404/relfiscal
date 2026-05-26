@@ -36,6 +36,7 @@ import {
   getTaxColumns,
 } from "@/hooks/useFiscalConfig";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
+import { MarkdownView } from "@/components/MarkdownView";
 
 interface MovementRow {
   id: string;
@@ -194,14 +195,47 @@ export default function Presentation() {
     | { kind: "company"; companyId: string }
     | { kind: "comparison" }
     | { kind: "sidebyside" }
-    | { kind: "scenarios" };
+    | { kind: "scenarios" }
+    | { kind: "doc"; companyId: string; docId: string };
+
+  // Fetch documentation for selected companies
+  const { data: documentation = [] } = useQuery({
+    queryKey: ["presentation_docs", finalCompanyIds.sort().join(",")],
+    enabled: mode === "running" && finalCompanyIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_documentation")
+        .select("id, company_id, title, content, position, status")
+        .in("company_id", finalCompanyIds)
+        .eq("status", "published")
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; company_id: string; title: string; content: string;
+        position: number; status: string;
+      }>;
+    },
+  });
+
+  const docsByCompany = useMemo(() => {
+    const m: Record<string, typeof documentation> = {};
+    documentation.forEach((d) => {
+      (m[d.company_id] ||= [] as any).push(d);
+    });
+    return m;
+  }, [documentation]);
 
   const slides: SlideKind[] = useMemo(() => {
     if (finalCompanies.length === 0) return [];
     const out: SlideKind[] = [];
     if (includeOverview) out.push({ kind: "overview" });
     if (includeCompanySlides) {
-      finalCompanies.forEach((c) => out.push({ kind: "company", companyId: c.id }));
+      finalCompanies.forEach((c) => {
+        out.push({ kind: "company", companyId: c.id });
+        const docs = docsByCompany[c.id] ?? [];
+        docs.forEach((d) => out.push({ kind: "doc", companyId: c.id, docId: d.id }));
+      });
     }
     if (includeScenarios && (scenarioACompanyIds.length > 0 || scenarioBCompanyIds.length > 0)) {
       out.push({ kind: "scenarios" });
@@ -213,7 +247,7 @@ export default function Presentation() {
     return out;
   }, [
     finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide,
-    includeScenarios, scenarioACompanyIds, scenarioBCompanyIds,
+    includeScenarios, scenarioACompanyIds, scenarioBCompanyIds, docsByCompany,
   ]);
 
   const currentSlideDef = slides[currentSlide];
