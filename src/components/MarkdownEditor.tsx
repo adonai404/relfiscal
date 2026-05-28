@@ -11,6 +11,7 @@ import {
 interface Props {
   value: string;
   onChange: (v: string) => void;
+  className?: string;
 }
 
 function wrapSelection(
@@ -35,7 +36,7 @@ function insertLinePrefix(textarea: HTMLTextAreaElement, prefix: string) {
   return { next, cursor: start + prefix.length };
 }
 
-export function MarkdownEditor({ value, onChange }: Props) {
+export function MarkdownEditor({ value, onChange, className }: Props) {
   const [view, setView] = useState<"edit" | "preview" | "split">("split");
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
