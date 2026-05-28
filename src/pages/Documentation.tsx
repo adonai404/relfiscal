@@ -331,8 +331,8 @@ function DocDialog({ doc, open, onClose, onSaved }: DocDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-[98vw] w-full h-[98vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="px-1">
           <DialogTitle>{doc ? "Editar informação" : "Nova informação"}</DialogTitle>
         </DialogHeader>
 
@@ -371,7 +371,7 @@ function DocDialog({ doc, open, onClose, onSaved }: DocDialogProps) {
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="flex-1 flex flex-col min-h-0 space-y-1.5 overflow-hidden">
           <div className="flex items-center justify-between">
             <Label>Conteúdo (Markdown)</Label>
             <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -382,7 +382,7 @@ function DocDialog({ doc, open, onClose, onSaved }: DocDialogProps) {
               ) : null}
             </div>
           </div>
-          <MarkdownEditor value={content} onChange={setContent} />
+          <MarkdownEditor value={content} onChange={setContent} className="flex-1 min-h-0" />
         </div>
 
         <DialogFooter>

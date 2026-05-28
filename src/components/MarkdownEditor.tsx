@@ -11,6 +11,7 @@ import {
 interface Props {
   value: string;
   onChange: (v: string) => void;
+  className?: string;
 }
 
 function wrapSelection(
@@ -35,7 +36,7 @@ function insertLinePrefix(textarea: HTMLTextAreaElement, prefix: string) {
   return { next, cursor: start + prefix.length };
 }
 
-export function MarkdownEditor({ value, onChange }: Props) {
+export function MarkdownEditor({ value, onChange, className }: Props) {
   const [view, setView] = useState<"edit" | "preview" | "split">("split");
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
@@ -134,12 +135,12 @@ export function MarkdownEditor({ value, onChange }: Props) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Digite o conteúdo em Markdown..."
-      className="min-h-[400px] resize-y rounded-none border-0 font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+      className="h-full min-h-[400px] flex-1 resize-none rounded-none border-0 font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
     />
   );
 
   const preview = (
-    <div className="min-h-[400px] overflow-auto p-4">
+    <div className="h-full min-h-[400px] overflow-auto p-4 flex-1">
       {value.trim() ? (
         <MarkdownView content={value} />
       ) : (
@@ -149,16 +150,18 @@ export function MarkdownEditor({ value, onChange }: Props) {
   );
 
   return (
-    <div className="overflow-hidden rounded-md border bg-background">
+    <div className={`flex flex-col overflow-hidden rounded-md border bg-background ${className || ""}`}>
       {toolbar}
-      {view === "edit" && editor}
-      {view === "preview" && preview}
-      {view === "split" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x">
-          {editor}
-          <div className="border-t md:border-t-0">{preview}</div>
-        </div>
-      )}
+      <div className="flex-1 flex flex-col min-h-0">
+        {view === "edit" && editor}
+        {view === "preview" && preview}
+        {view === "split" && (
+          <div className="grid flex-1 grid-cols-1 md:grid-cols-2 md:divide-x overflow-hidden">
+            {editor}
+            <div className="border-t md:border-t-0 overflow-auto">{preview}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
