@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wrench, Upload, FileText, Download, Trash2, CheckCircle2, AlertCircle, Search, FileDown, CalendarDays, TableProperties } from "lucide-react";
+import { Wrench, Upload, FileText, Download, Trash2, CheckCircle2, AlertCircle, Search, FileDown, CalendarDays, TableProperties, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -200,6 +200,28 @@ export default function Tools() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
                     Ferramenta externa para geração rápida de arquivos de dados estruturados.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+
+            <a 
+              href="https://declaration-data.lovable.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-primary/20 h-full">
+                <CardHeader>
+                  <Database className="h-8 w-8 mb-2 text-primary" />
+                  <CardTitle>Declaration Data</CardTitle>
+                  <CardDescription>
+                    Gerenciamento e organização de dados de declarações fiscais.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Ferramenta externa para processamento e armazenamento estruturado de declarações.
                   </p>
                 </CardContent>
               </Card>
