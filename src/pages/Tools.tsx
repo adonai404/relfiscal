@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wrench, Upload, FileText, Download, Trash2, CheckCircle2, AlertCircle, Search, FileDown } from "lucide-react";
+import { Wrench, Upload, FileText, Download, Trash2, CheckCircle2, AlertCircle, Search, FileDown, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -156,6 +156,28 @@ export default function Tools() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
                     Ferramenta externa para consulta rápida de documentos fiscais eletrônicos.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+            
+            <a 
+              href="https://fiscal-planner.lovable.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-primary/20 h-full">
+                <CardHeader>
+                  <CalendarDays className="h-8 w-8 mb-2 text-primary" />
+                  <CardTitle>Fiscal Planner</CardTitle>
+                  <CardDescription>
+                    Planejamento e organização de rotinas fiscais e obrigações.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Ferramenta externa para gestão de prazos e tarefas do departamento fiscal.
                   </p>
                 </CardContent>
               </Card>
