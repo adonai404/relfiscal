@@ -205,6 +205,28 @@ export default function Tools() {
               </Card>
             </a>
 
+            <a 
+              href="https://declaration-data.lovable.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-primary/20 h-full">
+                <CardHeader>
+                  <Database className="h-8 w-8 mb-2 text-primary" />
+                  <CardTitle>Declaration Data</CardTitle>
+                  <CardDescription>
+                    Gerenciamento e organização de dados de declarações fiscais.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Ferramenta externa para processamento e armazenamento estruturado de declarações.
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+
             <Card className="opacity-60 border-dashed">
               <CardHeader>
                 <Wrench className="h-8 w-8 mb-2 text-muted-foreground" />
