@@ -683,6 +683,18 @@ export default function Movement() {
         <footer className="print-only print-footer">
           Documento gerado em {new Date().toLocaleString("pt-BR")}
         </footer>
+
+        {companyDocs.length > 0 && (
+          <section className="print-only print-docs">
+            <h2 className="print-docs-title">Documentação</h2>
+            {companyDocs.map((d) => (
+              <article key={d.id} className="print-docs-item">
+                <h3 className="print-docs-item-title">{d.title}</h3>
+                <MarkdownView content={d.content} className="print-docs-content" />
+              </article>
+            ))}
+          </section>
+        )}
       </div>
     </div>
   );
