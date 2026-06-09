@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 /**
  * Verifica que, ao abrir a aba Movimento e acionar a impressão, a seção de
@@ -22,7 +23,11 @@ const COMPANY_ID = process.env.E2E_COMPANY_ID;
 test.describe("Movimento — impressão da Documentação", () => {
   test.skip(!COMPANY_ID, "Defina E2E_COMPANY_ID para rodar este teste.");
 
-  test("imprime tabela de débitos e parcelamento sem cortes", async ({ page }) => {
+  test("imprime tabela de débitos e parcelamento sem cortes", async ({ page }, testInfo) => {
+    await page.addInitScript((companyId) => {
+      window.localStorage.setItem("fiscal.selectedCompanyId", companyId as string);
+    }, COMPANY_ID);
+
     // 1. Abre a aba Movimento da empresa
     await page.goto(`/movimento?company=${COMPANY_ID}`);
     await page.waitForLoadState("networkidle");
@@ -49,6 +54,41 @@ test.describe("Movimento — impressão da Documentação", () => {
     const docsSection = page.locator(".print-docs");
     await expect(docsSection).toBeVisible();
     await expect(docsSection.getByText("Documentação")).toBeVisible();
+
+    const clippedAncestors = await docsSection.evaluate((node) => {
+      const offenders: Array<Record<string, string>> = [];
+      for (let el = node.parentElement; el; el = el.parentElement) {
+        const style = window.getComputedStyle(el);
+        const blocksPagination =
+          style.overflow !== "visible" ||
+          style.overflowX !== "visible" ||
+          style.overflowY !== "visible" ||
+          style.maxHeight !== "none" ||
+          style.position !== "static" ||
+          style.display === "flex" ||
+          style.display === "inline-flex" ||
+          style.display === "grid" ||
+          style.transform !== "none" ||
+          style.contain !== "none";
+
+        if (blocksPagination) {
+          offenders.push({
+            tag: el.tagName.toLowerCase(),
+            className: el.className.toString(),
+            display: style.display,
+            position: style.position,
+            overflow: style.overflow,
+            overflowX: style.overflowX,
+            overflowY: style.overflowY,
+            maxHeight: style.maxHeight,
+            transform: style.transform,
+            contain: style.contain,
+          });
+        }
+      }
+      return offenders;
+    });
+    expect(clippedAncestors).toEqual([]);
 
     // 7. Cabeçalho da tabela de débitos
     const docsContent = page.locator(".print-docs-content");
@@ -89,6 +129,12 @@ test.describe("Movimento — impressão da Documentação", () => {
       expect(box, `${label} sem boundingBox`).not.toBeNull();
       expect(box!.height).toBeGreaterThan(0);
     }
+
+    const pdfPath = testInfo.outputPath("movement-print.pdf");
+    await page.pdf({ path: pdfPath, format: "A4", printBackground: true });
+    const pdfBuffer = await readFile(pdfPath);
+    const pageCount = (pdfBuffer.toString("latin1").match(/\/Type\s*\/Page\b/g) ?? []).length;
+    expect(pageCount).toBeGreaterThan(1);
 
     // 10. Snapshot opcional para revisão visual manual
     await page.screenshot({
