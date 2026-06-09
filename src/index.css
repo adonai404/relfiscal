@@ -436,8 +436,10 @@
   }
   .print-docs-item {
     margin-bottom: 12px;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    /* Do NOT use page-break-inside: avoid here — when an item is taller
+     * than a printable page (typical case: docs with a debits table +
+     * installment plan), Chrome silently drops the overflow. Let the
+     * content flow across pages naturally. */
   }
   .print-docs-item-title {
     font-size: 10pt;
