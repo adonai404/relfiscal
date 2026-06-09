@@ -416,5 +416,44 @@
     padding-top: 6px;
     text-align: center;
   }
+  .print-docs {
+    margin-top: 16px;
+    page-break-before: always;
+    break-before: page;
+    color: black !important;
+  }
+  .print-docs, .print-docs * {
+    color: black !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .print-docs-title {
+    font-size: 12pt;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    border-bottom: 1px solid #999;
+    padding-bottom: 4px;
+  }
+  .print-docs-item {
+    margin-bottom: 12px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-docs-item-title {
+    font-size: 10pt;
+    font-weight: 700;
+    margin: 6px 0 4px 0;
+  }
+  .print-docs-content,
+  .print-docs-content * {
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
+    max-width: 100% !important;
+  }
+  .print-docs-content h1 { font-size: 11pt !important; }
+  .print-docs-content h2 { font-size: 10.5pt !important; }
+  .print-docs-content h3 { font-size: 10pt !important; }
+  .print-docs-content table { font-size: 8pt !important; }
+  .print-docs-content img { max-width: 100% !important; height: auto !important; }
 }
 .print-only { display: none; }
