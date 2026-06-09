@@ -17,6 +17,7 @@ import {
   type ExtractSuccess,
   type ExtractError,
 } from "@/lib/pdfExtract";
+import { extractLocally } from "@/lib/pdfLocalFallback";
 
 interface PreviewRow {
   id: string;
@@ -95,7 +96,20 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
     setExtracting(true);
     try {
       const resp = await extractPdfsSync(files);
-      const previews: PreviewRow[] = (resp.results ?? [])
+      // Fallback local: arquivos que a API rejeitou (ex.: Declaração Retificadora PGDAS-D Declaratório)
+      const recoveredResults: ExtractSuccess[] = [];
+      const remainingErrors: ExtractError[] = [];
+      for (const err of resp.errors ?? []) {
+        const file = files.find((f) => f.name === err.file_name);
+        const data = file ? await extractLocally(file) : null;
+        if (data && data.cnpj && data.competencia) {
+          recoveredResults.push({ file_name: err.file_name, status: "success", data });
+        } else {
+          remainingErrors.push(err);
+        }
+      }
+      const allResults = [...(resp.results ?? []), ...recoveredResults];
+      const previews: PreviewRow[] = allResults
         .filter((r): r is ExtractSuccess => r.status === "success" && !!r.data?.cnpj && !!r.data?.competencia)
         .map((r, i) => ({
           id: `${r.data.cnpj}-${r.data.competencia}-${i}`,
@@ -108,11 +122,12 @@ export function PdfImportTab({ onDone }: { onDone?: () => void }) {
           simples_nacional: r.data.valor_pago_das ?? 0,
         }));
       setRows(previews);
-      setErrors(resp.errors ?? []);
-      if (previews.length === 0 && (resp.errors?.length ?? 0) === 0) {
+      setErrors(remainingErrors);
+      if (previews.length === 0 && remainingErrors.length === 0) {
         toast.warning("A API processou os arquivos mas nenhum dado utilizável foi extraído.");
       } else if (previews.length > 0) {
-        toast.success(`${previews.length} extrato(s) lido(s). Confira e importe.`);
+        const recoveredMsg = recoveredResults.length > 0 ? ` (${recoveredResults.length} via leitura local)` : "";
+        toast.success(`${previews.length} extrato(s) lido(s)${recoveredMsg}. Confira e importe.`);
       } else {
         toast.error("Nenhum extrato pôde ser lido. Veja os erros abaixo.");
       }
