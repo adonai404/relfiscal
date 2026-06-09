@@ -278,6 +278,11 @@
   html, body {
     background: white !important;
     color: black !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   /* Força tema light na impressão (mesmo se o usuário estiver em dark mode) */
   .dark, html.dark, body.dark {
@@ -299,6 +304,39 @@
   }
   .no-print, .no-print * {
     display: none !important;
+  }
+  .app-print-root > [data-state][data-collapsible],
+  .app-print-header {
+    display: none !important;
+  }
+  #root,
+  .app-print-root,
+  .app-print-inset,
+  .app-print-main,
+  .movement-print-page,
+  .movement-print-flow,
+  .print-docs,
+  .print-docs-item,
+  .print-docs-content {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    contain: none !important;
+    transform: none !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  .app-print-main {
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .print-only {
     display: block !important;
@@ -420,6 +458,8 @@
     margin-top: 16px;
     page-break-before: always;
     break-before: page;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
     color: black !important;
   }
   .print-docs, .print-docs * {
@@ -460,8 +500,11 @@
   .print-docs-content table {
     font-size: 8.5pt !important;
     width: 100% !important;
+    display: table !important;
     table-layout: auto !important;
     border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
     margin: 6px 0 !important;
   }
   .print-docs-content th,
@@ -484,6 +527,7 @@
   }
   .print-docs-content tr {
     page-break-inside: avoid;
+    break-inside: avoid;
     background: white !important;
   }
   .print-docs-content ul,

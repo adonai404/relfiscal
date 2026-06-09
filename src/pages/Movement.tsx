@@ -417,7 +417,7 @@ export default function Movement() {
     col === "simples_nacional" && !!config?.auto_calculate_simples_nacional;
 
   return (
-    <div className="w-full">
+    <div className="movement-print-page w-full">
 
 
       {/* Print-only header */}
@@ -439,7 +439,7 @@ export default function Movement() {
         />
       </div>
 
-      <div className="w-full space-y-6">
+      <div className="movement-print-flow w-full space-y-6">
         {/* Summary cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 print-cards">
           <SummaryCard label="Total Entrada" value={totals.byCol.entrada || 0} accent="success" />
@@ -685,7 +685,7 @@ export default function Movement() {
         </footer>
 
         {companyDocs.length > 0 && (
-          <section className="print-only print-docs">
+          <section className="print-only print-docs" aria-label="Documentação para impressão">
             <h2 className="print-docs-title">Documentação</h2>
             {companyDocs.map((d) => (
               <article key={d.id} className="print-docs-item">
