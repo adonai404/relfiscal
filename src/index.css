@@ -309,6 +309,7 @@
   .app-print-header {
     display: none !important;
   }
+  #root,
   .app-print-root,
   .app-print-inset,
   .app-print-main,
