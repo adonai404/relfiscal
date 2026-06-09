@@ -1,7 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
+import { existsSync } from "node:fs";
 
 const PORT = Number(process.env.E2E_PORT ?? 4173);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
+const CHROMIUM_EXECUTABLE =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? (existsSync("/bin/chromium") ? "/bin/chromium" : undefined);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -14,6 +17,7 @@ export default defineConfig({
     headless: true,
     viewport: { width: 1280, height: 900 },
     trace: "retain-on-failure",
+    launchOptions: CHROMIUM_EXECUTABLE ? { executablePath: CHROMIUM_EXECUTABLE } : undefined,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // The webServer is optional; if E2E_BASE_URL points to an already-running
