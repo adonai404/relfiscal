@@ -134,6 +134,7 @@ import {
   type CustomColumn, useCustomColumns, useCustomColumnValues, useUpsertCustomValue,
   buildRowResolver,
 } from "@/hooks/useCustomColumns";
+import { MarkdownView } from "@/components/MarkdownView";
 
 interface MovementRow {
   id: string;
@@ -198,6 +199,23 @@ export default function Movement() {
         .order("competencia", { ascending: true });
       if (error) throw error;
       return (data ?? []) as MovementRow[];
+    },
+  });
+
+  // Documentação publicada da empresa (impressa junto com o movimento)
+  const { data: companyDocs = [] } = useQuery({
+    queryKey: ["company_documentation_print", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_documentation")
+        .select("id, title, content, status, position")
+        .eq("company_id", companyId!)
+        .eq("status", "published")
+        .order("position", { ascending: true })
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; title: string; content: string; status: string; position: number }>;
     },
   });
 
