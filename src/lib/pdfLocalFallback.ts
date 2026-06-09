@@ -48,7 +48,7 @@ function parseExtractedText(text: string): ExtractedData | null {
   const cnpj = cnpjMatch ? cnpjMatch[1].replace(/\D/g, "") : null;
 
   // Nome empresarial
-  const razaoMatch = text.match(/Nome\s+[Ee]mpresarial\s*:\s*([^\n\r]+?)(?:\s{2,}|$)/);
+  const razaoMatch = text.match(/Nome\s+[Ee]mpresarial\s*:\s*([^\n\r]+?)(?:\s{2,}|[\n\r]|$)/);
   const razao_social = razaoMatch ? razaoMatch[1].trim() : null;
 
   // Competência: "Período de Apuração: 01/06/2025 a 30/06/2025" OU "Período de Apuração (PA): 04/2025"
