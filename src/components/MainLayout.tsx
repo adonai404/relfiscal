@@ -45,10 +45,10 @@ export function MainLayout() {
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="app-print-root">
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-card/80 backdrop-blur px-4 md:px-6 sticky top-0 z-20">
+      <SidebarInset className="app-print-inset">
+        <header className="app-print-header flex h-16 shrink-0 items-center gap-3 border-b bg-card/80 backdrop-blur px-4 md:px-6 sticky top-0 z-20">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-5" />
           {selectedCompany ? (
@@ -96,7 +96,7 @@ export function MainLayout() {
             <ThemeToggle />
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-8 overflow-auto max-w-[1600px] w-full mx-auto">
+        <main className="app-print-main flex-1 p-4 md:p-8 overflow-auto max-w-[1600px] w-full mx-auto">
           <Outlet />
         </main>
       </SidebarInset>
