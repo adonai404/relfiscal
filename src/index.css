@@ -331,6 +331,8 @@
     overflow-y: visible !important;
     contain: none !important;
     transform: none !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
   .app-print-main {
     padding: 0 !important;
@@ -456,6 +458,8 @@
     margin-top: 16px;
     page-break-before: always;
     break-before: page;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
     color: black !important;
   }
   .print-docs, .print-docs * {
@@ -496,8 +500,11 @@
   .print-docs-content table {
     font-size: 8.5pt !important;
     width: 100% !important;
+    display: table !important;
     table-layout: auto !important;
     border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
     margin: 6px 0 !important;
   }
   .print-docs-content th,
@@ -520,6 +527,7 @@
   }
   .print-docs-content tr {
     page-break-inside: avoid;
+    break-inside: avoid;
     background: white !important;
   }
   .print-docs-content ul,
