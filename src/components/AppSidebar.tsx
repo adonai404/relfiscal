@@ -93,6 +93,11 @@ export function AppSidebar() {
       icon: Wrench,
       path: "/ferramentas",
     },
+    {
+      title: "Assistente IA",
+      icon: Sparkles,
+      path: "/assistente",
+    },
   ];
 
   const adminItems = [
