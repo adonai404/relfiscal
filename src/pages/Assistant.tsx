@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Plus, Trash2, Send, MessageSquare, Building2, Sparkles, Square } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -381,7 +382,7 @@ function ChatWindow({
                     <p className="whitespace-pre-wrap">{text}</p>
                   ) : (
                     <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-2">
-                      <ReactMarkdown>{text || "…"}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text || "…"}</ReactMarkdown>
                     </div>
                   )}
                 </div>
