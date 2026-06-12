@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Plus,
   Wrench,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
