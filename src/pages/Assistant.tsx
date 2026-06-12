@@ -113,7 +113,7 @@ export default function Assistant() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] gap-4">
+    <div className="flex h-[calc(100dvh-8rem)] min-h-[520px] gap-4 max-md:h-[calc(100dvh-6rem)]">
       {/* Thread list */}
       <aside className="w-64 shrink-0 flex flex-col rounded-xl border bg-card">
         <div className="p-3 border-b">
