@@ -63,7 +63,6 @@ const App = () => (
                   <Route path="/ferramentas" element={<Tools />} />
                   <Route path="/documentacao" element={<Documentation />} />
                   <Route path="/assistente" element={<Assistant />} />
-                  <Route path="/assistente/:threadId" element={<Assistant />} />
                   <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                   <Route path="/admin/clientes" element={<ProtectedRoute requireSuperAdmin><AdminCustomers /></ProtectedRoute>} />
                 </Route>
