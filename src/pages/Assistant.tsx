@@ -35,6 +35,8 @@ export default function Assistant() {
   const { data: companyTags = [] } = useCompanyTags();
 
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [companyIds, setCompanyIds] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [scopeOpen, setScopeOpen] = useState(false);
@@ -45,21 +47,65 @@ export default function Assistant() {
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPersistedRef = useRef<string>("[]");
 
-  // Create an ephemeral thread on mount (no history persisted across sessions in the UI)
+  // Bootstrap: load the user's single active conversation (or create one).
+  // Keep ONLY one thread per user — delete any extras (older ones).
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
+      setBootstrapping(true);
+      const { data: threads, error: tErr } = await supabase
         .from("ai_threads")
-        .insert({ user_id: user.id, title: "Conversa", company_ids: [] })
-        .select("id")
-        .single();
-      if (error) {
-        toast.error("Erro ao iniciar conversa");
+        .select("id, company_ids, updated_at")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+      if (tErr) {
+        toast.error("Erro ao carregar conversa");
+        setBootstrapping(false);
         return;
       }
-      if (!cancelled) setThreadId(data.id);
+      let activeId: string | null = null;
+      let scope: string[] = [];
+      if (threads && threads.length > 0) {
+        activeId = threads[0].id;
+        scope = (threads[0].company_ids as string[]) ?? [];
+        // Delete extras if any
+        const extras = threads.slice(1).map((t) => t.id);
+        if (extras.length > 0) {
+          await supabase.from("ai_threads").delete().in("id", extras);
+        }
+      } else {
+        const { data: created, error: cErr } = await supabase
+          .from("ai_threads")
+          .insert({ user_id: user.id, title: "Conversa", company_ids: [] })
+          .select("id")
+          .single();
+        if (cErr || !created) {
+          toast.error("Erro ao iniciar conversa");
+          setBootstrapping(false);
+          return;
+        }
+        activeId = created.id;
+      }
+
+      // Load messages
+      const { data: rows } = await supabase
+        .from("ai_messages")
+        .select("id, role, parts, created_at")
+        .eq("thread_id", activeId)
+        .order("created_at", { ascending: true });
+      const initial: UIMessage[] = (rows ?? []).map((r) => ({
+        id: r.id,
+        role: r.role as "user" | "assistant",
+        parts: (r.parts as any) ?? [],
+      }));
+
+      if (cancelled) return;
+      setCompanyIds(scope);
+      lastPersistedRef.current = JSON.stringify([...scope].sort());
+      setInitialMessages(initial);
+      setThreadId(activeId);
+      setBootstrapping(false);
     })();
     return () => {
       cancelled = true;
@@ -130,9 +176,9 @@ export default function Assistant() {
     });
   }, [apiUrl, threadId]);
 
-  const { messages, sendMessage, status, stop, error, setMessages } = useChat({
+  const { messages, sendMessage, status, stop, error } = useChat({
     id: threadId ?? "pending",
-    messages: [] as UIMessage[],
+    messages: initialMessages,
     transport,
     onError: (e) => {
       toast.error(e.message || "Erro no assistente");
@@ -211,17 +257,34 @@ export default function Assistant() {
   };
 
   const handleNewConversation = async () => {
-    if (!user) return;
-    setMessages([]);
+    if (!user || !threadId) return;
+    // Cancel pending scope save
+    if (persistTimer.current) {
+      clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+    }
+    // Delete current thread (cascade removes ai_messages)
+    const { error: delErr } = await supabase
+      .from("ai_threads")
+      .delete()
+      .eq("id", threadId);
+    if (delErr) {
+      toast.error("Erro ao excluir conversa atual");
+      return;
+    }
+    // Reset local state
     setInput("");
     setCompanyIds([]);
     lastPersistedRef.current = "[]";
+    setInitialMessages([]);
+    setThreadId(null);
+    // Create fresh thread
     const { data, error } = await supabase
       .from("ai_threads")
       .insert({ user_id: user.id, title: "Conversa", company_ids: [] })
       .select("id")
       .single();
-    if (error) {
+    if (error || !data) {
       toast.error("Erro ao iniciar conversa");
       return;
     }
