@@ -5,7 +5,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Plus, Trash2, Send, MessageSquare, Building2, Sparkles, Square } from "lucide-react";
+import { Plus, Trash2, Send, MessageSquare, Building2, Sparkles, Square, Search, X, Check } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -186,8 +186,32 @@ function ChatWindow({
   const [initialMessages, setInitialMessages] = useState<UIMessage[] | null>(null);
   const [companyIds, setCompanyIds] = useState<string[]>(thread.company_ids ?? []);
   const [input, setInput] = useState("");
+  const [scopeOpen, setScopeOpen] = useState(false);
+  const [companySearch, setCompanySearch] = useState("");
+  const [savingScope, setSavingScope] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedRef = useRef<string>(JSON.stringify(thread.company_ids ?? []));
+
+  // Sort companies alphabetically + filter by search
+  const sortedCompanies = useMemo(() => {
+    return [...companies].sort((a, b) =>
+      (a.nome_fantasia || a.razao_social || "").localeCompare(
+        b.nome_fantasia || b.razao_social || "",
+        "pt-BR",
+        { sensitivity: "base" },
+      ),
+    );
+  }, [companies]);
+
+  const filteredCompanies = useMemo(() => {
+    const q = companySearch.trim().toLowerCase();
+    if (!q) return sortedCompanies;
+    return sortedCompanies.filter((c) =>
+      `${c.nome_fantasia ?? ""} ${c.razao_social ?? ""}`.toLowerCase().includes(q),
+    );
+  }, [sortedCompanies, companySearch]);
 
   // Load history
   useEffect(() => {
@@ -267,14 +291,80 @@ function ChatWindow({
   const isLoading = status === "submitted" || status === "streaming";
   const canSend = input.trim().length > 0 && companyIds.length > 0 && !isLoading;
 
-  const updateScope = async (ids: string[]) => {
-    setCompanyIds(ids);
-    await supabase.from("ai_threads").update({ company_ids: ids }).eq("id", thread.id);
-    onThreadUpdated();
+  // Debounced persistence — instant UI, single DB write
+  const persistScope = (ids: string[]) => {
+    const key = JSON.stringify([...ids].sort());
+    if (key === lastPersistedRef.current) return;
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    setSavingScope(true);
+    persistTimer.current = setTimeout(async () => {
+      const { error } = await supabase
+        .from("ai_threads")
+        .update({ company_ids: ids })
+        .eq("id", thread.id);
+      setSavingScope(false);
+      if (error) {
+        toast.error("Erro ao salvar seleção de empresas");
+        return;
+      }
+      lastPersistedRef.current = key;
+      onThreadUpdated();
+    }, 400);
   };
+
+  const toggleCompany = (id: string, checked: boolean) => {
+    const next = checked
+      ? Array.from(new Set([...companyIds, id]))
+      : companyIds.filter((x) => x !== id);
+    setCompanyIds(next);
+    persistScope(next);
+  };
+
+  const selectAllFiltered = () => {
+    const next = Array.from(new Set([...companyIds, ...filteredCompanies.map((c) => c.id)]));
+    setCompanyIds(next);
+    persistScope(next);
+  };
+
+  const clearScope = () => {
+    setCompanyIds([]);
+    persistScope([]);
+  };
+
+  // Flush pending write on unmount / thread switch
+  useEffect(() => {
+    return () => {
+      if (persistTimer.current) {
+        clearTimeout(persistTimer.current);
+        const key = JSON.stringify([...companyIds].sort());
+        if (key !== lastPersistedRef.current) {
+          supabase.from("ai_threads").update({ company_ids: companyIds }).eq("id", thread.id);
+        }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread.id]);
 
   const handleSend = async () => {
     if (!canSend) return;
+    // Flush pending scope write before sending so the edge function sees latest scope
+    if (persistTimer.current) {
+      clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+      const key = JSON.stringify([...companyIds].sort());
+      if (key !== lastPersistedRef.current) {
+        const { error: scopeErr } = await supabase
+          .from("ai_threads")
+          .update({ company_ids: companyIds })
+          .eq("id", thread.id);
+        if (scopeErr) {
+          toast.error("Erro ao salvar seleção de empresas");
+          return;
+        }
+        lastPersistedRef.current = key;
+        setSavingScope(false);
+      }
+    }
     const text = input.trim();
     setInput("");
     // Auto-title from first user msg
@@ -293,7 +383,10 @@ function ChatWindow({
         <Sparkles className="size-4 text-primary" />
         <span className="text-sm font-medium">Assistente IA · Movimento</span>
         <div className="ml-auto flex items-center gap-2">
-          <Popover>
+          {savingScope && (
+            <span className="text-xs text-muted-foreground">Salvando…</span>
+          )}
+          <Popover open={scopeOpen} onOpenChange={setScopeOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
                 <Building2 className="size-4" />
@@ -302,13 +395,58 @@ function ChatWindow({
                   : `${companyIds.length} empresa${companyIds.length > 1 ? "s" : ""}`}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 p-2">
+            <PopoverContent align="end" className="w-80 p-0">
+              <div className="p-2 border-b space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    value={companySearch}
+                    onChange={(e) => setCompanySearch(e.target.value)}
+                    placeholder="Buscar empresa…"
+                    className="h-8 pl-7 text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    {companyIds.length} de {companies.length} selecionada
+                    {companies.length === 1 ? "" : "s"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={selectAllFiltered}
+                      disabled={filteredCompanies.length === 0}
+                    >
+                      <Check className="size-3" /> Todas
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={clearScope}
+                      disabled={companyIds.length === 0}
+                    >
+                      <X className="size-3" /> Limpar
+                    </Button>
+                  </div>
+                </div>
+              </div>
               <ScrollArea className="max-h-72">
-                <div className="flex flex-col gap-1">
+                <div className="p-2 flex flex-col gap-0.5">
                   {companies.length === 0 && (
-                    <p className="text-xs text-muted-foreground p-2">Nenhuma empresa disponível.</p>
+                    <p className="text-xs text-muted-foreground p-2">
+                      Nenhuma empresa disponível. Cadastre uma empresa primeiro.
+                    </p>
                   )}
-                  {companies.map((c) => {
+                  {companies.length > 0 && filteredCompanies.length === 0 && (
+                    <p className="text-xs text-muted-foreground p-2">
+                      Nenhuma empresa corresponde à busca.
+                    </p>
+                  )}
+                  {filteredCompanies.map((c) => {
                     const checked = companyIds.includes(c.id);
                     return (
                       <label
@@ -317,14 +455,9 @@ function ChatWindow({
                       >
                         <Checkbox
                           checked={checked}
-                          onCheckedChange={(v) => {
-                            const next = v
-                              ? [...companyIds, c.id]
-                              : companyIds.filter((id) => id !== c.id);
-                            updateScope(next);
-                          }}
+                          onCheckedChange={(v) => toggleCompany(c.id, !!v)}
                         />
-                        <span className="truncate">
+                        <span className="truncate flex-1">
                           {c.nome_fantasia || c.razao_social}
                         </span>
                       </label>
@@ -344,8 +477,16 @@ function ChatWindow({
             const c = companies.find((x) => x.id === id);
             if (!c) return null;
             return (
-              <Badge key={id} variant="secondary" className="font-normal">
+              <Badge key={id} variant="secondary" className="font-normal gap-1 pr-1">
                 {c.nome_fantasia || c.razao_social}
+                <button
+                  type="button"
+                  onClick={() => toggleCompany(id, false)}
+                  className="rounded-full hover:bg-background/60 p-0.5"
+                  aria-label="Remover empresa"
+                >
+                  <X className="size-3" />
+                </button>
               </Badge>
             );
           })}
