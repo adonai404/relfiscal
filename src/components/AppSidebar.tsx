@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Plus,
   Wrench,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
@@ -91,6 +92,11 @@ export function AppSidebar() {
       title: "Ferramentas",
       icon: Wrench,
       path: "/ferramentas",
+    },
+    {
+      title: "Assistente IA",
+      icon: Sparkles,
+      path: "/assistente",
     },
   ];
 
