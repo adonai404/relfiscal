@@ -4,6 +4,7 @@ import {
   Wrench, Search, CalendarDays, TableProperties, FileDown,
   Plus, Pencil, Trash2, Link as LinkIcon, FileText, Calculator, ChartBar,
   Database, Folder, Globe, Mail, Settings, Briefcase, BookOpen, Cloud,
+  Lock, Users,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -34,6 +37,8 @@ type UserTool = {
   description: string;
   url: string;
   icon: string;
+  visibility: "private" | "public";
+  user_id: string;
 };
 
 function ToolIcon({ name, className }: { name: string; className?: string }) {
@@ -47,14 +52,14 @@ export default function Tools() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<UserTool | null>(null);
   const [deleting, setDeleting] = useState<UserTool | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", url: "", icon: "Wrench" });
+  const [form, setForm] = useState({ title: "", description: "", url: "", icon: "Wrench", visibility: "private" as "private" | "public" });
   const [saving, setSaving] = useState(false);
 
   const loadTools = async () => {
     if (!user) return;
     const { data, error } = await supabase
       .from("user_tools")
-      .select("id,title,description,url,icon")
+      .select("id,title,description,url,icon,visibility,user_id")
       .order("created_at", { ascending: true });
     if (error) {
       toast({ title: "Erro ao carregar ferramentas", description: error.message, variant: "destructive" });
@@ -67,13 +72,13 @@ export default function Tools() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ title: "", description: "", url: "", icon: "Wrench" });
+    setForm({ title: "", description: "", url: "", icon: "Wrench", visibility: "private" });
     setDialogOpen(true);
   };
 
   const openEdit = (tool: UserTool) => {
     setEditing(tool);
-    setForm({ title: tool.title, description: tool.description, url: tool.url, icon: tool.icon });
+    setForm({ title: tool.title, description: tool.description, url: tool.url, icon: tool.icon, visibility: tool.visibility });
     setDialogOpen(true);
   };
 
@@ -93,7 +98,7 @@ export default function Tools() {
     }
     const finalUrl = url.startsWith("http") ? url : `https://${url}`;
     setSaving(true);
-    const payload = { title, description: form.description.trim(), url: finalUrl, icon: form.icon };
+    const payload = { title, description: form.description.trim(), url: finalUrl, icon: form.icon, visibility: form.visibility };
     const { error } = editing
       ? await supabase.from("user_tools").update(payload).eq("id", editing.id)
       : await supabase.from("user_tools").insert({ ...payload, user_id: user.id });
@@ -228,7 +233,14 @@ export default function Tools() {
               <a href={tool.url} target="_blank" rel="noopener noreferrer" className="block h-full">
                 <Card className="hover:bg-accent/50 transition-colors cursor-pointer border-primary/20 h-full">
                   <CardHeader>
-                    <ToolIcon name={tool.icon} className="h-8 w-8 mb-2 text-primary" />
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <ToolIcon name={tool.icon} className="h-8 w-8 text-primary" />
+                      <Badge variant="secondary" className="gap-1 text-xs">
+                        {tool.visibility === "public"
+                          ? (<><Users className="h-3 w-3" /> Pública</>)
+                          : (<><Lock className="h-3 w-3" /> Privada</>)}
+                      </Badge>
+                    </div>
                     <CardTitle className="pr-16">{tool.title}</CardTitle>
                     <CardDescription>{tool.description || tool.url}</CardDescription>
                   </CardHeader>
@@ -237,14 +249,16 @@ export default function Tools() {
                   </CardContent>
                 </Card>
               </a>
-              <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => { e.preventDefault(); openEdit(tool); }}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.preventDefault(); setDeleting(tool); }}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              {tool.user_id === user?.id && (
+                <div className="absolute bottom-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => { e.preventDefault(); openEdit(tool); }}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.preventDefault(); setDeleting(tool); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
 
@@ -307,6 +321,24 @@ export default function Tools() {
                   );
                 })}
               </div>
+            </div>
+            <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="tool-visibility" className="flex items-center gap-2">
+                  {form.visibility === "public" ? <Users className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                  {form.visibility === "public" ? "Pública" : "Privada"}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {form.visibility === "public"
+                    ? "Todos os usuários poderão ver esta ferramenta."
+                    : "Apenas você poderá ver esta ferramenta."}
+                </p>
+              </div>
+              <Switch
+                id="tool-visibility"
+                checked={form.visibility === "public"}
+                onCheckedChange={(checked) => setForm((f) => ({ ...f, visibility: checked ? "public" : "private" }))}
+              />
             </div>
           </div>
           <DialogFooter>
