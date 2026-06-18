@@ -982,6 +982,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      duplicate_company: { Args: { _company_id: string }; Returns: string }
       generate_slug: { Args: { input_text: string }; Returns: string }
       get_or_create_import_company: {
         Args: {
