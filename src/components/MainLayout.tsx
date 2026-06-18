@@ -14,10 +14,12 @@ import {
 import { Home, Building2 } from "lucide-react";
 import { useCompany } from "@/hooks/useCompany";
 import { formatCNPJ } from "@/lib/format";
+import { useKnowledgeTheme } from "@/hooks/useKnowledgeTheme";
 
 export function MainLayout() {
   const location = useLocation();
   const { selectedCompany } = useCompany();
+  useKnowledgeTheme();
   
   const getBreadcrumbs = () => {
     const paths = location.pathname.split("/").filter(Boolean);

@@ -1,11 +1,11 @@
 import { 
-  Building2, 
-  LayoutDashboard, 
-  ArrowLeftRight, 
-  Presentation, 
-  Calculator, 
-  Users, 
-  UserCog, 
+  Building2,
+  LayoutDashboard,
+  ArrowLeftRight,
+  Presentation,
+  Calculator,
+  Users,
+  UserCog,
   LogOut,
   Home,
   Activity,
@@ -13,7 +13,8 @@ import {
   Plus,
   Wrench,
   FileText,
-  Sparkles
+  Sparkles,
+  BookOpen
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
@@ -97,6 +98,11 @@ export function AppSidebar() {
       title: "Assistente IA",
       icon: Sparkles,
       path: "/assistente",
+    },
+    {
+      title: "Conhecimento",
+      icon: BookOpen,
+      path: "/conhecimento",
     },
   ];
 
