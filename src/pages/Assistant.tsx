@@ -3,7 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Building2, Sparkles, Square, Search, X, Check, Tag as TagIcon, RefreshCw } from "lucide-react";
+import { Send, Building2, Sparkles, Square, Search, X, Check, Tag as TagIcon, RefreshCw, FileDown } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,65 @@ import { toast } from "sonner";
 function partsToText(parts: any[]): string {
   if (!Array.isArray(parts)) return "";
   return parts.map((p) => (p?.type === "text" ? p.text : "")).join("");
+}
+
+function saveResponseAsPdf(text: string) {
+  const now = new Date().toLocaleString("pt-BR");
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Convert basic markdown to HTML for readability in print
+  const html = escaped
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/^[-*] (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Resposta do Assistente IA</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, serif; font-size: 13px; line-height: 1.7; color: #1a1a1a; padding: 48px 56px; max-width: 820px; margin: 0 auto; }
+    header { border-bottom: 2px solid #e5e5e5; padding-bottom: 16px; margin-bottom: 28px; }
+    header h1 { font-size: 18px; font-weight: 700; color: #111; }
+    header p  { font-size: 11px; color: #888; margin-top: 4px; }
+    .content p { margin: 10px 0; }
+    .content h1 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; }
+    .content h2 { font-size: 14px; font-weight: 700; margin: 18px 0 6px; }
+    .content h3 { font-size: 13px; font-weight: 700; margin: 14px 0 4px; }
+    .content ul { margin: 8px 0 8px 20px; }
+    .content li { margin: 3px 0; }
+    .content strong { font-weight: 700; }
+    .content em { font-style: italic; }
+    .content code { background: #f4f4f4; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 12px; }
+    footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e5e5; font-size: 10px; color: #aaa; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Resposta do Assistente IA</h1>
+    <p>Gerado em ${now} · Fiscal.aqui</p>
+  </header>
+  <div class="content"><p>${html}</p></div>
+  <footer>Gerado pelo Assistente IA do Fiscal.aqui</footer>
+  <script>window.onload = () => { window.print(); }</script>
+</body>
+</html>`);
+  win.document.close();
 }
 
 export default function Assistant() {
@@ -500,19 +559,33 @@ export default function Assistant() {
               const isUser = m.role === "user";
               return (
                 <div key={m.id} className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
-                      isUser
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground",
-                    )}
-                  >
-                    {isUser ? (
-                      <p className="whitespace-pre-wrap">{text}</p>
-                    ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-2">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text || "…"}</ReactMarkdown>
+                  <div className={cn("max-w-[85%]", isUser ? "" : "w-full")}>
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-2.5 text-sm",
+                        isUser
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground",
+                      )}
+                    >
+                      {isUser ? (
+                        <p className="whitespace-pre-wrap">{text}</p>
+                      ) : (
+                        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-2">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{text || "…"}</ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                    {!isUser && text && (
+                      <div className="mt-1 flex justify-end">
+                        <button
+                          onClick={() => saveResponseAsPdf(text)}
+                          title="Salvar como PDF"
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          <FileDown className="h-3.5 w-3.5" />
+                          Salvar como PDF
+                        </button>
                       </div>
                     )}
                   </div>

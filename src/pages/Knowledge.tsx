@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -25,8 +26,11 @@ import {
   BookOpen, Plus, Search, Star, ExternalLink, Pencil, Trash2,
   Loader2, X, Scale, Globe, FileText, FlaskConical, Microscope,
   ChevronDown, Hash, Upload, Download, FileSpreadsheet,
-  File, Eye, Paperclip,
+  File, Eye, Files, LayoutGrid,
 } from "lucide-react";
+import * as pdfjs from "pdfjs-dist";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -42,12 +46,18 @@ interface KnowledgeItem {
   notes: string | null;
   tags: string[];
   is_favorite: boolean;
-  file_path: string | null;
-  file_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface KnowledgeFile {
+  id: string;
+  item_id: string;
+  file_path: string;
+  file_name: string;
   file_size: number | null;
   file_mime: string | null;
   created_at: string;
-  updated_at: string;
 }
 
 const DEFAULT_TYPES = ["Lei", "Norma", "Site", "Artigo", "Pesquisa", "Outro"];
@@ -72,40 +82,29 @@ const TYPE_BADGE: Record<string, string> = {
   Outro:    "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
-function typeConfig(type: string) {
-  return TYPE_CONFIG[type] ?? TYPE_CONFIG["Outro"];
-}
-function typeBadge(type: string) {
-  return TYPE_BADGE[type] ?? TYPE_BADGE["Outro"];
-}
+function typeConfig(t: string) { return TYPE_CONFIG[t] ?? TYPE_CONFIG["Outro"]; }
+function typeBadge(t: string)  { return TYPE_BADGE[t]   ?? TYPE_BADGE["Outro"];  }
+
 function formatUrl(url: string) {
   try { return new URL(url).hostname + new URL(url).pathname.slice(0, 30); }
   catch { return url.slice(0, 40); }
 }
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function formatBytes(b: number) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`;
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-function fileIcon(mime: string | null) {
+function fileIcon(mime: string | null): React.ElementType {
   if (!mime) return File;
   if (mime === "application/pdf") return FileText;
   if (mime.includes("spreadsheet") || mime.includes("excel") || mime.includes("csv")) return FileSpreadsheet;
   if (mime.includes("word") || mime.includes("document")) return FileText;
   return File;
 }
-
-function isPdf(mime: string | null) {
-  return mime === "application/pdf";
-}
-
-// ─── Signed URL helper ───────────────────────────────────────────────────────
+function isPdf(mime: string | null) { return mime === "application/pdf"; }
 
 async function getSignedUrl(path: string): Promise<string | null> {
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(path, 60 * 60); // 1 hour
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
   if (error) return null;
   return data.signedUrl;
 }
@@ -123,8 +122,12 @@ export default function Knowledge() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<KnowledgeItem | null>(null);
   const [toDelete, setToDelete] = useState<KnowledgeItem | null>(null);
-  const [pdfItem, setPdfItem] = useState<KnowledgeItem | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  // files modal
+  const [filesItem, setFilesItem] = useState<KnowledgeItem | null>(null);
+  // pdf viewer
+  const [pdfFile, setPdfFile] = useState<KnowledgeFile | null>(null);
+  const [pdfUrl, setPdfUrl]   = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
@@ -142,6 +145,29 @@ export default function Knowledge() {
     },
   });
 
+  // fetch files for all items in one shot
+  const { data: allFiles = [] } = useQuery({
+    queryKey: ["knowledge_files", user?.id],
+    enabled: !!user && items.length > 0,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const ids = items.map((i) => i.id);
+      const { data, error } = await supabase
+        .from("knowledge_item_files")
+        .select("*")
+        .in("item_id", ids)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as KnowledgeFile[];
+    },
+  });
+
+  const filesByItem = useMemo(() => {
+    const m: Record<string, KnowledgeFile[]> = {};
+    allFiles.forEach((f) => { (m[f.item_id] ??= []).push(f); });
+    return m;
+  }, [allFiles]);
+
   const allTypes = useMemo(() => {
     const extra = items.map((i) => i.type).filter((t) => !DEFAULT_TYPES.includes(t));
     return [...DEFAULT_TYPES, ...Array.from(new Set(extra))];
@@ -152,9 +178,9 @@ export default function Knowledge() {
   [items]);
 
   const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    items.forEach((i) => { counts[i.type] = (counts[i.type] ?? 0) + 1; });
-    return counts;
+    const c: Record<string, number> = {};
+    items.forEach((i) => { c[i.type] = (c[i.type] ?? 0) + 1; });
+    return c;
   }, [items]);
 
   const filtered = useMemo(() => {
@@ -164,18 +190,22 @@ export default function Knowledge() {
       if (typeFilter !== "all" && item.type !== typeFilter) return false;
       if (categoryFilter !== "all" && item.category !== categoryFilter) return false;
       if (q) {
+        const files = filesByItem[item.id] ?? [];
         const hit =
           item.title.toLowerCase().includes(q) ||
           (item.notes?.toLowerCase().includes(q) ?? false) ||
           item.tags.some((t) => t.toLowerCase().includes(q)) ||
-          (item.file_name?.toLowerCase().includes(q) ?? false);
+          files.some((f) => f.file_name.toLowerCase().includes(q));
         if (!hit) return false;
       }
       return true;
     });
-  }, [items, search, typeFilter, categoryFilter, favOnly]);
+  }, [items, search, typeFilter, categoryFilter, favOnly, filesByItem]);
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["knowledge"] });
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["knowledge"] });
+    qc.invalidateQueries({ queryKey: ["knowledge_files"] });
+  };
 
   const toggleFavorite = async (item: KnowledgeItem) => {
     const { error } = await supabase
@@ -188,9 +218,9 @@ export default function Knowledge() {
 
   const handleDelete = async () => {
     if (!toDelete) return;
-    // Remove file from storage if exists
-    if (toDelete.file_path) {
-      await supabase.storage.from(BUCKET).remove([toDelete.file_path]);
+    const files = filesByItem[toDelete.id] ?? [];
+    if (files.length > 0) {
+      await supabase.storage.from(BUCKET).remove(files.map((f) => f.file_path));
     }
     const { error } = await supabase.from("knowledge_items").delete().eq("id", toDelete.id);
     if (error) {
@@ -202,24 +232,20 @@ export default function Knowledge() {
     setToDelete(null);
   };
 
-  const openPdf = async (item: KnowledgeItem) => {
-    if (!item.file_path) return;
-    setPdfItem(item);
+  const openPdf = async (file: KnowledgeFile) => {
+    setPdfFile(file);
     setPdfLoading(true);
     setPdfUrl(null);
-    const url = await getSignedUrl(item.file_path);
+    const url = await getSignedUrl(file.file_path);
     setPdfUrl(url);
     setPdfLoading(false);
   };
 
-  const handleDownload = async (item: KnowledgeItem) => {
-    if (!item.file_path) return;
-    const url = await getSignedUrl(item.file_path);
+  const handleDownload = async (file: KnowledgeFile) => {
+    const url = await getSignedUrl(file.file_path);
     if (!url) { toast({ title: "Erro ao gerar link", variant: "destructive" }); return; }
     const a = document.createElement("a");
-    a.href = url;
-    a.download = item.file_name ?? "arquivo";
-    a.click();
+    a.href = url; a.download = file.file_name; a.click();
   };
 
   const activeTypes = allTypes.filter((t) => typeCounts[t]);
@@ -231,8 +257,7 @@ export default function Knowledge() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-3xl font-bold flex items-center gap-2.5">
-            <BookOpen className="h-8 w-8 text-primary" />
-            Conhecimento
+            <BookOpen className="h-8 w-8 text-primary" /> Conhecimento
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Leis, normas, sites e referências para consulta rápida.
@@ -266,9 +291,7 @@ export default function Knowledge() {
                 <span className={cn(
                   "ml-0.5 rounded-full px-1.5 text-[10px] font-semibold",
                   active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}>
-                  {typeCounts[t]}
-                </span>
+                )}>{typeCounts[t]}</span>
               </button>
             );
           })}
@@ -279,12 +302,7 @@ export default function Knowledge() {
       <div className="flex gap-2 flex-wrap sm:flex-nowrap">
         <div className="relative flex-1 min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar título, conteúdo, tags, arquivo…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 w-full"
-          />
+          <Input placeholder="Buscar título, conteúdo, tags, arquivo…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-full" />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -295,31 +313,20 @@ export default function Knowledge() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setCategoryFilter("all")}>Todas as categorias</DropdownMenuItem>
-            {allCategories.map((c) => (
-              <DropdownMenuItem key={c} onClick={() => setCategoryFilter(c)}>{c}</DropdownMenuItem>
-            ))}
+            {allCategories.map((c) => <DropdownMenuItem key={c} onClick={() => setCategoryFilter(c)}>{c}</DropdownMenuItem>)}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button
-          variant={favOnly ? "default" : "outline"}
-          onClick={() => setFavOnly((p) => !p)}
-          className="gap-1.5 shrink-0"
-        >
-          <Star className={cn("h-4 w-4", favOnly && "fill-current")} />
-          Favoritos
+        <Button variant={favOnly ? "default" : "outline"} onClick={() => setFavOnly((p) => !p)} className="gap-1.5 shrink-0">
+          <Star className={cn("h-4 w-4", favOnly && "fill-current")} /> Favoritos
         </Button>
       </div>
 
       {/* Grid */}
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center text-sm text-muted-foreground">
-          {items.length === 0
-            ? 'Nenhum item cadastrado ainda. Clique em "Novo item" para começar.'
-            : "Nenhum item encontrado com os filtros atuais."}
+          {items.length === 0 ? 'Nenhum item cadastrado ainda. Clique em "Novo item" para começar.' : "Nenhum item encontrado com os filtros atuais."}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -327,17 +334,17 @@ export default function Knowledge() {
             <KnowledgeCard
               key={item.id}
               item={item}
+              files={filesByItem[item.id] ?? []}
               onToggleFavorite={() => toggleFavorite(item)}
               onEdit={() => setEditing(item)}
               onDelete={() => setToDelete(item)}
-              onViewPdf={() => openPdf(item)}
-              onDownload={() => handleDownload(item)}
+              onOpenFiles={() => setFilesItem(item)}
             />
           ))}
         </div>
       )}
 
-      {/* Create / Edit dialog */}
+      {/* Create / Edit */}
       {(creating || editing) && (
         <KnowledgeDialog
           item={editing}
@@ -356,54 +363,48 @@ export default function Knowledge() {
             <AlertDialogTitle>Excluir item?</AlertDialogTitle>
             <AlertDialogDescription>
               "{toDelete?.title}" será removido permanentemente
-              {toDelete?.file_name ? `, incluindo o arquivo "${toDelete.file_name}"` : ""}.
+              {(filesByItem[toDelete?.id ?? ""]?.length ?? 0) > 0
+                ? `, incluindo ${filesByItem[toDelete!.id].length} arquivo(s) anexado(s)`
+                : ""}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Files modal */}
+      {filesItem && (
+        <FilesModal
+          item={filesItem}
+          files={filesByItem[filesItem.id] ?? []}
+          onClose={() => setFilesItem(null)}
+          onViewPdf={openPdf}
+          onDownload={handleDownload}
+          onDeleted={refresh}
+        />
+      )}
+
       {/* PDF Viewer */}
-      <Dialog open={!!pdfItem} onOpenChange={(o) => { if (!o) { setPdfItem(null); setPdfUrl(null); } }}>
+      <Dialog open={!!pdfFile} onOpenChange={(o) => { if (!o) { setPdfFile(null); setPdfUrl(null); } }}>
         <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0" aria-describedby={undefined}>
           <DialogHeader className="px-5 pt-4 pb-2 shrink-0 border-b">
             <div className="flex items-center justify-between gap-3">
-              <DialogTitle className="truncate text-base">{pdfItem?.file_name}</DialogTitle>
-              <div className="flex gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => pdfItem && handleDownload(pdfItem)}
-                  className="gap-1.5"
-                >
-                  <Download className="h-3.5 w-3.5" /> Baixar
-                </Button>
-              </div>
+              <DialogTitle className="truncate text-base">{pdfFile?.file_name}</DialogTitle>
+              <Button size="sm" variant="outline" onClick={() => pdfFile && handleDownload(pdfFile)} className="gap-1.5 shrink-0">
+                <Download className="h-3.5 w-3.5" /> Baixar
+              </Button>
             </div>
           </DialogHeader>
           <div className="flex-1 min-h-0 bg-muted/30">
             {pdfLoading ? (
-              <div className="flex h-full items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
+              <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : pdfUrl ? (
-              <iframe
-                src={pdfUrl}
-                className="w-full h-full border-0"
-                title={pdfItem?.file_name ?? "PDF"}
-              />
+              <iframe src={pdfUrl} className="w-full h-full border-0" title={pdfFile?.file_name ?? "PDF"} />
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Não foi possível carregar o arquivo.
-              </div>
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Não foi possível carregar o arquivo.</div>
             )}
           </div>
         </DialogContent>
@@ -416,158 +417,102 @@ export default function Knowledge() {
 
 interface CardProps {
   item: KnowledgeItem;
+  files: KnowledgeFile[];
   onToggleFavorite: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onViewPdf: () => void;
-  onDownload: () => void;
+  onOpenFiles: () => void;
 }
 
-function KnowledgeCard({ item, onToggleFavorite, onEdit, onDelete, onViewPdf, onDownload }: CardProps) {
+function KnowledgeCard({ item, files, onToggleFavorite, onEdit, onDelete, onOpenFiles }: CardProps) {
   const cfg = typeConfig(item.type);
   const Icon = cfg.icon;
-  const FileIcon = fileIcon(item.file_mime);
-  const hasFile = !!item.file_path;
-  const hasPdf = isPdf(item.file_mime);
 
   return (
     <div className="group relative flex flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
-
-      {/* Accent bar top */}
       <div className={cn("h-1 w-full shrink-0", cfg.bg)} />
 
       {/* Header */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        {/* Icon */}
-        <div className={cn(
-          "shrink-0 flex h-10 w-10 items-center justify-center rounded-xl shadow-sm",
-          cfg.bg
-        )}>
+        <div className={cn("shrink-0 flex h-10 w-10 items-center justify-center rounded-xl shadow-sm", cfg.bg)}>
           <Icon className={cn("h-5 w-5", cfg.text)} />
         </div>
-
-        {/* Title + category + type badge */}
         <div className="flex-1 min-w-0 pt-0.5">
           <div className="flex items-start justify-between gap-2">
             <p className="font-bold text-sm leading-snug line-clamp-2 flex-1">{item.title}</p>
-            <span className={cn(
-              "shrink-0 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
-              typeBadge(item.type)
-            )}>
+            <span className={cn("shrink-0 mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap", typeBadge(item.type))}>
               {item.type}
             </span>
           </div>
           {item.category && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 font-medium uppercase tracking-widest">
-              {item.category}
-            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 font-medium uppercase tracking-widest">{item.category}</p>
           )}
         </div>
       </div>
 
-      {/* Divider */}
       <div className="mx-4 border-t border-border/50" />
 
       {/* Body */}
       <div className="px-4 py-3 flex flex-col gap-2.5 flex-1">
-
-        {/* Notes */}
         {item.notes && (
-          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-            {item.notes}
-          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{item.notes}</p>
         )}
-
-        {/* URL */}
         {item.url && (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline underline-offset-2 truncate max-w-full"
-          >
+          <a href={item.url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline underline-offset-2 truncate max-w-full">
             <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
             <span className="truncate">{formatUrl(item.url)}</span>
           </a>
         )}
 
-        {/* File attachment */}
-        {hasFile && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/50 px-3 py-2">
+        {/* Files summary */}
+        {files.length > 0 && (
+          <button
+            onClick={onOpenFiles}
+            className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/50 px-3 py-2 text-left hover:bg-muted transition-colors w-full"
+          >
             <div className={cn("shrink-0 flex h-7 w-7 items-center justify-center rounded-lg", cfg.bg)}>
-              <FileIcon className={cn("h-3.5 w-3.5", cfg.text)} />
+              <Files className={cn("h-3.5 w-3.5", cfg.text)} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate leading-tight">{item.file_name}</p>
-              {item.file_size && (
-                <p className="text-[10px] text-muted-foreground">{formatBytes(item.file_size)}</p>
+              <p className="text-xs font-medium">
+                {files.length === 1 ? files[0].file_name : `${files.length} arquivos anexados`}
+              </p>
+              {files.length === 1 && files[0].file_size && (
+                <p className="text-[10px] text-muted-foreground">{formatBytes(files[0].file_size)}</p>
+              )}
+              {files.length > 1 && (
+                <p className="text-[10px] text-muted-foreground">Clique para ver e gerenciar</p>
               )}
             </div>
-            <div className="flex gap-0.5 shrink-0">
-              {hasPdf && (
-                <button
-                  onClick={onViewPdf}
-                  title="Visualizar PDF"
-                  className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <button
-                onClick={onDownload}
-                title="Baixar arquivo"
-                className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-              >
-                <Download className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
+            <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          </button>
         )}
       </div>
 
       {/* Footer */}
       <div className="px-4 pb-3 flex items-center justify-between gap-2">
-        {/* Tags */}
         <div className="flex flex-wrap gap-1 min-w-0">
           {item.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center gap-0.5 rounded-full bg-muted/80 border border-border/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-            >
+            <span key={tag} className="inline-flex items-center gap-0.5 rounded-full bg-muted/80 border border-border/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
               <Hash className="h-2.5 w-2.5" />{tag}
             </span>
           ))}
-          {item.tags.length > 3 && (
-            <span className="text-[10px] text-muted-foreground self-center">+{item.tags.length - 3}</span>
-          )}
+          {item.tags.length > 3 && <span className="text-[10px] text-muted-foreground self-center">+{item.tags.length - 3}</span>}
         </div>
-
-        {/* Date + actions */}
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-[10px] text-muted-foreground tabular-nums mr-1">
             {new Date(item.created_at).toLocaleDateString("pt-BR")}
           </span>
           <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={onEdit}
-              title="Editar"
-              className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
+            <button onClick={onEdit} title="Editar" className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
               <Pencil className="h-3.5 w-3.5" />
             </button>
-            <button
-              onClick={onDelete}
-              title="Excluir"
-              className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-            >
+            <button onClick={onDelete} title="Excluir" className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
-          <button
-            onClick={onToggleFavorite}
-            title={item.is_favorite ? "Remover favorito" : "Favoritar"}
-            className="rounded-lg p-1.5 text-muted-foreground hover:text-amber-500 transition-colors"
-          >
+          <button onClick={onToggleFavorite} title={item.is_favorite ? "Remover favorito" : "Favoritar"} className="rounded-lg p-1.5 text-muted-foreground hover:text-amber-500 transition-colors">
             <Star className={cn("h-3.5 w-3.5", item.is_favorite && "fill-amber-400 text-amber-400")} />
           </button>
         </div>
@@ -576,90 +521,293 @@ function KnowledgeCard({ item, onToggleFavorite, onEdit, onDelete, onViewPdf, on
   );
 }
 
-// ─── File Upload Zone ─────────────────────────────────────────────────────────
+// ─── PDF Thumbnail ────────────────────────────────────────────────────────────
 
-interface UploadZoneProps {
-  file: File | null;
-  existingName: string | null;
-  onFile: (f: File | null) => void;
-  onRemoveExisting: () => void;
-  uploading: boolean;
-  progress: number;
-}
+function PdfThumbnail({ url, className }: { url: string | null; className?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [rendered, setRendered] = useState(false);
+  const [failed, setFailed] = useState(false);
 
-function UploadZone({ file, existingName, onFile, onRemoveExisting, uploading, progress }: UploadZoneProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    if (!url || !canvasRef.current) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const pdf = await pdfjs.getDocument(url).promise;
+        const page = await pdf.getPage(1);
+        if (cancelled || !canvasRef.current) return;
+        const viewport = page.getViewport({ scale: 1 });
+        const canvas = canvasRef.current;
+        // Fit into 200×260 box
+        const scale = Math.min(200 / viewport.width, 260 / viewport.height);
+        const vp = page.getViewport({ scale });
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+        await page.render({ canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
+        if (!cancelled) setRendered(true);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [url]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const f = e.dataTransfer.files[0];
-    if (f) onFile(f);
-  }, [onFile]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) onFile(f);
-  };
-
-  const displayName = file?.name ?? existingName;
-
-  if (displayName && !uploading) {
+  if (failed || !url) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
-        <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="flex-1 text-xs truncate">{displayName}</span>
-        <button
-          type="button"
-          onClick={() => { onFile(null); onRemoveExisting(); }}
-          className="text-muted-foreground hover:text-destructive transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    );
-  }
-
-  if (uploading) {
-    return (
-      <div className="space-y-1.5 rounded-lg border border-border px-3 py-2.5">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Enviando {file?.name}…
-        </div>
-        <Progress value={progress} className="h-1.5" />
+      <div className={cn("flex items-center justify-center bg-muted rounded-lg", className)}>
+        <FileText className="h-8 w-8 text-muted-foreground/40" />
       </div>
     );
   }
 
   return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={handleDrop}
-      onClick={() => inputRef.current?.click()}
-      className={cn(
-        "cursor-pointer rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors",
-        dragging
-          ? "border-primary bg-primary/5"
-          : "border-border hover:border-primary/50 hover:bg-muted/40"
+    <div className={cn("relative bg-white rounded-lg overflow-hidden", className)}>
+      {!rendered && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
       )}
-    >
-      <Upload className="mx-auto h-5 w-5 text-muted-foreground mb-1.5" />
-      <p className="text-xs text-muted-foreground">
-        Arraste um arquivo ou <span className="text-primary font-medium">clique para selecionar</span>
-      </p>
-      <p className="text-[10px] text-muted-foreground mt-0.5">
-        PDF, DOCX, XLSX, CSV… até {MAX_FILE_MB} MB
-      </p>
-      <input
-        ref={inputRef}
-        type="file"
-        className="hidden"
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,.png,.jpg,.jpeg"
-        onChange={handleChange}
-      />
+      <canvas ref={canvasRef} className="w-full h-full object-contain" />
+    </div>
+  );
+}
+
+// ─── Files Modal (Gallery) ────────────────────────────────────────────────────
+
+interface FilesModalProps {
+  item: KnowledgeItem;
+  files: KnowledgeFile[];
+  onClose: () => void;
+  onViewPdf: (f: KnowledgeFile) => void;
+  onDownload: (f: KnowledgeFile) => void;
+  onDeleted: () => void;
+}
+
+function FilesModal({ item, files, onClose, onViewPdf, onDownload, onDeleted }: FilesModalProps) {
+  const cfg = typeConfig(item.type);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  // signed URLs for thumbnails keyed by file id
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const pdfFiles = files.filter((f) => isPdf(f.file_mime));
+    if (pdfFiles.length === 0) return;
+    (async () => {
+      const entries = await Promise.all(
+        pdfFiles.map(async (f) => [f.id, await getSignedUrl(f.file_path)] as const)
+      );
+      setSignedUrls(Object.fromEntries(entries.filter(([, u]) => u) as [string, string][]));
+    })();
+  }, [files]);
+
+  const handleDeleteFile = async (file: KnowledgeFile) => {
+    setDeleting(file.id);
+    await supabase.storage.from(BUCKET).remove([file.file_path]);
+    const { error } = await supabase.from("knowledge_item_files").delete().eq("id", file.id);
+    if (error) {
+      toast({ title: "Erro ao remover arquivo", variant: "destructive" });
+    } else {
+      toast({ title: "Arquivo removido" });
+      onDeleted();
+    }
+    setDeleting(null);
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col gap-0 p-0 overflow-hidden" aria-describedby={undefined}>
+        <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <LayoutGrid className="h-4 w-4 text-primary" />
+            Arquivos — <span className="truncate max-w-xs">{item.title}</span>
+            <span className="ml-auto text-xs font-normal text-muted-foreground shrink-0">
+              {files.length} arquivo{files.length !== 1 ? "s" : ""}
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+
+        {files.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Nenhum arquivo anexado.</p>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {files.map((file) => {
+                const pdf = isPdf(file.file_mime);
+                const FIcon = fileIcon(file.file_mime);
+                const isDeleting = deleting === file.id;
+
+                return (
+                  <div
+                    key={file.id}
+                    className="group relative flex flex-col rounded-xl border border-border bg-muted/30 overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
+                  >
+                    {/* Thumbnail area */}
+                    <div className="relative aspect-[3/4] bg-muted/50">
+                      {pdf ? (
+                        <PdfThumbnail
+                          url={signedUrls[file.id] ?? null}
+                          className="absolute inset-0 w-full h-full"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <div className={cn("flex h-12 w-12 items-center justify-center rounded-xl", cfg.bg)}>
+                            <FIcon className={cn("h-6 w-6", cfg.text)} />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-widest">
+                            {file.file_name.split(".").pop()}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Hover overlay with actions */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {pdf && (
+                          <button
+                            onClick={() => { onViewPdf(file); onClose(); }}
+                            title="Visualizar"
+                            className="rounded-full bg-white/90 p-2 text-gray-800 hover:bg-white transition-colors shadow"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onDownload(file)}
+                          title="Baixar"
+                          className="rounded-full bg-white/90 p-2 text-gray-800 hover:bg-white transition-colors shadow"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFile(file)}
+                          title="Remover"
+                          disabled={isDeleting}
+                          className="rounded-full bg-white/90 p-2 text-red-600 hover:bg-white transition-colors shadow disabled:opacity-50"
+                        >
+                          {isDeleting
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Trash2 className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* File info */}
+                    <div className="px-2.5 py-2 border-t border-border/50 bg-card">
+                      <p className="text-xs font-medium truncate leading-tight" title={file.file_name}>
+                        {file.file_name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {file.file_size ? formatBytes(file.file_size) : "—"}
+                        {" · "}
+                        {new Date(file.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="px-6 py-3 border-t shrink-0">
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Upload Zone ──────────────────────────────────────────────────────────────
+
+interface UploadingFile { file: File; progress: number; done: boolean; error: boolean; }
+
+interface UploadZoneProps {
+  onUploaded: (files: { path: string; name: string; size: number; mime: string }[]) => void;
+  uploading: UploadingFile[];
+  setUploading: React.Dispatch<React.SetStateAction<UploadingFile[]>>;
+  userId: string;
+}
+
+function UploadZone({ onUploaded, uploading, setUploading, userId }: UploadZoneProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const processFiles = useCallback(async (files: File[]) => {
+    const valid = files.filter((f) => {
+      if (f.size > MAX_FILE_MB * 1024 * 1024) {
+        toast({ title: `"${f.name}" excede ${MAX_FILE_MB} MB`, variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    if (valid.length === 0) return;
+
+    const entries: UploadingFile[] = valid.map((f) => ({ file: f, progress: 0, done: false, error: false }));
+    setUploading((p) => [...p, ...entries]);
+
+    const results: { path: string; name: string; size: number; mime: string }[] = [];
+    for (const entry of entries) {
+      const ext = entry.file.name.split(".").pop() ?? "bin";
+      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+      setUploading((p) => p.map((e) => e.file === entry.file ? { ...e, progress: 30 } : e));
+      const { error } = await supabase.storage.from(BUCKET).upload(path, entry.file, { cacheControl: "3600" });
+      if (error) {
+        setUploading((p) => p.map((e) => e.file === entry.file ? { ...e, error: true, done: true } : e));
+        toast({ title: `Erro ao enviar "${entry.file.name}"`, variant: "destructive" });
+      } else {
+        setUploading((p) => p.map((e) => e.file === entry.file ? { ...e, progress: 100, done: true } : e));
+        results.push({ path, name: entry.file.name, size: entry.file.size, mime: entry.file.type });
+      }
+    }
+    if (results.length > 0) onUploaded(results);
+    setTimeout(() => setUploading((p) => p.filter((e) => !e.done)), 1500);
+  }, [userId, onUploaded, setUploading]);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    processFiles(Array.from(e.dataTransfer.files));
+  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) processFiles(Array.from(e.target.files));
+    e.target.value = "";
+  };
+
+  return (
+    <div className="space-y-2">
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          "cursor-pointer rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors",
+          dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/40"
+        )}
+      >
+        <Upload className="mx-auto h-5 w-5 text-muted-foreground mb-1.5" />
+        <p className="text-xs text-muted-foreground">
+          Arraste arquivos ou <span className="text-primary font-medium">clique para selecionar</span>
+        </p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">PDF, DOCX, XLSX, CSV… até {MAX_FILE_MB} MB · múltiplos arquivos</p>
+        <input ref={inputRef} type="file" className="hidden" multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,.png,.jpg,.jpeg"
+          onChange={handleChange} />
+      </div>
+
+      {uploading.length > 0 && (
+        <div className="space-y-1.5">
+          {uploading.map((u, i) => (
+            <div key={i} className="rounded-lg border border-border/60 bg-muted/40 px-3 py-2 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="truncate text-muted-foreground">{u.file.name}</span>
+                {u.error ? <span className="text-destructive text-[10px]">Erro</span>
+                  : u.done ? <span className="text-emerald-600 text-[10px]">Enviado</span>
+                  : <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+              </div>
+              {!u.done && <Progress value={u.progress} className="h-1" />}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -677,9 +825,9 @@ interface DialogProps {
 
 function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved }: DialogProps) {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState<UploadingFile[]>([]);
 
   const [title, setTitle] = useState(item?.title ?? "");
   const [type, setType] = useState(item?.type ?? "");
@@ -691,11 +839,16 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(item?.tags ?? []);
 
-  // File state
-  const [newFile, setNewFile] = useState<File | null>(null);
-  const [removeExisting, setRemoveExisting] = useState(false);
-
-  const existingFileName = (!removeExisting && item?.file_name) ? item.file_name : null;
+  // Existing files for editing
+  const { data: existingFiles = [] } = useQuery({
+    queryKey: ["knowledge_files_dialog", item?.id],
+    enabled: !!item?.id,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("knowledge_item_files").select("*").eq("item_id", item!.id).order("created_at");
+      return (data ?? []) as KnowledgeFile[];
+    },
+  });
 
   const isCustomType = type === "__custom__";
   const isCustomCategory = category === "__custom__";
@@ -708,54 +861,32 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
     setTagInput("");
   };
 
-  const uploadFile = async (file: File, userId: string): Promise<{
-    file_path: string; file_name: string; file_size: number; file_mime: string;
-  } | null> => {
-    if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      toast({ title: `Arquivo muito grande (máx. ${MAX_FILE_MB} MB)`, variant: "destructive" });
-      return null;
-    }
-    const ext = file.name.split(".").pop() ?? "bin";
-    const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-    setUploading(true);
-    setUploadProgress(10);
-
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-    setUploadProgress(90);
-    setUploading(false);
-
-    if (error) {
-      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
-      return null;
-    }
-    setUploadProgress(100);
-    return { file_path: path, file_name: file.name, file_size: file.size, file_mime: file.type };
+  const handleUploaded = async (
+    files: { path: string; name: string; size: number; mime: string }[],
+    itemId: string
+  ) => {
+    const rows = files.map((f) => ({
+      item_id: itemId,
+      file_path: f.path,
+      file_name: f.name,
+      file_size: f.size,
+      file_mime: f.mime,
+    }));
+    await supabase.from("knowledge_item_files").insert(rows);
+    qc.invalidateQueries({ queryKey: ["knowledge_files"] });
+    qc.invalidateQueries({ queryKey: ["knowledge_files_dialog", itemId] });
   };
+
+  // Buffer for files uploaded before save (new items)
+  const pendingFiles = useRef<{ path: string; name: string; size: number; mime: string }[]>([]);
 
   const handleSave = async () => {
     if (!title.trim()) { toast({ title: "Informe o título", variant: "destructive" }); return; }
     if (!effectiveType) { toast({ title: "Selecione ou informe o tipo", variant: "destructive" }); return; }
+    if (uploading.some((u) => !u.done)) { toast({ title: "Aguarde o upload terminar", variant: "destructive" }); return; }
 
     setSaving(true);
     try {
-      let filePayload: Record<string, unknown> = {};
-
-      if (newFile && user) {
-        // Remove old file if replacing
-        if (item?.file_path) {
-          await supabase.storage.from(BUCKET).remove([item.file_path]);
-        }
-        const uploaded = await uploadFile(newFile, user.id);
-        if (!uploaded) { setSaving(false); return; }
-        filePayload = uploaded;
-      } else if (removeExisting && item?.file_path) {
-        await supabase.storage.from(BUCKET).remove([item.file_path]);
-        filePayload = { file_path: null, file_name: null, file_size: null, file_mime: null };
-      }
-
       const payload = {
         title: title.trim(),
         type: effectiveType,
@@ -763,15 +894,20 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
         url: url.trim() || null,
         notes: notes.trim() || null,
         tags,
-        ...filePayload,
       };
 
+      let savedId = item?.id;
       if (item) {
         const { error } = await supabase.from("knowledge_items").update(payload).eq("id", item.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("knowledge_items").insert({ ...payload, user_id: user!.id });
+        const { data, error } = await supabase.from("knowledge_items").insert({ ...payload, user_id: user!.id }).select("id").single();
         if (error) throw error;
+        savedId = data.id;
+        if (pendingFiles.current.length > 0) {
+          await handleUploaded(pendingFiles.current, savedId!);
+          pendingFiles.current = [];
+        }
       }
       toast({ title: item ? "Item atualizado" : "Item criado" });
       onSaved();
@@ -780,6 +916,14 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeleteExistingFile = async (file: KnowledgeFile) => {
+    await supabase.storage.from(BUCKET).remove([file.file_path]);
+    await supabase.from("knowledge_item_files").delete().eq("id", file.id);
+    qc.invalidateQueries({ queryKey: ["knowledge_files_dialog", item?.id] });
+    qc.invalidateQueries({ queryKey: ["knowledge_files"] });
+    toast({ title: "Arquivo removido" });
   };
 
   return (
@@ -805,9 +949,7 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
                   <SelectItem value="__custom__">+ Criar novo tipo</SelectItem>
                 </SelectContent>
               </Select>
-              {isCustomType && (
-                <Input className="mt-1" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="Nome do novo tipo" />
-              )}
+              {isCustomType && <Input className="mt-1" value={customType} onChange={(e) => setCustomType(e.target.value)} placeholder="Nome do novo tipo" />}
             </div>
             <div className="space-y-1.5">
               <Label>Categoria</Label>
@@ -819,9 +961,7 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
                   <SelectItem value="__custom__">+ Criar nova categoria</SelectItem>
                 </SelectContent>
               </Select>
-              {isCustomCategory && (
-                <Input className="mt-1" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Nome da nova categoria" />
-              )}
+              {isCustomCategory && <Input className="mt-1" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Nome da nova categoria" />}
             </div>
           </div>
 
@@ -830,38 +970,56 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
             <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" type="url" />
           </div>
 
+          {/* Existing files */}
+          {existingFiles.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Arquivos anexados</Label>
+              <div className="space-y-1.5">
+                {existingFiles.map((f) => {
+                  const FIcon = fileIcon(f.file_mime);
+                  return (
+                    <div key={f.id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                      <FIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="flex-1 text-xs truncate">{f.file_name}</span>
+                      {f.file_size && <span className="text-[10px] text-muted-foreground shrink-0">{formatBytes(f.file_size)}</span>}
+                      <button onClick={() => handleDeleteExistingFile(f)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Upload zone */}
           <div className="space-y-1.5">
-            <Label>Arquivo anexo</Label>
+            <Label>Adicionar arquivos</Label>
             <UploadZone
-              file={newFile}
-              existingName={existingFileName}
-              onFile={setNewFile}
-              onRemoveExisting={() => setRemoveExisting(true)}
+              userId={user?.id ?? ""}
               uploading={uploading}
-              progress={uploadProgress}
+              setUploading={setUploading}
+              onUploaded={async (files) => {
+                if (item?.id) {
+                  await handleUploaded(files, item.id);
+                } else {
+                  pendingFiles.current = [...pendingFiles.current, ...files];
+                  toast({ title: `${files.length} arquivo(s) prontos para salvar` });
+                }
+              }}
             />
           </div>
 
           <div className="space-y-1.5">
             <Label>Anotações</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Resumo, vigência, observações práticas…"
-              rows={4}
-              className="resize-none"
-            />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Resumo, vigência, observações práticas…" rows={4} className="resize-none" />
           </div>
 
           <div className="space-y-1.5">
             <Label>Tags</Label>
             <div className="flex gap-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Ex: irpf, 2024, pessoa-física"
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
-              />
+              <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Ex: irpf, 2024, pessoa-física"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} />
               <Button type="button" variant="outline" onClick={addTag}>Adicionar</Button>
             </div>
             {tags.length > 0 && (
@@ -881,8 +1039,8 @@ function KnowledgeDialog({ item, open, allTypes, allCategories, onClose, onSaved
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving || uploading}>
-            {(saving || uploading) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+          <Button onClick={handleSave} disabled={saving || uploading.some((u) => !u.done)}>
+            {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Salvar
           </Button>
         </DialogFooter>
