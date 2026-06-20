@@ -8,7 +8,6 @@ import {
   UserCog,
   LogOut,
   Home,
-  Activity,
   ChevronRight,
   Plus,
   Wrench,
@@ -44,6 +43,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { ImperialLogo } from "@/components/ImperialLogo";
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
@@ -145,12 +145,12 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" onClick={() => navigate("/app")} className="hover:bg-transparent">
-              <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-[var(--shadow-soft)]">
-                <Activity className="size-5" />
+              <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-white p-1.5 shadow-[var(--shadow-soft)] ring-1 ring-border/60">
+                <ImperialLogo className="size-full" />
               </div>
               <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-bold text-base">Fiscal.aqui</span>
-                <span className="text-xs text-muted-foreground font-medium">Gestão Fiscal Inteligente</span>
+                <span className="font-bold text-base">Imperial App</span>
+                <span className="text-xs text-muted-foreground font-medium">Imperial Contabilidade</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -1,0 +1,10 @@
+<svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Imperial Contabilidade">
+  <rect width="1080" height="1080" rx="220" fill="#ffffff"/>
+  <g>
+    <polygon points="60,895 320,895 175,690" fill="#F35C3D"/>
+    <polygon points="350,895 730,895 540,675" fill="#F35C3D"/>
+    <polygon points="845,895 1020,895 932,720" fill="#F35C3D"/>
+    <polyline points="70,460 250,690 470,290 590,540 760,448" fill="none" stroke="#15A65C" stroke-width="120" stroke-linejoin="miter" stroke-miterlimit="10"/>
+    <polygon points="965,330 805,580 832,392 670,322" fill="#15A65C"/>
+  </g>
+</svg>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
@@ -30,23 +31,14 @@ function partsToText(parts: any[]): string {
 
 function saveResponseAsPdf(text: string) {
   const now = new Date().toLocaleString("pt-BR");
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 
-  // Convert basic markdown to HTML for readability in print
-  const html = escaped
-    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/^[-*] (.+)$/gm, "<li>$1</li>")
-    .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
-    .replace(/\n\n/g, "</p><p>")
-    .replace(/\n/g, "<br>");
+  // Render through the SAME markdown pipeline used on screen so the printed
+  // output matches the chat exactly (tables, ordered/nested lists, links,
+  // blockquotes, code blocks). react-markdown does not emit raw HTML by
+  // default, so user/AI content cannot inject markup here.
+  const html = renderToStaticMarkup(
+    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>,
+  );
 
   const win = window.open("", "_blank");
   if (!win) return;
@@ -61,17 +53,28 @@ function saveResponseAsPdf(text: string) {
     header { border-bottom: 2px solid #e5e5e5; padding-bottom: 16px; margin-bottom: 28px; }
     header h1 { font-size: 18px; font-weight: 700; color: #111; }
     header p  { font-size: 11px; color: #888; margin-top: 4px; }
+    .content > *:first-child { margin-top: 0; }
     .content p { margin: 10px 0; }
     .content h1 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; }
     .content h2 { font-size: 14px; font-weight: 700; margin: 18px 0 6px; }
     .content h3 { font-size: 13px; font-weight: 700; margin: 14px 0 4px; }
-    .content ul { margin: 8px 0 8px 20px; }
+    .content ul, .content ol { margin: 8px 0 8px 22px; }
     .content li { margin: 3px 0; }
+    .content li > ul, .content li > ol { margin: 3px 0 3px 18px; }
     .content strong { font-weight: 700; }
     .content em { font-style: italic; }
+    .content a { color: #1a56db; text-decoration: underline; }
     .content code { background: #f4f4f4; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 12px; }
+    .content pre { background: #f4f4f4; border-radius: 6px; padding: 12px 14px; overflow-x: auto; margin: 12px 0; }
+    .content pre code { background: none; padding: 0; }
+    .content blockquote { border-left: 3px solid #d0d0d0; margin: 12px 0; padding: 4px 0 4px 14px; color: #555; }
+    .content hr { border: none; border-top: 1px solid #e5e5e5; margin: 18px 0; }
+    .content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12px; }
+    .content th, .content td { border: 1px solid #d8d8d8; padding: 6px 10px; text-align: left; }
+    .content th { background: #f4f4f4; font-weight: 700; }
+    .content tr:nth-child(even) td { background: #fafafa; }
     footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e5e5; font-size: 10px; color: #aaa; }
-    @media print { body { padding: 0; } }
+    @media print { body { padding: 0; } .content pre, .content table { page-break-inside: avoid; } }
   </style>
 </head>
 <body>
@@ -79,7 +82,7 @@ function saveResponseAsPdf(text: string) {
     <h1>Resposta do Assistente IA</h1>
     <p>Gerado em ${now} · Fiscal.aqui</p>
   </header>
-  <div class="content"><p>${html}</p></div>
+  <div class="content">${html}</div>
   <footer>Gerado pelo Assistente IA do Fiscal.aqui</footer>
   <script>window.onload = () => { window.print(); }</script>
 </body>
