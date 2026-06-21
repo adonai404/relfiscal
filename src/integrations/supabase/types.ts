@@ -641,6 +641,98 @@ export type Database = {
           },
         ]
       }
+      knowledge_item_files: {
+        Row: {
+          created_at: string
+          file_mime: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          item_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_mime?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          item_id: string
+        }
+        Update: {
+          created_at?: string
+          file_mime?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_item_files_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_mime: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          is_favorite: boolean
+          notes: string | null
+          tags: string[]
+          title: string
+          type: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_mime?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_favorite?: boolean
+          notes?: string | null
+          tags?: string[]
+          title: string
+          type: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_mime?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_favorite?: boolean
+          notes?: string | null
+          tags?: string[]
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           access_requested_at: string | null
@@ -1001,6 +1093,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_public_movement: { Args: { p_slug: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
