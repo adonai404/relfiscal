@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { createOpenAICompatible } from "npm:@ai-sdk/openai-compatible";
+import { createAnthropic } from "npm:@ai-sdk/anthropic";
 import { convertToModelMessages, streamText, type UIMessage } from "npm:ai";
 
 const corsHeaders = {
@@ -18,9 +18,9 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: "Missing LOVABLE_API_KEY" }), { status: 500, headers: corsHeaders });
+    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicApiKey) {
+      return new Response(JSON.stringify({ error: "Missing ANTHROPIC_API_KEY" }), { status: 500, headers: corsHeaders });
     }
 
     const supabase = createClient(
@@ -146,17 +146,10 @@ Deno.serve(async (req) => {
       "=== FIM DOS DADOS ===",
     ].join("\n");
 
-    const gateway = createOpenAICompatible({
-      name: "lovable",
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      headers: {
-        "Lovable-API-Key": lovableApiKey,
-        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-      },
-    });
+    const anthropic = createAnthropic({ apiKey: anthropicApiKey });
 
     const result = streamText({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: anthropic("claude-sonnet-4-5-20250929"),
       system,
       messages: await convertToModelMessages(messages),
     });
