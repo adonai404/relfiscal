@@ -543,7 +543,7 @@ function PdfThumbnail({ url, className }: { url: string | null; className?: stri
         const vp = page.getViewport({ scale });
         canvas.width = vp.width;
         canvas.height = vp.height;
-        await page.render({ canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
+        await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport: vp } as any).promise;
         if (!cancelled) setRendered(true);
       } catch {
         if (!cancelled) setFailed(true);
