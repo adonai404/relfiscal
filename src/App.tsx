@@ -1,6 +1,7 @@
  import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, HashRouter, Route, Routes } from "react-router-dom";
+import { isTauri } from "@/lib/desktop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,13 +36,18 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+// No desktop (Tauri) os assets vêm do bundle local via tauri://, então usamos
+// HashRouter (rotas no fragmento #/...) para deep-link/refresh funcionarem sem
+// servidor. No web mantemos BrowserRouter (URLs limpas, SEO de /p/:slug etc.).
+const Router = isTauri() ? HashRouter : BrowserRouter;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <Router>
           <AuthProvider>
             <CompanyProvider>
               <Routes>
@@ -78,7 +84,7 @@ const App = () => (
               </Routes>
             </CompanyProvider>
           </AuthProvider>
-        </BrowserRouter>
+        </Router>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

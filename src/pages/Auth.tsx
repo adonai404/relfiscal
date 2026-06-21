@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { publicUrl } from "@/lib/publicUrl";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -92,7 +93,7 @@ export default function Auth() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/app` },
+      options: { emailRedirectTo: publicUrl("/app") },
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -106,7 +107,7 @@ export default function Auth() {
     }
     setResetting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth`,
+      redirectTo: publicUrl("/auth"),
     });
     setResetting(false);
     if (error) return toast.error(error.message);

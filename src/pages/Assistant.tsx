@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { isTauri } from "@/lib/desktop";
 
 function partsToText(parts: any[]): string {
   if (!Array.isArray(parts)) return "";
@@ -39,6 +40,14 @@ function saveResponseAsPdf(text: string) {
   const html = renderToStaticMarkup(
     <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>,
   );
+
+  // No app desktop (Tauri) window.open não abre popup → o fluxo abaixo não roda.
+  // Degrada com aviso; a exportação nativa (gravar arquivo temporário + abrir no
+  // navegador) entra numa próxima fase. Ver docs/desktop-fase2.md.
+  if (isTauri()) {
+    toast.info("Exportar PDF do Assistente ainda não está disponível no app desktop.");
+    return;
+  }
 
   const win = window.open("", "_blank");
   if (!win) return;

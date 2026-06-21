@@ -124,6 +124,7 @@ import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber, formatCustomValue } from "@/lib/format";
+import { publicUrl } from "@/lib/publicUrl";
 import {
   ALL_COLUMNS, type ColumnKey,
   isColumnVisible, getColumnLabel, useFiscalConfig,
@@ -406,10 +407,20 @@ export default function Movement() {
 
   if (!selectedCompany) return <Navigate to="/empresas" replace />;
 
-  const sharePublic = () => {
-    const url = `${window.location.origin}/p/${selectedCompany.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Link público copiado!");
+  const sharePublic = async () => {
+    const url = publicUrl(`/p/${selectedCompany.slug}`);
+    // Compartilhar = tornar a empresa visível na página pública (/p/:slug).
+    // Por padrão toda empresa é privada (is_public=false); só fica pública aqui.
+    const { error } = await supabase
+      .from("companies")
+      .update({ is_public: true })
+      .eq("id", selectedCompany.id);
+    if (error) {
+      toast.error("Não foi possível ativar o link público.");
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    toast.success("Link público ativado e copiado!");
   };
 
   // Cell editor disabled for simples_nacional when auto-calc is on
@@ -430,7 +441,7 @@ export default function Movement() {
         </div>
         <img
           src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
-            `${window.location.origin}/p/${selectedCompany.slug}`
+            publicUrl(`/p/${selectedCompany.slug}`)
           )}`}
           alt="QR Code do painel público"
           className="print-qr"

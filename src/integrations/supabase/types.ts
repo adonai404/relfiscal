@@ -81,6 +81,7 @@ export type Database = {
           created_by: string
           folder_id: string | null
           id: string
+          is_public: boolean
           nome_fantasia: string
           razao_social: string
           regime: Database["public"]["Enums"]["tax_regime"]
@@ -96,6 +97,7 @@ export type Database = {
           created_by?: string
           folder_id?: string | null
           id?: string
+          is_public?: boolean
           nome_fantasia: string
           razao_social: string
           regime?: Database["public"]["Enums"]["tax_regime"]
@@ -111,6 +113,7 @@ export type Database = {
           created_by?: string
           folder_id?: string | null
           id?: string
+          is_public?: boolean
           nome_fantasia?: string
           razao_social?: string
           regime?: Database["public"]["Enums"]["tax_regime"]

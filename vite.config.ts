@@ -4,11 +4,22 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Detecta build/dev rodando dentro do Tauri (a CLI do Tauri define TAURI_ENV_*).
+const isTauri = !!process.env.TAURI_ENV_PLATFORM;
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // No Tauri os assets são servidos via protocolo próprio (tauri://) a partir do
+  // bundle local, então o caminho precisa ser relativo. No web mantém raiz "/".
+  base: isTauri ? "./" : "/",
+  // Mantém o output do Vite visível quando rodando junto da CLI do Tauri.
+  clearScreen: false,
+  envPrefix: ["VITE_", "TAURI_ENV_"],
   server: {
     host: "::",
     port: 8080,
+    // O Tauri carrega o devUrl fixo (8080); falhar é melhor que trocar de porta.
+    strictPort: isTauri,
     hmr: {
       overlay: false,
     },
@@ -20,6 +31,9 @@ export default defineConfig(({ mode }) => ({
     // o manifest tem scope/start_url em /app e o app-shell offline (navigateFallback)
     // só vale para rotas /app. Portal (/portal) e página pública (/p/:slug)
     // seguem como web normal (vão direto à rede nas navegações).
+    // Desativado no build Tauri: o Service Worker não faz sentido (e atrapalha)
+    // dentro do protocolo tauri:// — o desktop já é "app instalado".
+    !isTauri &&
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",

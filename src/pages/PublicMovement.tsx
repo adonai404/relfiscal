@@ -13,7 +13,7 @@ import {
   isComputedColumn, computeColumnValue, formatPercent, getColumnCategory,
   getTaxColumns,
 } from "@/hooks/useFiscalConfig";
-import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
+import { buildRowResolver, type CustomColumn, type CustomColumnValue } from "@/hooks/useCustomColumns";
 import { formatCustomValue } from "@/lib/format";
 
 interface Company {
@@ -43,47 +43,34 @@ interface MovementRow {
   csll: number;
 }
 
+interface PublicMovementPayload {
+  company: Company;
+  config: FiscalConfig | null;
+  movements: MovementRow[];
+  custom_columns: CustomColumn[];
+  custom_values: CustomColumnValue[];
+}
+
 export default function PublicMovement() {
   const { slug } = useParams<{ slug: string }>();
 
-  const { data: company, isLoading: loadingCompany } = useQuery({
-    queryKey: ["public_company", slug],
+  const { data: payload, isLoading } = useQuery({
+    queryKey: ["public_movement", slug],
     enabled: !!slug,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("companies")
-        .select("id, slug, cnpj, nome_fantasia, razao_social, uf")
-        .eq("slug", slug!)
-        .maybeSingle();
+      // RPC SECURITY DEFINER: retorna a empresa + dados SOMENTE se is_public = true,
+      // expondo apenas as colunas necessárias (nunca api_key). Ver migração
+      // 20260620143000_public_movement_rpc_is_public.sql.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc("get_public_movement", { p_slug: slug });
       if (error) throw error;
-      return data as Company | null;
+      return (data ?? null) as PublicMovementPayload | null;
     },
   });
 
-  const companyId = company?.id;
-
-  const { data: config } = useQuery({
-    queryKey: ["public_fiscal_config", companyId],
-    enabled: !!companyId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fiscal_config").select("*").eq("company_id", companyId!).maybeSingle();
-      if (error) throw error;
-      return data as FiscalConfig | null;
-    },
-  });
-
-  const { data: rawRows = [], isLoading: loadingRows } = useQuery({
-    queryKey: ["public_fiscal_movement", companyId],
-    enabled: !!companyId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fiscal_movement").select("*").eq("company_id", companyId!)
-        .order("competencia", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as MovementRow[];
-    },
-  });
+  const company = payload?.company ?? null;
+  const config = payload?.config ?? null;
+  const rawRows = useMemo<MovementRow[]>(() => payload?.movements ?? [], [payload]);
 
   const rows = useMemo(() => {
     if (!config?.auto_calculate_simples_nacional) return rawRows;
@@ -99,8 +86,8 @@ export default function PublicMovement() {
     [config]
   );
 
-  const { data: customCols = [] } = useCustomColumns(companyId);
-  const { data: customValues = [] } = useCustomColumnValues(companyId);
+  const customCols = useMemo<CustomColumn[]>(() => payload?.custom_columns ?? [], [payload]);
+  const customValues = useMemo<CustomColumnValue[]>(() => payload?.custom_values ?? [], [payload]);
   const valuesByMov = useMemo(() => {
     const out: Record<string, Record<string, number>> = {};
     customValues.forEach((v) => { (out[v.movement_id] ||= {})[v.column_id] = Number(v.value || 0); });
@@ -161,7 +148,7 @@ export default function PublicMovement() {
     canonical.setAttribute("href", window.location.href);
   }, [company]);
 
-  if (loadingCompany) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -238,7 +225,7 @@ export default function PublicMovement() {
             <CardTitle>Movimento Fiscal</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto fiscal-table-wrap">
-            {loadingRows ? (
+            {isLoading ? (
               <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
             ) : rows.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhuma competência registrada.</p>
