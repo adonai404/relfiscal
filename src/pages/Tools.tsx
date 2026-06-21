@@ -24,6 +24,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { DownloadSettings } from "@/components/DownloadSettings";
+
+const BUILTIN_SITES = [
+  { label: "Consulta de Notas Fiscais", url: "https://consulta-notas.lovable.app" },
+  { label: "Fiscal Planner", url: "https://fiscal-planner.lovable.app" },
+  { label: "Gerador de Planilhas", url: "https://gerador-planilha.lovable.app" },
+  { label: "Extrator de Declarações Fiscais", url: "https://declaration-data.lovable.app" },
+];
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Wrench, Search, CalendarDays, TableProperties, FileDown, LinkIcon, FileText,
@@ -134,9 +142,14 @@ export default function Tools() {
               Acesse ferramentas úteis para auxiliar no seu dia a dia fiscal.
             </p>
           </div>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" /> Adicionar ferramenta
-          </Button>
+          <div className="flex items-center gap-2">
+            <DownloadSettings
+              sites={[...BUILTIN_SITES, ...tools.map((t) => ({ label: t.title, url: t.url }))]}
+            />
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" /> Adicionar ferramenta
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

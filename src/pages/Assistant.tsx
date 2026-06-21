@@ -23,14 +23,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { isTauri } from "@/lib/desktop";
+import { saveTextFile } from "@/lib/desktop";
 
 function partsToText(parts: any[]): string {
   if (!Array.isArray(parts)) return "";
   return parts.map((p) => (p?.type === "text" ? p.text : "")).join("");
 }
 
-function saveResponseAsPdf(text: string) {
+async function downloadResponse(text: string) {
   const now = new Date().toLocaleString("pt-BR");
 
   // Render through the SAME markdown pipeline used on screen so the printed
@@ -41,17 +41,7 @@ function saveResponseAsPdf(text: string) {
     <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>,
   );
 
-  // No app desktop (Tauri) window.open não abre popup → o fluxo abaixo não roda.
-  // Degrada com aviso; a exportação nativa (gravar arquivo temporário + abrir no
-  // navegador) entra numa próxima fase. Ver docs/desktop-fase2.md.
-  if (isTauri()) {
-    toast.info("Exportar PDF do Assistente ainda não está disponível no app desktop.");
-    return;
-  }
-
-  const win = window.open("", "_blank");
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html>
+  const doc = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
@@ -93,10 +83,11 @@ function saveResponseAsPdf(text: string) {
   </header>
   <div class="content">${html}</div>
   <footer>Gerado pelo Assistente IA do Fiscal.aqui</footer>
-  <script>window.onload = () => { window.print(); }</script>
 </body>
-</html>`);
-  win.document.close();
+</html>`;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const ok = await saveTextFile(`Assistente-${stamp}.html`, doc, "text/html");
+  if (ok) toast.success("Resposta baixada.");
 }
 
 export default function Assistant() {
@@ -591,12 +582,12 @@ export default function Assistant() {
                     {!isUser && text && (
                       <div className="mt-1 flex justify-end">
                         <button
-                          onClick={() => saveResponseAsPdf(text)}
-                          title="Salvar como PDF"
+                          onClick={() => downloadResponse(text)}
+                          title="Baixar resposta"
                           className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                         >
                           <FileDown className="h-3.5 w-3.5" />
-                          Salvar como PDF
+                          Baixar resposta
                         </button>
                       </div>
                     )}

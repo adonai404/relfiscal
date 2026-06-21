@@ -1,20 +1,20 @@
 interface ImperialLogoProps {
   className?: string;
-  /** Cor da seta/zigue-zague. */
+  /** Cor da montanha/seta em zigue-zague. */
   green?: string;
-  /** Cor das montanhas. */
+  /** Cor dos triângulos da base. */
   coral?: string;
 }
 
 /**
- * Logo da Imperial Contabilidade — seta ascendente em zigue-zague (verde)
- * sobre montanhas (coral). Desenhada em SVG para escalar sem perda.
- * As lacunas são transparentes; use sobre um fundo claro/branco.
+ * Logo da Imperial Contabilidade — montanha ascendente em zigue-zague (verde)
+ * com triângulos na base (vermelho/coral). Desenhada em SVG para escalar sem
+ * perda. O fundo é transparente; use sobre um fundo claro.
  */
 export function ImperialLogo({
   className,
-  green = "#15A65C",
-  coral = "#F35C3D",
+  green = "#00AC6A",
+  coral = "#FF5C44",
 }: ImperialLogoProps) {
   return (
     <svg
@@ -24,22 +24,15 @@ export function ImperialLogo({
       role="img"
       aria-label="Imperial Contabilidade"
     >
-      {/* Montanhas (coral) — laterais sangram a borda para dar o corte do original */}
-      <polygon points="-40,895 260,895 110,665" fill={coral} />
-      <polygon points="300,895 730,895 515,650" fill={coral} />
-      <polygon points="875,895 1140,895 1007,690" fill={coral} />
-
-      {/* Seta em zigue-zague (verde) */}
-      <polyline
-        points="-30,420 235,705 480,250 600,540 790,432"
-        fill="none"
-        stroke={green}
-        strokeWidth="140"
-        strokeLinejoin="miter"
-        strokeMiterlimit="10"
+      {/* Montanha/seta em zigue-zague (verde) */}
+      <polygon
+        points="93,334 93,508 270,687 508,447 747,686 926,505 982,564 988,358 784,358 838,416 748,507 509,272 271,506"
+        fill={green}
       />
-      {/* Ponta da seta (verde) */}
-      <polygon points="1020,300 841,592 872,384 678,306" fill={green} />
+      {/* Triângulos da base (coral) */}
+      <polygon points="334,806 686,804 508,627" fill={coral} />
+      <polygon points="91,683 91,806 210,805" fill={coral} />
+      <polygon points="924,688 808,805 924,805" fill={coral} />
     </svg>
   );
 }

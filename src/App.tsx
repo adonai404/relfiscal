@@ -1,7 +1,8 @@
  import Home from "./pages/Home.tsx";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, HashRouter, Route, Routes } from "react-router-dom";
-import { isTauri } from "@/lib/desktop";
+import { isTauri, openInAppBrowser } from "@/lib/desktop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +42,68 @@ const queryClient = new QueryClient();
 // servidor. No web mantemos BrowserRouter (URLs limpas, SEO de /p/:slug etc.).
 const Router = isTauri() ? HashRouter : BrowserRouter;
 
+/**
+ * No desktop, faz os links EXTERNOS (http/https) abrirem no NAVEGADOR INTERNO do
+ * app — e SÓ ali. O Tauri abre `target="_blank"` no navegador do SO de forma
+ * nativa, e `preventDefault()` NÃO segura isso (abriria nos dois). A solução é
+ * "neutralizar" o link: guardar a URL num data-attr e remover `target`/`href`,
+ * para o Tauri nunca disparar o open externo. O clique então abre só a janela
+ * interna. No web este componente não faz nada.
+ */
+function DesktopExternalLinks() {
+  useEffect(() => {
+    if (!isTauri()) return;
+    const EXTERNAL = /^https?:\/\//i;
+
+    const neutralize = (a: HTMLAnchorElement) => {
+      const href = a.getAttribute("href");
+      if (!href || !EXTERNAL.test(href)) return; // ignora links internos (rotas)
+      a.dataset.inappHref = href;
+      a.removeAttribute("target");
+      a.removeAttribute("href");
+      a.style.cursor = "pointer";
+    };
+    const scan = (root: Element | Document) => {
+      if (root instanceof HTMLAnchorElement) neutralize(root);
+      root.querySelectorAll?.("a[href]").forEach((el) => neutralize(el as HTMLAnchorElement));
+    };
+
+    scan(document);
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes.forEach((n) => {
+          if (n.nodeType === 1) scan(n as Element);
+        });
+        if (m.type === "attributes" && m.target instanceof HTMLAnchorElement) {
+          neutralize(m.target);
+        }
+      }
+    });
+    obs.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["href", "target"],
+    });
+
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("a");
+      const url = a?.dataset?.inappHref;
+      if (url) {
+        e.preventDefault();
+        void openInAppBrowser(url);
+      }
+    };
+    document.addEventListener("click", onClick, true);
+
+    return () => {
+      obs.disconnect();
+      document.removeEventListener("click", onClick, true);
+    };
+  }, []);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -48,6 +111,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Router>
+          <DesktopExternalLinks />
           <AuthProvider>
             <CompanyProvider>
               <Routes>

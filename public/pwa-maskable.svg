@@ -1,12 +1,11 @@
 <svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Imperial Contabilidade">
   <!-- Fundo cheio (sem cantos arredondados): a máscara do SO define a forma final -->
-  <rect width="1080" height="1080" fill="#ffffff"/>
-  <!-- Logo dentro da zona segura (~64% central) para não ser cortada pela máscara -->
-  <g transform="translate(195 235) scale(0.64)">
-    <polygon points="60,895 320,895 175,690" fill="#F35C3D"/>
-    <polygon points="350,895 730,895 540,675" fill="#F35C3D"/>
-    <polygon points="845,895 1020,895 932,720" fill="#F35C3D"/>
-    <polyline points="70,460 250,690 470,290 590,540 760,448" fill="none" stroke="#15A65C" stroke-width="120" stroke-linejoin="miter" stroke-miterlimit="10"/>
-    <polygon points="965,330 805,580 832,392 670,322" fill="#15A65C"/>
+  <rect width="1080" height="1080" fill="#DDFFEE"/>
+  <!-- Logo dentro da zona segura (~58% central) para não ser cortada pela máscara -->
+  <g transform="translate(162 162) scale(0.7)">
+    <polygon points="93,334 93,508 270,687 508,447 747,686 926,505 982,564 988,358 784,358 838,416 748,507 509,272 271,506" fill="#00AC6A"/>
+    <polygon points="334,806 686,804 508,627" fill="#FF5C44"/>
+    <polygon points="91,683 91,806 210,805" fill="#FF5C44"/>
+    <polygon points="924,688 808,805 924,805" fill="#FF5C44"/>
   </g>
 </svg>
