@@ -14,10 +14,13 @@ import {
   FileText,
   Sparkles,
   BookOpen,
+  ArrowUpCircle,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAppUpdater } from "@/hooks/useAppUpdater";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -44,13 +47,20 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ImperialLogo } from "@/components/ImperialLogo";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
   const { selectedCompany, setSelectedCompany, companies } = useCompany();
   const { isSuperAdmin, isAdmin } = useUserRole();
+  const { updateInfo, isUpdating, error: updateError, installUpdate } = useAppUpdater();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (updateError) toast.error(`Erro ao atualizar: ${updateError}`);
+  }, [updateError]);
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -206,6 +216,19 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          {updateInfo.available && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={installUpdate}
+                disabled={isUpdating}
+                tooltip={isUpdating ? "Atualizando..." : `Atualizar para v${updateInfo.version}`}
+                className="bg-primary/10 text-primary font-medium ring-1 ring-primary/30 hover:bg-primary/20 hover:text-primary"
+              >
+                {isUpdating ? <Loader2 className="animate-spin" /> : <ArrowUpCircle />}
+                <span>{isUpdating ? "Atualizando..." : `Atualizar para v${updateInfo.version}`}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           {accountItems.map((item) => (
             <SidebarMenuItem key={item.path}>
               <SidebarMenuButton 

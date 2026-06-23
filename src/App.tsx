@@ -12,7 +12,6 @@ import { CompanyProvider } from "@/hooks/useCompany";
 import { OpenTabsProvider } from "@/hooks/useOpenTabs";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MainLayout } from "@/components/MainLayout";
-import { UpdateNotification } from "@/components/UpdateNotification";
 import Index from "./pages/Index.tsx";
 import Landing from "./pages/Landing.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -112,7 +111,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <UpdateNotification />
         <Router>
           <DesktopExternalLinks />
           <AuthProvider>
