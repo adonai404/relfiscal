@@ -76,13 +76,11 @@ export function AppSidebar() {
       title: "Planejamento",
       icon: Calculator,
       path: "/planejamento",
-      requiresCompany: true,
     },
     {
       title: "Apresentação",
       icon: Presentation,
       path: "/apresentacao",
-      requiresCompany: true,
     },
     {
       title: "Documentação",
