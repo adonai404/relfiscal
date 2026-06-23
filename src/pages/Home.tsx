@@ -1,14 +1,12 @@
  import { useNavigate } from "react-router-dom";
 import { ArrowLeftRight, LayoutDashboard, Presentation, LogOut, ChevronRight, Activity, UserCog, Calculator } from "lucide-react";
  import { useAuth } from "@/hooks/useAuth";
- import { useCompany } from "@/hooks/useCompany";
  import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
  import { ThemeToggle } from "@/components/ThemeToggle";
  
  export default function Home() {
   const { user, signOut } = useAuth();
-   const { selectedCompany } = useCompany();
    const navigate = useNavigate();
  
   const getGreeting = () => {
@@ -52,7 +50,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         path: "/planejamento",
         color: "text-amber-500",
         bg: "bg-amber-500/10",
-        forceEnabled: true,
       },
       {
         title: "Minha Conta",
@@ -61,7 +58,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         path: "/minha-conta",
         color: "text-orange-500",
         bg: "bg-orange-500/10",
-        forceEnabled: true,
       },
     ];
  
@@ -78,12 +74,10 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {menuItems.map((item, idx) => {
             const Icon = item.icon;
-            const isDisabled = !selectedCompany && !(item as any).forceEnabled;
             return (
               <button
                 key={item.path}
-                disabled={isDisabled}
-                className="group text-left animate-in fade-in slide-in-from-bottom-3 duration-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="group text-left animate-in fade-in slide-in-from-bottom-3 duration-500"
                 style={{ animationDelay: `${idx * 70}ms` }}
                 onClick={() => navigate(item.path)}
               >
