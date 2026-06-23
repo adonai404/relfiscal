@@ -148,10 +148,22 @@ Deno.serve(async (req) => {
 
     const anthropic = createAnthropic({ apiKey: anthropicApiKey });
 
+    // Prompt caching: o bloco do sistema (instruções + dados de movimento) é
+    // estável dentro da conversa (mesma thread/empresas), então marcamos com
+    // cache_control. A partir do 2º turno a Anthropic relê esse prefixo por
+    // ~10% do preço de entrada — economiza bastante em conversas longas.
+    const modelMessages = await convertToModelMessages(messages);
+
     const result = streamText({
-      model: anthropic("claude-sonnet-4-5-20250929"),
-      system,
-      messages: await convertToModelMessages(messages),
+      model: anthropic("claude-sonnet-4-6"),
+      messages: [
+        {
+          role: "system",
+          content: system,
+          providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+        },
+        ...modelMessages,
+      ],
     });
 
     return result.toUIMessageStreamResponse({
