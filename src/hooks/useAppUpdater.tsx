@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { check } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/api/process";
 import { isTauri } from "@/lib/desktop";
 
 interface UpdateInfo {
@@ -24,6 +22,8 @@ export function useAppUpdater() {
 
     const checkForUpdate = async () => {
       try {
+        // Importar dinamicamente apenas no Tauri
+        const { check } = await import("@tauri-apps/plugin-updater");
         const update = await check();
         if (update?.shouldUpdate && update.manifest) {
           setUpdateInfo({
@@ -48,6 +48,9 @@ export function useAppUpdater() {
   const installUpdate = async () => {
     try {
       setIsUpdating(true);
+      // Importar dinamicamente apenas no Tauri
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const { relaunch } = await import("@tauri-apps/api/process");
       const update = await check();
       if (update?.shouldUpdate) {
         await update.downloadAndInstall();

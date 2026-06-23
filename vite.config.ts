@@ -80,4 +80,13 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
+  build: {
+    rollupOptions: {
+      external: [
+        "@tauri-apps/plugin-updater",
+        "@tauri-apps/api/process",
+        "@tauri-apps/api/core",
+      ],
+    },
+  },
 }));
