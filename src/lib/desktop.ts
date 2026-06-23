@@ -115,3 +115,30 @@ export async function saveTextFile(
   URL.revokeObjectURL(href);
   return true;
 }
+
+/**
+ * Baixa/salva um arquivo binário (XLSX, PDF, etc). No desktop abre "Salvar como"
+ * e grava via comando Rust; no web dispara um download direto (Blob).
+ * Retorna false se o usuário cancelar.
+ */
+export async function saveBinaryFile(
+  suggestedName: string,
+  data: Uint8Array,
+): Promise<boolean> {
+  if (isTauri()) {
+    const path = await saveDialog({ defaultPath: suggestedName });
+    if (!path) return false;
+    await invoke("write_binary_file", { path, data: Array.from(data) });
+    return true;
+  }
+  const blob = new Blob([data], { type: "application/octet-stream" });
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = suggestedName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(href);
+  return true;
+}

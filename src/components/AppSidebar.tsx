@@ -13,7 +13,7 @@ import {
   Wrench,
   FileText,
   Sparkles,
-  BookOpen
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";

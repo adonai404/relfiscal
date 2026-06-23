@@ -336,7 +336,15 @@ export default function Settings() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`, customCols)}
+                    onClick={async () => {
+                      try {
+                        await downloadTemplate(config ?? undefined, `template-${selectedCompany.slug}.xlsx`, customCols);
+                        toast.success("Template baixado com sucesso!");
+                      } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : String(e);
+                        toast.error(`Erro ao baixar template: ${msg}`);
+                      }
+                    }}
                   >
                     <Download className="mr-2 h-4 w-4" /> Baixar Template
                   </Button>
@@ -350,15 +358,21 @@ export default function Settings() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() =>
-                      exportMovementToXlsx(
-                        exportRows as Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
-                        config ?? undefined,
-                        `movimento-${selectedCompany.slug}.xlsx`,
-                        customCols,
-                        valuesByMov,
-                      )
-                    }
+                    onClick={async () => {
+                      try {
+                        await exportMovementToXlsx(
+                          exportRows as Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
+                          config ?? undefined,
+                          `movimento-${selectedCompany.slug}.xlsx`,
+                          customCols,
+                          valuesByMov,
+                        );
+                        toast.success("Dados exportados com sucesso!");
+                      } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : String(e);
+                        toast.error(`Erro ao exportar: ${msg}`);
+                      }
+                    }}
                     disabled={exportRows.length === 0}
                   >
                     <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar

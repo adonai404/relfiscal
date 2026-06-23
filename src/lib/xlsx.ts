@@ -3,6 +3,7 @@ import { ALL_COLUMNS, type ColumnKey, type FiscalConfig, getColumnLabel, isColum
 import { displayCompetencia, normalizeCompetencia, parseBrNumber } from "./format";
 import type { CustomColumn } from "@/hooks/useCustomColumns";
 import { buildRowResolver } from "@/hooks/useCustomColumns";
+import { isTauri, saveBinaryFile } from "./desktop";
 
 export interface ParsedRow {
   competencia: string;
@@ -24,11 +25,11 @@ const norm = (s: string) =>
 // Parse numeric value supporting BR (1.234,56) and US (1,234.56) formats
 const parseNum = (v: unknown): number => parseBrNumber(v as string | number | null | undefined);
 
-export function downloadTemplate(
+export async function downloadTemplate(
   cfg: FiscalConfig | null | undefined,
   fileName = "template-movimento.xlsx",
   customCols: CustomColumn[] = []
-) {
+): Promise<void> {
   const cols = visibleColumns(cfg);
   const manualCustom = customCols
     .filter((c) => c.visible && c.kind === "manual")
@@ -52,17 +53,23 @@ export function downloadTemplate(
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Movimento");
-  XLSX.writeFile(wb, fileName);
+
+  if (isTauri()) {
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    await saveBinaryFile(fileName, new Uint8Array(wbout));
+  } else {
+    XLSX.writeFile(wb, fileName);
+  }
 }
 
-export function exportMovementToXlsx(
+export async function exportMovementToXlsx(
   rows: Array<{ competencia: string } & Partial<Record<ColumnKey, number>>>,
   cfg: FiscalConfig | null | undefined,
   fileName = "movimento-fiscal.xlsx",
   customCols: CustomColumn[] = [],
   // movement_id -> column_id -> value
   valuesByMov: Record<string, Record<string, number>> = {}
-) {
+): Promise<void> {
   const cols = visibleColumns(cfg);
   const visibleCustom = customCols
     .filter((c) => c.visible)
@@ -102,7 +109,13 @@ export function exportMovementToXlsx(
   });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Movimento");
-  XLSX.writeFile(wb, fileName);
+
+  if (isTauri()) {
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    await saveBinaryFile(fileName, new Uint8Array(wbout));
+  } else {
+    XLSX.writeFile(wb, fileName);
+  }
 }
 
 // Parse uploaded xlsx using current configuration to map labels back to keys

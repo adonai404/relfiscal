@@ -5,7 +5,7 @@ import {
    Building2, LayoutDashboard, Layers, LogOut, Plus, Loader2, Search, Users, FileSpreadsheet,
    Trash2, LayoutGrid, List, Rows3, Presentation as PresentationIcon, Pencil, Folder, FolderPlus,
    FolderOpen, MoreVertical, Copy, Archive, ArchiveRestore, Power, PowerOff, Inbox, Tag as TagIcon,
-  ChevronLeft
+  ChevronLeft, ExternalLink
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany, type Company } from "@/hooks/useCompany";
+import { useOpenTabs } from "@/hooks/useOpenTabs";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useProfile } from "@/hooks/useProfile";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -58,6 +59,7 @@ const STATUS_BADGE_CLASSES: Record<CompanyStatus, string> = {
 export default function Companies() {
   const { user, loading, signOut } = useAuth();
   const { companies, loadingCompanies, setSelectedCompany, refetch } = useCompany();
+  const { openInTab } = useOpenTabs();
   const { isSuperAdmin } = useUserRole();
   const { isActive } = useProfile();
   const canCreate = isActive || isSuperAdmin;
@@ -119,9 +121,14 @@ export default function Companies() {
   if (!user) return <Navigate to="/auth" replace />;
 
    const select = (c: Company) => {
+     openInTab(c);
      setSelectedCompany(c);
      navigate(`/movimento?company=${c.id}`);
    };
+
+  const openCompanyInNewTab = (c: Company) => {
+    openInTab(c);
+  };
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,6 +345,10 @@ export default function Companies() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-popover">
+              <DropdownMenuItem onClick={() => openCompanyInNewTab(c)}>
+                <ExternalLink className="mr-2 h-4 w-4" /> Abrir em nova aba
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => openEdit(c)}>
                 <Pencil className="mr-2 h-4 w-4" /> Editar
               </DropdownMenuItem>

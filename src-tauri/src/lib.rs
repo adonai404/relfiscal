@@ -11,6 +11,13 @@ fn write_text_file(path: String, contents: String) -> Result<(), String> {
     std::fs::write(&path, contents).map_err(|e| e.to_string())
 }
 
+/// Grava dados binários (ex: XLSX, PDF) num caminho do disco. No desktop, o usuário
+/// escolhe o destino com "Salvar como" e aqui grava via comando Rust.
+#[tauri::command]
+fn write_binary_file(path: String, data: Vec<u8>) -> Result<(), String> {
+    std::fs::write(&path, data).map_err(|e| e.to_string())
+}
+
 /// Abre um site numa janela interna do app (navegador embutido). Se `dir` for
 /// informado, TODO download feito nessa janela é salvo automaticamente nessa
 /// pasta — sem o diálogo "Salvar como" (regra "site X -> pasta Y").
@@ -98,8 +105,10 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             write_text_file,
+            write_binary_file,
             open_internal_browser
         ])
         .setup(|app| {

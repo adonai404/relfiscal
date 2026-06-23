@@ -44,11 +44,13 @@ export default function TaxPlanning() {
   });
 
   const { data: plannings = [], isLoading } = useQuery({
-    queryKey: ["tax_planning"],
+    queryKey: ["tax_planning", companies.map(c => c.id).join(",")],
+    enabled: companies.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tax_planning")
         .select("*, companies(nome_fantasia), tax_planning_groups(name)")
+        .in("company_id", companies.map(c => c.id))
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
