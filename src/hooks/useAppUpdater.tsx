@@ -24,12 +24,13 @@ export function useAppUpdater() {
       try {
         // Importar dinamicamente apenas no Tauri
         const { check } = await import("@tauri-apps/plugin-updater");
+        // No Tauri 2, check() retorna Update | null (null = sem atualização)
         const update = await check();
-        if (update?.shouldUpdate && update.manifest) {
+        if (update) {
           setUpdateInfo({
             available: true,
-            version: update.manifest.version,
-            notes: update.manifest.body || "",
+            version: update.version,
+            notes: update.body || "",
           });
         }
       } catch (err) {
@@ -50,11 +51,12 @@ export function useAppUpdater() {
       setIsUpdating(true);
       // Importar dinamicamente apenas no Tauri
       const { check } = await import("@tauri-apps/plugin-updater");
-      const { relaunch } = await import("@tauri-apps/api/process");
+      const { relaunch } = await import("@tauri-apps/plugin-process");
       const update = await check();
-      if (update?.shouldUpdate) {
+      if (update) {
+        // Baixa e instala a atualização
         await update.downloadAndInstall();
-        // Reiniciar o app
+        // Reinicia o app para aplicar a nova versão
         await relaunch();
       }
     } catch (err) {

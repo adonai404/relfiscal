@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+bun.lockb
+bun.lock
+
+# Tauri updater signing keys (NUNCA versionar a chave privada)
+src-tauri/tauri.key
+src-tauri/*.key
+
