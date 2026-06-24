@@ -34,6 +34,7 @@ import Tools from "./pages/Tools.tsx";
 import Documentation from "./pages/Documentation.tsx";
 import Assistant from "./pages/Assistant.tsx";
 import Knowledge from "./pages/Knowledge.tsx";
+import Automacoes from "./pages/Automacoes.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -137,6 +138,7 @@ const App = () => (
                   <Route path="/documentacao" element={<Documentation />} />
                   <Route path="/assistente" element={<Assistant />} />
                   <Route path="/conhecimento" element={<Knowledge />} />
+                  <Route path="/automacoes" element={<Automacoes />} />
                   <Route path="/admin/usuarios" element={<ProtectedRoute requireSuperAdmin><AdminUsers /></ProtectedRoute>} />
                   <Route path="/admin/clientes" element={<ProtectedRoute requireSuperAdmin><AdminCustomers /></ProtectedRoute>} />
                 </Route>

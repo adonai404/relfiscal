@@ -231,6 +231,67 @@ html.theme-transitioning *::after {
   --sidebar-ring: 28 75% 58%;
 }
 
+/* === Tema Automações (aço/slate — paleta #5A738E) === */
+/* Paleta: #F0F1F2 (fundo) · #1C1C1E (texto) · #5A738E (primária) · #6E6E73 (muted) · #BFC0C0 (prata/bordas) */
+.automacao-theme {
+  --background: 210 9% 95%;           /* #F0F1F2 */
+  --foreground: 240 4% 9%;            /* #1C1C1E */
+  --card: 0 0% 100%;
+  --card-foreground: 240 4% 9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 4% 9%;
+  --primary: 211 22% 45%;             /* #5A738E aço azul */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 8% 90%;
+  --secondary-foreground: 240 4% 16%;
+  --muted: 210 7% 91%;
+  --muted-foreground: 247 3% 44%;     /* #6E6E73 */
+  --accent: 211 14% 86%;
+  --accent-foreground: 240 4% 16%;
+  --destructive: 0 70% 50%;
+  --border: 210 5% 79%;               /* derivado de #BFC0C0 */
+  --input: 210 5% 84%;
+  --ring: 211 22% 45%;
+  /* Sidebar escura em contraste com o conteúdo claro */
+  --sidebar-background: 211 14% 20%;
+  --sidebar-foreground: 210 7% 82%;
+  --sidebar-primary: 211 22% 66%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 211 12% 26%;
+  --sidebar-accent-foreground: 210 7% 90%;
+  --sidebar-border: 211 10% 27%;
+  --sidebar-ring: 211 22% 60%;
+}
+
+.dark.automacao-theme {
+  --background: 240 4% 9%;            /* #1C1C1E */
+  --foreground: 210 5% 95%;           /* #F0F1F2 */
+  --card: 240 3% 12%;
+  --card-foreground: 210 5% 95%;
+  --popover: 240 3% 12%;
+  --popover-foreground: 210 5% 95%;
+  --primary: 211 22% 60%;             /* #5A738E mais claro para dark */
+  --primary-foreground: 240 4% 9%;
+  --secondary: 240 3% 16%;
+  --secondary-foreground: 210 5% 88%;
+  --muted: 240 3% 14%;
+  --muted-foreground: 210 3% 56%;     /* #BFC0C0 escurecido */
+  --accent: 240 3% 17%;
+  --accent-foreground: 210 5% 88%;
+  --destructive: 0 62% 50%;
+  --border: 240 3% 19%;
+  --input: 240 3% 17%;
+  --ring: 211 22% 54%;
+  --sidebar-background: 240 4% 7%;
+  --sidebar-foreground: 210 4% 70%;
+  --sidebar-primary: 211 22% 58%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 3% 12%;
+  --sidebar-accent-foreground: 210 4% 82%;
+  --sidebar-border: 240 3% 14%;
+  --sidebar-ring: 211 22% 52%;
+}
+
 /* === Tabela Fiscal: cores por coluna + divisórias === */
 @layer components {
   /* Divisórias verticais entre todas as células (corpo + cabeçalho) */

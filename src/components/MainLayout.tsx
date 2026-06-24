@@ -16,6 +16,9 @@ import { useCompany } from "@/hooks/useCompany";
 import { useOpenTabs } from "@/hooks/useOpenTabs";
 import { formatCNPJ } from "@/lib/format";
 import { useKnowledgeTheme } from "@/hooks/useKnowledgeTheme";
+import { useFolderWatcher } from "@/hooks/useFolderWatcher";
+import { useAutoReport } from "@/hooks/useAutoReport";
+import { useAutomacaoTheme } from "@/hooks/useAutomacaoTheme";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
@@ -25,6 +28,9 @@ export function MainLayout() {
   const { selectedCompany, setSelectedCompany, companies } = useCompany();
   const { openTabs, closeTab } = useOpenTabs();
   useKnowledgeTheme();
+  useFolderWatcher();
+  useAutoReport();
+  useAutomacaoTheme();
 
   const getBreadcrumbs = () => {
     const paths = location.pathname.split("/").filter(Boolean);
@@ -43,6 +49,7 @@ export function MainLayout() {
       if (path === "admin") displayLabel = "Administração";
       if (path === "usuarios") displayLabel = "Usuários";
       if (path === "tarefas") displayLabel = "Tarefas";
+      if (path === "automacoes") displayLabel = "Automações";
 
       return { url, label: displayLabel, isCurrent: index === paths.length - 1 };
     });

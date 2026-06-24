@@ -1,4 +1,4 @@
-import { 
+import {
   Building2,
   LayoutDashboard,
   ArrowLeftRight,
@@ -16,6 +16,8 @@ import {
   BookOpen,
   ArrowUpCircle,
   Loader2,
+  Monitor,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
@@ -49,6 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { ImperialLogo } from "@/components/ImperialLogo";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { isTauri } from "@/lib/desktop";
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
@@ -111,6 +114,11 @@ export function AppSidebar() {
       title: "Conhecimento",
       icon: BookOpen,
       path: "/conhecimento",
+    },
+    {
+      title: "Automações",
+      icon: Zap,
+      path: "/automacoes",
     },
   ];
 
@@ -229,9 +237,21 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
+          {!isTauri() && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => window.open("https://github.com/adonai404/relfiscal/releases", "_blank", "noopener,noreferrer")}
+                tooltip="Baixar app desktop"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Monitor />
+                <span>Baixar app desktop</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           {accountItems.map((item) => (
             <SidebarMenuItem key={item.path}>
-              <SidebarMenuButton 
+              <SidebarMenuButton
                 onClick={() => navigate(item.path)}
                 isActive={location.pathname === item.path}
                 tooltip={item.title}

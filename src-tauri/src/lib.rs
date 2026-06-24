@@ -1,6 +1,8 @@
 use std::path::PathBuf;
+use std::sync::Mutex;
+use notify::{recommended_watcher, Event, EventKind, RecursiveMode, Watcher};
 use tauri::webview::DownloadEvent;
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_notification::NotificationExt;
 
 /// Grava texto num caminho do disco. Usado p/ baixar o resultado da IA depois
@@ -16,6 +18,69 @@ fn write_text_file(path: String, contents: String) -> Result<(), String> {
 #[tauri::command]
 fn write_binary_file(path: String, data: Vec<u8>) -> Result<(), String> {
     std::fs::write(&path, data).map_err(|e| e.to_string())
+}
+
+/// Lê dados binários de um caminho do disco. Usado pela automação de pasta monitorada
+/// para ler PDFs detectados pelo watcher sem precisar do plugin fs no frontend.
+#[tauri::command]
+fn read_binary_file(path: String) -> Result<Vec<u8>, String> {
+    std::fs::read(&path).map_err(|e| e.to_string())
+}
+
+/// Mantém o watcher ativo enquanto o app está rodando.
+/// Substituído a cada chamada de start_folder_watch; None = parado.
+struct WatcherState(Mutex<Option<notify::RecommendedWatcher>>);
+
+/// Inicia o monitoramento de uma pasta. Quando um arquivo .pdf é criado nela,
+/// emite o evento `pdf-watcher-file` com o caminho do arquivo para o frontend.
+/// Aguarda 1 segundo antes de emitir (garante que o arquivo esteja completamente gravado).
+/// Chamar novamente substitui o watcher anterior.
+#[tauri::command]
+fn start_folder_watch(
+    app: tauri::AppHandle,
+    state: tauri::State<WatcherState>,
+    path: String,
+) -> Result<(), String> {
+    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
+    *guard = None; // para o watcher anterior, se houver
+
+    let app_clone = app.clone();
+    let mut watcher = recommended_watcher(move |res: notify::Result<Event>| {
+        if let Ok(event) = res {
+            if matches!(event.kind, EventKind::Create(_)) {
+                for p in &event.paths {
+                    if p.extension()
+                        .map(|ext| ext.eq_ignore_ascii_case("pdf"))
+                        .unwrap_or(false)
+                    {
+                        let path_str = p.to_string_lossy().to_string();
+                        let app2 = app_clone.clone();
+                        // Aguarda 1s para garantir que o arquivo esteja completamente gravado
+                        std::thread::spawn(move || {
+                            std::thread::sleep(std::time::Duration::from_millis(1000));
+                            let _ = app2.emit("pdf-watcher-file", path_str);
+                        });
+                    }
+                }
+            }
+        }
+    })
+    .map_err(|e| e.to_string())?;
+
+    watcher
+        .watch(std::path::Path::new(&path), RecursiveMode::NonRecursive)
+        .map_err(|e| e.to_string())?;
+
+    *guard = Some(watcher);
+    Ok(())
+}
+
+/// Para o monitoramento de pasta.
+#[tauri::command]
+fn stop_folder_watch(state: tauri::State<WatcherState>) -> Result<(), String> {
+    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
+    *guard = None;
+    Ok(())
 }
 
 /// Abre um site numa janela interna do app (navegador embutido). Se `dir` for
@@ -107,10 +172,14 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .manage(WatcherState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             write_text_file,
             write_binary_file,
-            open_internal_browser
+            read_binary_file,
+            open_internal_browser,
+            start_folder_watch,
+            stop_folder_watch,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
