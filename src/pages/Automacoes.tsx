@@ -370,22 +370,11 @@ function PastaPdfPanel() {
                         <div className="mt-1 text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-0.5">
                           <span className="text-foreground font-medium col-span-2">{e.companyName ?? e.cnpj}</span>
                           {e.competencia && <span>Competência: <span className="text-foreground">{fmtPeriodo(e.competencia)}</span></span>}
-                          {(e.saida ?? 0) > 0 && <span>Saída: <span className="text-foreground">{fmtBrl(e.saida!)}</span></span>}
+                          {(e.saida ?? 0) > 0 && <span>Faturamento: <span className="text-foreground">{fmtBrl(e.saida!)}</span></span>}
                           {(e.simplNacional ?? 0) > 0 && <span>DAS: <span className="text-foreground">{fmtBrl(e.simplNacional!)}</span></span>}
-                          {e.extractionSource === "fallback" && (
-                            <span className="col-span-2 flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-                              <AlertCircle className="h-3 w-3 shrink-0" />
-                              Extração local (API indisponível ou formato não reconhecido)
-                            </span>
-                          )}
                         </div>
                       )}
-                      {(e.errorMessage || e.apiError) && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {e.errorMessage}
-                          {e.apiError && <span className="block text-yellow-600 dark:text-yellow-400">API: {e.apiError}</span>}
-                        </p>
-                      )}
+                      {e.errorMessage && <p className="mt-0.5 text-xs text-muted-foreground">{e.errorMessage}</p>}
                     </div>
                   </div>
                 );

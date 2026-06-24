@@ -5,9 +5,7 @@ import { sendNotification } from "@tauri-apps/plugin-notification";
 import { isTauri } from "@/lib/desktop";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateImportCompanies } from "@/lib/companyImport";
-import { extractPdfsSync } from "@/lib/pdfExtract";
 import { extractLocally } from "@/lib/pdfLocalFallback";
-import type { ExtractedData } from "@/lib/pdfExtract";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -24,8 +22,6 @@ export interface LogEntry {
   fileName: string;
   filePath: string;
   status: "success" | "error" | "no-data";
-  extractionSource?: "api" | "fallback";  // como os dados foram extraídos
-  apiError?: string;                       // erro da API (se ocorreu)
   cnpj?: string;
   companyName?: string;
   competencia?: string;
@@ -37,10 +33,10 @@ export interface LogEntry {
 // ─── Chaves localStorage ──────────────────────────────────────────────────────
 
 const SETTINGS_KEY = "imperial.automacoes";
-const LOG_KEY = "imperial.automacoes.log";
-const MAX_LOG = 100;
+const LOG_KEY      = "imperial.automacoes.log";
+const MAX_LOG      = 100;
 
-// ─── Utilitários de configuração (exportados para a página usar) ───────────────
+// ─── Utilitários de configuração ──────────────────────────────────────────────
 
 export function getAutomacaoSettings(): AutomacaoSettings {
   try {
@@ -55,7 +51,7 @@ export function saveAutomacaoSettings(settings: AutomacaoSettings): void {
   window.dispatchEvent(new Event("automacao-settings-changed"));
 }
 
-// ─── Utilitários de log (exportados para a página usar) ────────────────────────
+// ─── Utilitários de log ───────────────────────────────────────────────────────
 
 export function getAutomacaoLog(): LogEntry[] {
   try {
@@ -72,57 +68,9 @@ export function clearAutomacaoLog(): void {
 
 function appendLogEntry(entry: LogEntry): void {
   const current = getAutomacaoLog();
-  const updated = [entry, ...current].slice(0, MAX_LOG);
+  const updated  = [entry, ...current].slice(0, MAX_LOG);
   localStorage.setItem(LOG_KEY, JSON.stringify(updated));
   window.dispatchEvent(new Event("automacao-log-changed"));
-}
-
-// ─── Extração com fallback (mesmo fluxo do PdfImportTab) ─────────────────────
-
-async function extractWithFallback(file: File): Promise<{
-  data: ExtractedData | null;
-  extractionSource: "api" | "fallback";
-  apiError: string | null;
-}> {
-  // 1. Tenta API externa (igual ao PdfImportTab)
-  try {
-    const resp = await extractPdfsSync([file]);
-
-    // Resultado bem-sucedido da API
-    const ok = resp.results?.find(
-      (r) => r.status === "success" && r.data?.cnpj && r.data?.competencia
-    );
-    if (ok) {
-      return { data: ok.data, extractionSource: "api", apiError: null };
-    }
-
-    // API processou mas devolveu erro para este arquivo — tenta fallback local
-    // (mesmo comportamento do PdfImportTab para UNSUPPORTED_VERSION, INVALID_PDF_FORMAT, etc.)
-    const apiErr = resp.errors?.find((e) => e.file_name === file.name);
-    const apiErrMsg = apiErr
-      ? `${apiErr.error_code}: ${apiErr.error_message}`
-      : resp.results?.length === 0 && !resp.errors?.length
-        ? "API não retornou dados"
-        : null;
-
-    const fallbackData = await extractLocally(file);
-    return {
-      data: fallbackData,
-      extractionSource: "fallback",
-      apiError: apiErrMsg,
-    };
-  } catch (err) {
-    // Erro de rede / API indisponível — fallback local
-    const apiErrMsg = (err as Error).message ?? "Erro na chamada à API";
-    console.error("[useFolderWatcher] API de extração falhou:", apiErrMsg);
-
-    const fallbackData = await extractLocally(file);
-    return {
-      data: fallbackData,
-      extractionSource: "fallback",
-      apiError: apiErrMsg,
-    };
-  }
 }
 
 // ─── Hook principal ────────────────────────────────────────────────────────────
@@ -135,7 +83,7 @@ export function useFolderWatcher() {
 
   const processPdf = useCallback(
     async (filePath: string) => {
-      const now = Date.now();
+      const now  = Date.now();
       const last = processedMap.get(filePath) ?? 0;
       if (now - last < 10_000) return;
       processedMap.set(filePath, now);
@@ -143,70 +91,47 @@ export function useFolderWatcher() {
       const fileName = filePath.split(/[/\\]/).pop() ?? filePath;
 
       try {
-        // Lê os bytes do disco via comando Rust
-        const bytes = await invoke<number[]>("read_binary_file", { path: filePath });
-        const uint8 = new Uint8Array(bytes);
-        const file = new File([uint8], fileName, { type: "application/pdf" });
+        // Lê o PDF do disco via Rust
+        const bytes  = await invoke<number[]>("read_binary_file", { path: filePath });
+        const uint8  = new Uint8Array(bytes);
+        const file   = new File([uint8], fileName, { type: "application/pdf" });
 
-        // Extração: API primeiro, fallback local se necessário (igual ao PdfImportTab)
-        const { data, extractionSource, apiError } = await extractWithFallback(file);
+        // Extração local: suporta PGDAS-D (Receita Federal) e SITTAX
+        const data = await extractLocally(file);
 
         if (!data?.cnpj || !data?.competencia) {
           appendLogEntry({
-            id: crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
-            fileName,
-            filePath,
-            status: "no-data",
-            extractionSource,
-            apiError: apiError ?? undefined,
-            errorMessage: apiError
-              ? `Falha na API (${apiError}) e extração local também não encontrou CNPJ/competência.`
-              : "CNPJ ou competência não encontrados no PDF.",
+            id: crypto.randomUUID(), timestamp: new Date().toISOString(),
+            fileName, filePath, status: "no-data",
+            errorMessage: "CNPJ ou competência não encontrados no PDF.",
           });
           toast.warning(`${fileName}: dados insuficientes para importar.`);
           return;
         }
 
-        // Mapeamento idêntico ao PdfImportTab:
-        // saida = rpa.total (Receita Bruta do PA), simples_nacional = valor_pago_das (DAS pago)
-        const saida = data.rpa?.total ?? 0;
+        // Campos extraídos:
+        //   saida          = Receita Bruta do PA (RPA) - Competência (total)
+        //   simples_nacional = Total do Débito Exigível (SITTAX) OU Arrecadação do DAS (PGDAS-D)
+        const saida        = data.rpa?.total ?? 0;
         const simplNacional = data.valor_pago_das ?? 0;
 
-        // Avisa se a extração retornou valores zerados (pode ser fallback incompleto)
-        if (saida === 0 && simplNacional === 0 && extractionSource === "fallback") {
-          console.warn(
-            "[useFolderWatcher] Extração local não encontrou valores monetários para",
-            fileName,
-            "— importando com valores zerados. Erro da API:",
-            apiError
-          );
-        }
-
-        // Localiza ou cria a empresa pelo CNPJ
+        // Localiza ou cria empresa pelo CNPJ
         const { idByCnpj } = await getOrCreateImportCompanies([
           {
-            cnpj: data.cnpj,
-            razao_social: data.razao_social ?? "A definir",
-            nome_fantasia:
-              data.razao_social ?? `Empresa ${data.cnpj.replace(/\D/g, "").slice(-4)}`,
-            uf: "SP",
-            regime: "simples_nacional",
+            cnpj:          data.cnpj,
+            razao_social:  data.razao_social ?? "A definir",
+            nome_fantasia: data.razao_social ?? `Empresa ${data.cnpj.replace(/\D/g, "").slice(-4)}`,
+            uf:            "SP",
+            regime:        "simples_nacional",
           },
         ]);
 
-        const cnpjDigits = data.cnpj.replace(/\D/g, "");
-        const company_id = idByCnpj.get(cnpjDigits);
+        const company_id = idByCnpj.get(data.cnpj.replace(/\D/g, ""));
         if (!company_id) throw new Error("Falha ao localizar/criar empresa no banco.");
 
-        // Upsert com os mesmos campos que PdfImportTab usa
+        // Upsert — mesmos campos que PdfImportTab usa
         const { error: upErr } = await supabase.from("fiscal_movement").upsert(
-          {
-            company_id,
-            competencia: data.competencia,
-            saida,
-            simples_nacional: simplNacional,
-          } as never,
+          { company_id, competencia: data.competencia, saida, simples_nacional: simplNacional } as never,
           { onConflict: "company_id,competencia" }
         );
         if (upErr) throw upErr;
@@ -215,44 +140,29 @@ export function useFolderWatcher() {
         qc.invalidateQueries({ queryKey: ["companies"] });
 
         appendLogEntry({
-          id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          fileName,
-          filePath,
-          status: "success",
-          extractionSource,
-          apiError: apiError ?? undefined,
-          cnpj: data.cnpj,
-          companyName: data.razao_social ?? undefined,
-          competencia: data.competencia,
-          saida,
-          simplNacional,
+          id: crypto.randomUUID(), timestamp: new Date().toISOString(),
+          fileName, filePath, status: "success",
+          cnpj: data.cnpj, companyName: data.razao_social ?? undefined,
+          competencia: data.competencia, saida, simplNacional,
         });
 
-        const compName = data.razao_social ?? data.cnpj;
+        const compName  = data.razao_social ?? data.cnpj;
         const [year, month] = (data.competencia ?? "").split("-");
         const compLabel = month && year ? `${month}/${year}` : data.competencia;
-        const sourceLabel = extractionSource === "fallback" ? " (leitura local)" : "";
 
-        toast.success(`Importado: ${compName} • ${compLabel}${sourceLabel}`);
+        toast.success(`Importado: ${compName} • ${compLabel}`);
 
         try {
           await sendNotification({
             title: "Importação automática",
-            body: `${fileName} → ${compName} (${compLabel})`,
+            body:  `${fileName} → ${compName} (${compLabel})`,
           });
-        } catch {
-          // Permissão não concedida — silencia
-        }
+        } catch {}
       } catch (err) {
         const msg = (err as Error).message ?? "Erro desconhecido";
         appendLogEntry({
-          id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          fileName,
-          filePath,
-          status: "error",
-          errorMessage: msg,
+          id: crypto.randomUUID(), timestamp: new Date().toISOString(),
+          fileName, filePath, status: "error", errorMessage: msg,
         });
         toast.error(`Falha ao importar ${fileName}: ${msg}`);
       }
@@ -268,13 +178,8 @@ export function useFolderWatcher() {
     let cancelled = false;
 
     const startWatching = async () => {
-      if (unlistenFn) {
-        unlistenFn();
-        unlistenFn = null;
-      }
-      try {
-        await invoke("stop_folder_watch");
-      } catch {}
+      if (unlistenFn) { unlistenFn(); unlistenFn = null; }
+      try { await invoke("stop_folder_watch"); } catch {}
 
       if (cancelled) return;
 
