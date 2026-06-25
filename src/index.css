@@ -292,6 +292,69 @@ html.theme-transitioning *::after {
   --sidebar-ring: 211 22% 52%;
 }
 
+/* === Tema Reforma Tributária (carmesim/vinho — paleta #73030D) === */
+/* Paleta: #F2F2F2 (fundo) · #0D0D0D (texto) · #73030D (primária) · #732F3B (secundária) · #8C8C8C (muted) */
+.reform-theme {
+  --background: 0 0% 96%;              /* #F5F5F5 próximo de #F2F2F2 */
+  --foreground: 355 50% 7%;            /* Quase preto com toque de vinho */
+  --card: 0 0% 100%;
+  --card-foreground: 355 50% 7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 355 50% 7%;
+  --primary: 355 95% 23%;              /* #73030D carmesim profundo */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 350 20% 92%;
+  --secondary-foreground: 355 40% 16%;
+  --muted: 350 10% 92%;
+  --muted-foreground: 0 0% 45%;        /* #8C8C8C cinza neutro */
+  --accent: 350 25% 89%;
+  --accent-foreground: 355 40% 16%;
+  --destructive: 0 72% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 355 15% 86%;
+  --input: 355 15% 88%;
+  --ring: 355 95% 23%;
+  /* Sidebar escura em vinho profundo */
+  --sidebar-background: 355 85% 11%;   /* ~#350208 vinho muito escuro */
+  --sidebar-foreground: 355 15% 87%;
+  --sidebar-primary: 355 60% 68%;      /* vermelho claro para highlight */
+  --sidebar-primary-foreground: 355 85% 11%;
+  --sidebar-accent: 355 60% 17%;
+  --sidebar-accent-foreground: 355 15% 92%;
+  --sidebar-border: 355 50% 16%;
+  --sidebar-ring: 355 60% 62%;
+}
+
+.dark.reform-theme {
+  --background: 355 12% 7%;            /* quase #0D0D0D com toque vinho */
+  --foreground: 355 8% 94%;
+  --card: 355 12% 10%;
+  --card-foreground: 355 8% 94%;
+  --popover: 355 12% 10%;
+  --popover-foreground: 355 8% 94%;
+  --primary: 355 78% 46%;              /* vermelho mais claro para dark */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 355 10% 16%;
+  --secondary-foreground: 355 8% 90%;
+  --muted: 355 10% 13%;
+  --muted-foreground: 355 5% 57%;
+  --accent: 355 10% 17%;
+  --accent-foreground: 355 8% 90%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 355 8% 20%;
+  --input: 355 8% 18%;
+  --ring: 355 78% 46%;
+  --sidebar-background: 355 18% 6%;
+  --sidebar-foreground: 355 8% 73%;
+  --sidebar-primary: 355 72% 52%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 355 14% 12%;
+  --sidebar-accent-foreground: 355 8% 86%;
+  --sidebar-border: 355 10% 14%;
+  --sidebar-ring: 355 68% 46%;
+}
+
 /* === Tabela Fiscal: cores por coluna + divisórias === */
 @layer components {
   /* Divisórias verticais entre todas as células (corpo + cabeçalho) */

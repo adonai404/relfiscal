@@ -19,6 +19,7 @@ import { useKnowledgeTheme } from "@/hooks/useKnowledgeTheme";
 import { useFolderWatcher } from "@/hooks/useFolderWatcher";
 import { useAutoReport } from "@/hooks/useAutoReport";
 import { useAutomacaoTheme } from "@/hooks/useAutomacaoTheme";
+import { useTaxReformTheme } from "@/hooks/useTaxReformTheme";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
@@ -31,6 +32,7 @@ export function MainLayout() {
   useFolderWatcher();
   useAutoReport();
   useAutomacaoTheme();
+  useTaxReformTheme();
 
   const getBreadcrumbs = () => {
     const paths = location.pathname.split("/").filter(Boolean);

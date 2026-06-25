@@ -18,6 +18,7 @@ import {
   Loader2,
   Monitor,
   Zap,
+  Scale,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
@@ -119,6 +120,11 @@ export function AppSidebar() {
       title: "Automações",
       icon: Zap,
       path: "/automacoes",
+    },
+    {
+      title: "Reforma Tributária",
+      icon: Scale,
+      path: "/reforma-tributaria",
     },
   ];
 
