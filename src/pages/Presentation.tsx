@@ -1,12 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Building2, ChevronLeft, ChevronRight, Loader2, LogOut, Maximize2, Minimize2,
   Play, Presentation as PresentationIcon, Tag as TagIcon, Pause,
   TrendingUp, TrendingDown, Minus, Trophy, Receipt, Wallet, Activity, PieChart as PieIcon,
-  ArrowRight, Sparkles, Scale,
+  ArrowRight, Sparkles, Scale, Eye, EyeOff, GripVertical, LayoutGrid,
+  FileText as FileTextIcon, BarChart2, Users, GitCompare, Layers as LayersIcon,
 } from "lucide-react";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, horizontalListSortingStrategy, useSortable, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,6 +208,31 @@ export default function Presentation() {
     | { kind: "scenarios" }
     | { kind: "doc"; companyId: string; docId: string };
 
+  interface SlideConfig {
+    id: string;
+    slide: SlideKind;
+    hidden: boolean;
+  }
+
+  function slideId(s: SlideKind): string {
+    if (s.kind === "company") return `company-${s.companyId}`;
+    if (s.kind === "doc") return `doc-${s.companyId}-${s.docId}`;
+    return s.kind;
+  }
+
+  function slideLabel(s: SlideKind): string {
+    if (s.kind === "overview") return "Visão Geral";
+    if (s.kind === "comparison") return "Ranking";
+    if (s.kind === "sidebyside") return "Lado a Lado";
+    if (s.kind === "scenarios") return "Cenários";
+    if (s.kind === "company") {
+      const c = companies.find((x) => x.id === s.companyId);
+      return c?.nome_fantasia || c?.razao_social || "Empresa";
+    }
+    if (s.kind === "doc") return "Documento";
+    return "Slide";
+  }
+
   // Fetch documentation for selected companies
   const { data: documentation = [] } = useQuery({
     queryKey: ["presentation_docs", finalCompanyIds.sort().join(",")],
@@ -227,7 +261,8 @@ export default function Presentation() {
     return m;
   }, [documentation]);
 
-  const slides: SlideKind[] = useMemo(() => {
+  // Generate the "base" ordered list of slides from current settings
+  const baseSlides = useMemo((): SlideKind[] => {
     if (finalCompanies.length === 0) return [];
     const out: SlideKind[] = [];
     if (includeOverview) out.push({ kind: "overview" });
@@ -245,13 +280,38 @@ export default function Presentation() {
     }
     if (finalCompanies.length >= 2 && includeSideBySide) out.push({ kind: "sidebyside" });
     if (finalCompanies.length >= 2 && includeComparison) out.push({ kind: "comparison" });
-    // Garante pelo menos um slide se o usuário desmarcar tudo
     if (out.length === 0) out.push({ kind: "overview" });
     return out;
   }, [
     finalCompanies, includeOverview, includeCompanySlides, includeComparison, includeSideBySide,
     includeScenarios, scenarioACompanyIds, scenarioBCompanyIds, docsByCompany, includeDocumentation,
   ]);
+
+  // Managed slide configs (order + visibility controlled by the user)
+  const [slideConfigs, setSlideConfigs] = useState<SlideConfig[]>([]);
+
+  // Sync baseSlides → slideConfigs: preserve existing order/visibility, add new, remove gone
+  const prevBaseKey = useRef("");
+  useEffect(() => {
+    const key = baseSlides.map(slideId).join("|");
+    if (key === prevBaseKey.current) return;
+    prevBaseKey.current = key;
+    setSlideConfigs((prev) => {
+      const newIds = new Set(baseSlides.map(slideId));
+      const kept = prev.filter((c) => newIds.has(c.id));
+      const keptIds = new Set(kept.map((c) => c.id));
+      const added = baseSlides
+        .filter((s) => !keptIds.has(slideId(s)))
+        .map((s) => ({ id: slideId(s), slide: s, hidden: false }));
+      return [...kept, ...added];
+    });
+  }, [baseSlides]);
+
+  // Visible slides for actual presentation
+  const slides = useMemo(
+    () => slideConfigs.filter((c) => !c.hidden).map((c) => c.slide),
+    [slideConfigs],
+  );
 
   const currentSlideDef = slides[currentSlide];
   const currentCompany = currentSlideDef?.kind === "company"
@@ -886,6 +946,41 @@ export default function Presentation() {
               </p>
             </CardContent>
           </Card>
+
+          {/* Galeria de slides */}
+          {slideConfigs.length > 0 && (
+            <Card className="mt-4">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <LayoutGrid className="h-4 w-4" /> Galeria de Slides
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Arraste para reordenar. Clique no olho para ocultar/exibir.
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{slideConfigs.filter((c) => !c.hidden).length} visíveis</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SlideGallery
+                  configs={slideConfigs}
+                  companies={companies}
+                  documentation={(() => {
+                    // flatten all docs for label lookup — available in closure
+                    return Object.values(docsByCompany).flat();
+                  })()}
+                  onReorder={(newConfigs) => setSlideConfigs(newConfigs)}
+                  onToggleHidden={(id) =>
+                    setSlideConfigs((prev) =>
+                      prev.map((c) => (c.id === id ? { ...c, hidden: !c.hidden } : c)),
+                    )
+                  }
+                />
+              </CardContent>
+            </Card>
+          )}
 
           <div className="mt-6 flex justify-end gap-2">
             <Button variant="outline" onClick={() => navigate("/empresas")}>Cancelar</Button>
@@ -2323,5 +2418,153 @@ function ScenariosSlide({
         </ChartCard>
       )}
     </>
+  );
+}
+
+// ── Slide Gallery ─────────────────────────────────────────────────────────────
+
+interface SlideGalleryProps {
+  configs: Array<{ id: string; slide: { kind: string; companyId?: string; docId?: string }; hidden: boolean }>;
+  companies: Array<{ id: string; nome_fantasia?: string; razao_social?: string }>;
+  documentation: Array<{ id: string; title: string }>;
+  onReorder: (configs: SlideGalleryProps["configs"]) => void;
+  onToggleHidden: (id: string) => void;
+}
+
+function SortableSlideCard({
+  config,
+  companies,
+  documentation,
+  onToggleHidden,
+}: {
+  config: SlideGalleryProps["configs"][number];
+  companies: SlideGalleryProps["companies"];
+  documentation: SlideGalleryProps["documentation"];
+  onToggleHidden: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: config.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  const { label, icon: Icon, color, preview } = getSlideVisuals(config, companies, documentation);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative flex flex-col rounded-xl border bg-card transition-all duration-200 w-[160px] shrink-0 overflow-hidden
+        ${config.hidden ? "opacity-40 border-dashed" : "hover:border-primary/40 hover:shadow-md"}
+        ${isDragging ? "shadow-2xl ring-2 ring-primary/40" : ""}
+      `}
+    >
+      {/* Grab handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-1.5 left-1.5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground z-10 touch-none"
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      {/* Toggle hidden */}
+      <button
+        onClick={() => onToggleHidden(config.id)}
+        className="absolute top-1.5 right-1.5 z-10 rounded-md p-1 text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 transition-colors"
+        title={config.hidden ? "Exibir slide" : "Ocultar slide"}
+      >
+        {config.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
+
+      {/* Thumbnail preview */}
+      <div className={`h-24 flex flex-col items-center justify-center gap-2 ${color} relative`}>
+        <Icon className="h-8 w-8 opacity-70" />
+        {/* Simulated content bars */}
+        <div className="absolute bottom-3 left-4 right-4 space-y-1 opacity-30">
+          <div className="h-1 rounded-full bg-current w-full" />
+          <div className="h-1 rounded-full bg-current w-3/4" />
+          <div className="h-1 rounded-full bg-current w-1/2" />
+        </div>
+        {config.hidden && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+            <EyeOff className="h-6 w-6 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Label */}
+      <div className="px-3 py-2">
+        <p className="text-[11px] font-medium leading-tight line-clamp-2 text-center">{label}</p>
+        {preview && <p className="text-[10px] text-muted-foreground text-center mt-0.5 truncate">{preview}</p>}
+      </div>
+    </div>
+  );
+}
+
+function getSlideVisuals(
+  config: SlideGalleryProps["configs"][number],
+  companies: SlideGalleryProps["companies"],
+  documentation: SlideGalleryProps["documentation"],
+): { label: string; icon: React.ElementType; color: string; preview?: string } {
+  const kind = config.slide.kind;
+  if (kind === "overview")
+    return { label: "Visão Geral", icon: BarChart2, color: "bg-primary/10 text-primary" };
+  if (kind === "comparison")
+    return { label: "Ranking Comparativo", icon: Trophy, color: "bg-amber-500/10 text-amber-500" };
+  if (kind === "sidebyside")
+    return { label: "Lado a Lado", icon: GitCompare, color: "bg-blue-500/10 text-blue-500" };
+  if (kind === "scenarios")
+    return { label: "Cenários", icon: Sparkles, color: "bg-emerald-500/10 text-emerald-600" };
+  if (kind === "company") {
+    const c = companies.find((x) => x.id === config.slide.companyId);
+    const name = c?.nome_fantasia || c?.razao_social || "Empresa";
+    return { label: name, icon: Building2, color: "bg-purple-500/10 text-purple-500" };
+  }
+  if (kind === "doc") {
+    const doc = documentation.find((d) => d.id === config.slide.docId);
+    return {
+      label: doc?.title ?? "Documento",
+      icon: FileTextIcon,
+      color: "bg-orange-500/10 text-orange-500",
+      preview: "Markdown",
+    };
+  }
+  return { label: "Slide", icon: LayersIcon, color: "bg-muted text-muted-foreground" };
+}
+
+function SlideGallery({ configs, companies, documentation, onReorder, onToggleHidden }: SlideGalleryProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = configs.findIndex((c) => c.id === active.id);
+    const newIndex = configs.findIndex((c) => c.id === over.id);
+    onReorder(arrayMove(configs, oldIndex, newIndex));
+  };
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={configs.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+        <div className="flex gap-3 overflow-x-auto pb-3 pt-1">
+          {configs.map((config) => (
+            <SortableSlideCard
+              key={config.id}
+              config={config}
+              companies={companies}
+              documentation={documentation}
+              onToggleHidden={onToggleHidden}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }

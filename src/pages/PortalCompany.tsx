@@ -21,7 +21,7 @@ import {
 } from "@/hooks/useFiscalConfig";
 import { useCustomColumns, useCustomColumnValues, buildRowResolver } from "@/hooks/useCustomColumns";
 import { formatCustomValue } from "@/lib/format";
-import { PeriodFilter, type PeriodFilterValue } from "@/components/PeriodFilter";
+import { PeriodFilter, currentYearPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 
 interface Company {
   id: string;
@@ -51,7 +51,7 @@ interface MovementRow {
 
 export default function PortalCompany() {
   const { id } = useParams<{ id: string }>();
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>({ from: "", to: "" });
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilterValue>(currentYearPeriod);
 
   const { data: company, isLoading: loadingCompany } = useQuery({
     queryKey: ["portal_company", id],

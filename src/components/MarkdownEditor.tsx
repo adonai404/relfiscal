@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -36,8 +36,158 @@ function insertLinePrefix(textarea: HTMLTextAreaElement, prefix: string) {
   return { next, cursor: start + prefix.length };
 }
 
+function LiveBlock({
+  content,
+  index,
+  active,
+  onActivate,
+  onChange,
+  onMergeWithPrev,
+  onSplitAt,
+}: {
+  content: string;
+  index: number;
+  active: boolean;
+  onActivate: () => void;
+  onChange: (v: string) => void;
+  onMergeWithPrev: () => void;
+  onSplitAt: (before: string, after: string) => void;
+}) {
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (active && taRef.current) {
+      taRef.current.focus();
+      const len = taRef.current.value.length;
+      taRef.current.setSelectionRange(len, len);
+    }
+  }, [active]);
+
+  // Auto-resize textarea height
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el || !active) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }, [content, active]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const el = taRef.current!;
+    // Backspace at pos 0 → merge with previous block
+    if (e.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0 && index > 0) {
+      e.preventDefault();
+      onMergeWithPrev();
+      return;
+    }
+    // Enter (without Shift) at end of line creates a new paragraph block
+    if (e.key === "Enter" && !e.shiftKey) {
+      const pos = el.selectionStart;
+      const val = el.value;
+      // Only split into a new block if cursor is at the very end
+      if (pos === val.length) {
+        e.preventDefault();
+        onSplitAt(val, "");
+        return;
+      }
+    }
+  };
+
+  if (active) {
+    return (
+      <textarea
+        ref={taRef}
+        value={content}
+        onChange={(e) => {
+          onChange(e.target.value);
+          const el = e.target;
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+        }}
+        onKeyDown={handleKeyDown}
+        rows={1}
+        className="w-full font-mono text-sm resize-none overflow-hidden rounded-sm border border-primary/30 bg-muted/20 px-2 py-1 outline-none focus:ring-1 focus:ring-primary/40"
+        placeholder="Digite em Markdown..."
+      />
+    );
+  }
+
+  return (
+    <div
+      onClick={onActivate}
+      className="cursor-text rounded-sm px-2 py-1 min-h-[1.75rem] hover:bg-muted/30 transition-colors"
+    >
+      {content.trim() ? (
+        <MarkdownView content={content} />
+      ) : (
+        <span className="text-muted-foreground/40 text-sm italic select-none">Parágrafo vazio</span>
+      )}
+    </div>
+  );
+}
+
+function LiveEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [activeBlock, setActiveBlock] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const blocks = value === "" ? [""] : value.split("\n\n");
+
+  const update = useCallback(
+    (newBlocks: string[]) => onChange(newBlocks.join("\n\n")),
+    [onChange],
+  );
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (e.target === containerRef.current) {
+      const last = blocks.length - 1;
+      if (blocks[last] === "") {
+        setActiveBlock(last);
+      } else {
+        const newBlocks = [...blocks, ""];
+        update(newBlocks);
+        setActiveBlock(newBlocks.length - 1);
+      }
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onClick={handleContainerClick}
+      className="flex-1 min-h-[400px] overflow-auto p-4 space-y-2 cursor-text"
+    >
+      {blocks.map((block, i) => (
+        <LiveBlock
+          key={i}
+          index={i}
+          content={block}
+          active={activeBlock === i}
+          onActivate={() => setActiveBlock(i)}
+          onChange={(v) => {
+            const nb = [...blocks];
+            nb[i] = v;
+            update(nb);
+          }}
+          onMergeWithPrev={() => {
+            const nb = [...blocks];
+            const merged = nb[i - 1] + "\n\n" + nb[i];
+            nb.splice(i - 1, 2, merged);
+            update(nb);
+            setActiveBlock(i - 1);
+          }}
+          onSplitAt={(before, after) => {
+            const nb = [...blocks];
+            nb.splice(i, 1, before, after);
+            update(nb);
+            setActiveBlock(i + 1);
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function MarkdownEditor({ value, onChange, className }: Props) {
-  const [view, setView] = useState<"edit" | "preview" | "split">("split");
+  const [view, setView] = useState<"live" | "edit" | "preview" | "split">("live");
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
   const apply = (fn: (t: HTMLTextAreaElement) => { next: string; cursor: number }) => {
@@ -120,6 +270,7 @@ export function MarkdownEditor({ value, onChange, className }: Props) {
       <div className="ml-auto">
         <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
           <TabsList className="h-8">
+            <TabsTrigger value="live" className="h-7 px-2 text-xs">Live</TabsTrigger>
             <TabsTrigger value="edit" className="h-7 px-2 text-xs">Editar</TabsTrigger>
             <TabsTrigger value="split" className="h-7 px-2 text-xs">Dividido</TabsTrigger>
             <TabsTrigger value="preview" className="h-7 px-2 text-xs">Pré-visualizar</TabsTrigger>
@@ -153,6 +304,7 @@ export function MarkdownEditor({ value, onChange, className }: Props) {
     <div className={`flex flex-col overflow-hidden rounded-md border bg-background ${className || ""}`}>
       {toolbar}
       <div className="flex-1 flex flex-col min-h-0">
+        {view === "live" && <LiveEditor value={value} onChange={onChange} />}
         {view === "edit" && editor}
         {view === "preview" && preview}
         {view === "split" && (

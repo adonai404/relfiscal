@@ -36,7 +36,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { brl } from "@/lib/format";
-import { PeriodFilter, type PeriodFilterValue } from "@/components/PeriodFilter";
+import { PeriodFilter, currentYearPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 
 interface Company {
   id: string;
@@ -111,7 +111,7 @@ const PIE_COLORS = [
 
 export default function PortalHome() {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  const [period, setPeriod] = useState<PeriodFilterValue>(currentYearPeriod);
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [taxFilter, setTaxFilter] = useState<TaxKey | null>(null);

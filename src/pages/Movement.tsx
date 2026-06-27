@@ -122,7 +122,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
+import { PeriodFilter, filterByPeriod, currentYearPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia, formatCNPJ, parseBrNumber, formatCustomValue } from "@/lib/format";
 import { publicUrl } from "@/lib/publicUrl";
 import {
@@ -165,7 +165,7 @@ export default function Movement() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  const [period, setPeriod] = useState<PeriodFilterValue>(currentYearPeriod);
   type Op = "gte" | "lte" | "eq" | "between";
   const [colFilters, setColFilters] = useState<Record<string, { op: Op; a: string; b: string }>>({});
 

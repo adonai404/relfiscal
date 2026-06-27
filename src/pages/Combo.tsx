@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompany } from "@/hooks/useCompany";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { PeriodFilter, filterByPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
+import { PeriodFilter, filterByPeriod, currentYearPeriod, type PeriodFilterValue } from "@/components/PeriodFilter";
 import { brl, displayCompetencia } from "@/lib/format";
 
 interface MovementLite {
@@ -48,7 +48,7 @@ export default function Combo() {
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
-  const [period, setPeriod] = useState<PeriodFilterValue>({ from: "", to: "" });
+  const [period, setPeriod] = useState<PeriodFilterValue>(currentYearPeriod);
 
   const { data: rawMovements = [], isLoading } = useQuery({
     queryKey: ["combo_movements", selectedIds.sort().join(",")],

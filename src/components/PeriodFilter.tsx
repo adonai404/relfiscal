@@ -12,6 +12,11 @@ export interface PeriodFilterValue {
   to: string;   // 'YYYY-MM' or ''
 }
 
+export function currentYearPeriod(): PeriodFilterValue {
+  const y = new Date().getFullYear();
+  return { from: `${y}-01`, to: `${y}-12` };
+}
+
 interface Props {
   value: PeriodFilterValue;
   onChange: (v: PeriodFilterValue) => void;
